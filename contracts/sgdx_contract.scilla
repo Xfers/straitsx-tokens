@@ -1,9 +1,8 @@
 scilla_version 0
 
-(* Ownership contract *)
+(* SGDXContract to be used by Xfers to represent fiat-backed stablecoin *)
 
-import BoolUtils
-import IntUtils
+import BoolUtils IntUtils
 
 library SGDXContract 
 
@@ -27,14 +26,14 @@ contract SGDXContract
 name : String,
 symbol : String,
 currency : String,
-decimals : Uint32.
-masterMinter : ByStr20,
+decimals : Uint32,
 init_owner : ByStr20
 )
 
 
-field _owner : ByStr20 = init_owner
+field owner : ByStr20 = init_owner
 field pauser : ByStr20 = init_owner 
+field masterMinter : ByStr20 = init_owner
 field paused : Uint128  = zero
 field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
@@ -48,11 +47,11 @@ field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 
 (*Allows the current owner to transfer control of the contract to a newOwner.*)
 transition transferOwnership (newOwner : ByStr20)
-    current_owner <- _owner;
+    current_owner <- owner;
     isowner = builtin eq _sender current_owner;
     match isowner with
-    | True=>
-      _owner := newOwner;
+    | True =>
+      owner := newOwner;
       e = { _eventname : "OwnershipTransferred"; from : _sender  ; to : newOwner};
 	  event e 
     | False=>
@@ -61,7 +60,7 @@ end
 
 transition pause()
     current_pauser <- pauser;
-    ispauser = builtin current_pauser _sender;
+    ispauser = builtin eq current_pauser _sender;
     match ispauser with
     | True  =>
       paused := one;   
@@ -73,7 +72,7 @@ end
 
 transition unpause()
     current_pauser <- pauser;
-    ispauser = builtin current_pauser _sender;
+    ispauser = builtin eq current_pauser _sender;
     match ispauser with
     | True  =>
       paused := zero;   
@@ -84,24 +83,25 @@ transition unpause()
 end
  
 transition updatePauser(newPauser : ByStr20)
-    current_owner <- _owner;
+    current_owner <- owner;
     isowner = builtin eq _sender current_owner;
     match isowner with
     | True  =>  
       pauser := newPauser;
-      e = {_eventname : "PauseChanged", pauser : _newPauser};  
+      e = {_eventname : "PauseChanged"; pauser : newPauser};  
       event e
-    | False =>   
+    | False => 
+    end   
 end
 
 
 transition blacklist(address : ByStr20)
     current_blacklister <- blacklister;
-    isblacklister = builtin current_blacklister _sender
+    isblacklister = builtin eq current_blacklister _sender;
     match isblacklister with 
     | True =>
       blacklisted[address] := one;
-      e = {_eventname : "Blacklisted", address : address};  
+      e = {_eventname : "Blacklisted"; address : address};  
       event e
     | False => 
     end 
@@ -109,70 +109,80 @@ end
 
 transition unBlacklist(address : ByStr20)
     current_blacklister <- blacklister;
-    isblacklister = builtin current_blacklister _sender
+    isblacklister = builtin eq current_blacklister _sender;
     match isblacklister with 
     | True =>
       delete blacklisted[address];
-      e = {_eventname : "UnBlacklisted", address : address};  
+      e = {_eventname : "UnBlacklisted"; address : address};  
       event e
     | False => 
     end 
 end
 
 transition updateBlacklister(newBlacklister : ByStr20)
-    current_owner <- _owner;
+    current_owner <- owner;
     isowner = builtin eq _sender current_owner;
     match isowner with
     | True =>
       blacklister:= newBlacklister;
-      e = {_eventname : "BlacklisterChanged", blacklister : newBlacklister};  
+      e = {_eventname : "BlacklisterChanged"; blacklister : newBlacklister};  
       event e
     | False =>
     end 
 end
 
 transition mint(to: ByStr20, amount : Uint128 )
-  isPaused <- paused;
+  isPausedInt <- paused;
+  isPaused = builtin eq isPausedInt one;
   isblacklisted_sender <- exists blacklisted[_sender];
-  isblacklisted_receipient <- exists blacklisted[_to];
+  isblacklisted_receipient <- exists blacklisted[to];
   isMinter <- exists minters[_sender];
   or_res = let isNotMinter = negb isMinter in let tmp1 = orb isPaused isblacklisted_sender 
 		    in let tmp2 = orb tmp1 isblacklisted_receipient
-                    in let tmp3 = orb tmp2 isNotMinter;
+                    in  orb tmp2 isNotMinter;
   match or_res with   
   | False =>
     allowed_amount <- minterAllowed[_sender];
-    within_limits = builtin uint128_le amount allowed_amount;
-    match within_limits with
-    | True =>
-      a <- totalSupply;
-      new_tokens = builtin add amount a;
-      totalSupply <- new_tokens;
-      x <- balances[to];
-      new_bal = builtin add amount x;
-      balances[to] := new_bal;
-      new_allowed_amount = builtin sub amount_allowed amount;
-      minterAllowed[_sender] := new_allowed_amount;
-      e1 = { _eventname : "Mint"; minter : _sender; amount : amount; recipient : to};
-      event e1;
-      e2 = { _eventname : "Transfer"; from : _sender; amount : amount; recipient : to};
-      event e2 
-    | False =>
+    match allowed_amount with
+    | Some a => 
+      within_limits = uint128_le amount a;
+      match within_limits with
+      | True =>
+        t <- totalSupply;
+        new_tokens = builtin add amount t;
+        totalSupply := new_tokens;
+        x <- balances[to];
+        current_val = match x with
+            | Some v => v 
+            | None => zero
+            end;        
+        new_bal = builtin add amount current_val;
+        balances[to] := new_bal;
+        new_allowed_amount = builtin sub a amount;
+        minterAllowed[_sender] := new_allowed_amount;
+        e1 = { _eventname : "Mint"; minter : _sender; amount : amount; recipient : to};
+        event e1;
+        e2 = { _eventname : "Transfer"; from : _sender; amount : amount; recipient : to};
+        event e2 
+      | False =>
+      end
+    | None => 
     end
   | True =>      
   end
 end
 
 transition approve (spender : ByStr20, value : Uint128)
-  isPaused <- paused;
+  isPausedInt <- paused;
+  isPaused = builtin eq isPausedInt one;
   isblacklisted_sender <- exists blacklisted[_sender];
   isblacklisted_spender <- exists blacklisted[spender];
   or_res = let tmp1 = orb isPaused isblacklisted_sender 
-		    in let tmp2 = orb tmp1 isblacklisted_spender;
+		    in orb tmp1 isblacklisted_spender;
   match or_res with
   | False =>
     allowed[_sender][spender] := value;
-    e = { _evetname : "Approval"; sender : _sender; spender : spender; amount : value};
+    e = {_eventname : "Approval"; sender : _sender; spender : spender; amount : value};
     event e;
     msg = { _tag : "ApproveSuccess"; _recipient : _sender; _amount : zero;
           approver : _sender; spender : spender; amount : value };
@@ -183,13 +193,14 @@ transition approve (spender : ByStr20, value : Uint128)
 end
 
 transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128)
-  isPaused <- paused;
+  isPausedInt <- paused;
+  isPaused = builtin eq isPausedInt one;
   isblacklisted_sender <- exists blacklisted[_sender];   
   isblacklisted_receipient <- exists blacklisted[to];
   isblacklisted_from <- exists blacklisted[from];
   or_res = let tmp1 = orb isPaused isblacklisted_sender 
 		    in let tmp2 = orb tmp1 isblacklisted_receipient
-                    in let tmp3 = orb tmp2 isblacklisted_from;
+                    in  orb tmp2 isblacklisted_from;
   match or_res with
   | False => 
     bal <- balances[from];
@@ -200,8 +211,7 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128)
       match sender_allowed_from with
       | Some b =>
         (* We can only transfer the minimum of available or authorized tokens *)
-        t = min_int a b;
-        can_do = le_int value t;
+        can_do = uint128_le value b;
         match can_do with
         | True =>
             (* tokens is what we should subtract from "from" and add to "to" *)
@@ -243,20 +253,21 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128)
   end
  | True => 
 end
-
+end
 
 transition transfer (to : ByStr20, value : Uint128)
-  isPaused <- paused;
+  isPausedInt <- paused;
+  isPaused = builtin eq isPausedInt one;
   isblacklisted_sender <- exists blacklisted[_sender];   
-  isblacklisted_recipient <- exists blacklisted[to];
+  isblacklisted_receipient <- exists blacklisted[to];
   or_res = let tmp1 = orb isPaused isblacklisted_sender 
-		    in let tmp2 = orb tmp1 isblacklisted_receipient;
+		    in orb tmp1 isblacklisted_receipient;
   match or_res with
   | False => 
     bal <- balances[_sender];
     match bal with
     | Some b =>
-      can_do = le_int value b;
+      can_do = uint128_le value b;
       match can_do with
     | True =>
       (* subtract tokens from _sender and add it to "to" *)
@@ -291,39 +302,43 @@ transition transfer (to : ByStr20, value : Uint128)
   end
  | True =>
 end
+end
 
 transition burn(value : Uint128)
-  isPaused <- paused;
+  isPausedInt <- paused;
+  isPaused = builtin eq isPausedInt one;
   isMinter <- exists minters[_sender];
   isblacklisted_sender <- exists blacklisted[_sender];    
   or_res = let isNotMinter = negb isMinter in let tmp1 = orb isPaused isblacklisted_sender 
-		    in let tmp2 = orb tmp1 isNotMinter;
+		    in orb tmp1 isNotMinter;
   match or_res with 
   | False => 
     bal <- balances[_sender];
     match bal with
     | Some b =>
-      can_do = unit128_le value b;
+      can_do = uint128_le value b;
       match can_do with
       | True=>
         new_balance = builtin sub b value;
         balances[_sender] := new_balance;    
         currentSupply <- totalSupply;
         new_supply = builtin sub currentSupply value;
-        totalSupply <- new_supply;         
+        totalSupply := new_supply;         
         e = { _eventname : "Burn"; burner : _sender; amount : value};
         event e      
       | False =>      
       end
-   | None=>    
+   | None =>
+   end    
   | True =>
   end
 end
 
-
 transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128)
-    isPaused <- paused;
-    isMasterMinter = builtin eq _sender masterMinter;
+    isPausedInt <- paused;
+    isPaused = builtin eq isPausedInt one;
+    currentMasterMinter <- masterMinter;
+    isMasterMinter = builtin eq _sender currentMasterMinter;
     or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
     match or_res with
     | False =>
@@ -336,11 +351,12 @@ transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128)
 end
 
 transition removeMinter(minter : ByStr20)
-    isMasterMinter = builtin eq _sender masterMinter;
+    currentMasterMinter <- masterMinter;
+    isMasterMinter = builtin eq _sender currentMasterMinter;
     match isMasterMinter with
     | True => 
       delete minters[minter];
-      minterAllowed[minter] = 0;
+      minterAllowed[minter] := zero;
       e = { _eventname : "MinterRemoved"; minter : minter};
       event e
     | False =>
@@ -348,12 +364,12 @@ transition removeMinter(minter : ByStr20)
 end
 
 transition updateMasterMinter(newMasterMinter : ByStr20)
-    current_owner <- _owner;
+    current_owner <- owner;
     isowner = builtin eq _sender current_owner;
     match isowner with
     | True =>
-      masterMinter:= newMasterMinter;
-      e = {_eventname : "MasterMinterChanged", masterMinter : newMasterMinter};  
+      masterMinter := newMasterMinter;
+      e = {_eventname : "MasterMinterChanged"; masterMinter : newMasterMinter};  
       event e
     | False =>
     end 
