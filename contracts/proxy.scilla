@@ -1,0 +1,90 @@
+scilla_version 0
+
+(* Proxy contract to be used by Xfers *)
+
+import BoolUtils IntUtils
+
+library ProxyContract 
+
+(* returns singleton List Message *)
+let one_msg =
+    fun (msg : Message) =>
+        let nil_msg = Nil {Message} in
+        Cons {Message} msg nil_msg
+
+(***************************************************)
+(*             The contract definition             *)
+(***************************************************)
+
+contract ProxyContract 
+(
+init_implementation : ByStr20,
+init_admin : ByStr20
+)
+
+field implementation : ByStr20 = init_implementation
+field admin : ByStr20 = init_admin  
+
+transition upgradeTo(newImplementation : ByStr20)
+    currentAdmin <- admin;
+    isAdmin = builtin eq currentAdmin _sender;
+    match isAdmin with
+    | True =>
+      implementation := newImplementation;
+      e = {_eventname : "Upgraded"; implementation_address : newImplementation};
+      event e 
+    | False =>
+    end
+end
+
+transition changeAdmin(newAdmin : ByStr20)
+    currentAdmin <- admin;
+    isAdmin = builtin eq currentAdmin _sender;
+    match isAdmin with
+    | True =>
+      admin := newAdmin;
+      e = {_eventname : "AdminChanged", oldAdmin : currentAdmin; newAdmin : newAdmin};
+      event e
+    | False =>
+    end 
+end
+
+transition proxyTransferOwnership(newOwner : ByStr20)
+    current_impl <- implementation;
+    msg = {_tag : "transferOwnership"; _recipient : current_impl; caller : _sender; newOwner : newOwner};
+    msgs = one_msg msg;
+    send msgs
+end
+
+transition proxyPause()
+    current_impl <- implementation;
+    msg  = {_tag : "pause"; _recipient : current_impl; caller : _sender};
+    msgs = one_msg msg;
+end
+
+transition proxyUnPause()
+    current_impl <- implementation;
+    msg  = {_tag : "unpause"; _recipient : current_impl; caller : _sender};
+    msgs = one_msg msg;
+end
+
+transition proxyUpdatePauser(newPauser : ByStr20)
+    current_impl <- implementation;
+    msg  = {_tag : "updatePauser"; _recipient : current_impl; caller : _sender; newPauser : newPauser};
+    msgs = one_msg msg;
+end
+
+transition proxyBlacklist (address : ByStr20)
+    current_impl <- implementation;
+    msg  = {_tag : "blacklist"; _recipient : current_impl; caller : _sender; address : address};
+    msgs = one_msg msg;
+end
+
+transition proxyUnBlacklist (address : ByStr20)
+    current_impl <- implementation;
+    msg  = {_tag : "unBlacklist"; _recipient : current_impl; caller : _sender; address : address};
+    msgs = one_msg msg;
+end
+
+
+
