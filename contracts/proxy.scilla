@@ -38,7 +38,7 @@ transition upgradeTo(newImplementation : ByStr20)
 end
 
 transition changeAdmin(newAdmin : ByStr20)
-    currentAdmin <- admin;
+    
     isAdmin = builtin eq currentAdmin _sender;
     match isAdmin with
     | True =>
@@ -48,6 +48,15 @@ transition changeAdmin(newAdmin : ByStr20)
     | False =>
     end 
 end
+
+transition proxyReauthorizeDefaultOperator(operator : ByStr20)
+    current_impl <- implementation;
+    msg = {_tag : "reauthorizeDefaultOperator"; _recipient : current_impl; caller : _sender; newOwner : newOwner};
+    msgs = one_msg msg;
+    send msgs
+end
+
+
 
 transition proxyTransferOwnership(newOwner : ByStr20)
     current_impl <- implementation;
