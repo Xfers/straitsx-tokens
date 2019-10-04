@@ -2,7 +2,7 @@ scilla_version 0
 
 (* SGDXContract to be used by Xfers to represent fiat-backed stablecoin *)
 
-import BoolUtils IntUtils
+import BoolUtils IntUtils ListUtils
 
 library SGDXContract 
 
@@ -23,6 +23,13 @@ let one_msg =
         let nil_msg = Nil {Message} in
         Cons {Message} msg nil_msg
 
+let f =
+  fun (a : ByStr20) =>
+  fun (b : ByStr20) =>
+    builtin eq a b
+
+
+let isDefOperator = @list_mem ByStr20
 
 let zero = Uint128 0
 let one  = Uint128 1
@@ -39,7 +46,8 @@ name : String,
 symbol : String,
 currency : String,
 decimals : Uint32,
-init_owner : ByStr20
+init_owner : ByStr20,
+default_operators : List ByStr20
 )
 
 
@@ -50,12 +58,35 @@ field paused : Bool = False
 field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 
+field revokedDefaultOperators : Map ByStr20 (Map ByStr20 Bool) = Emp ByStr20 (Map ByStr20 Bool)
+
 field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)    
 field totalSupply : Uint128  = zero
 field minters : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 
+transition reauthorizeDefaultOperator(operator : ByStr20)
+  isDefaultOperator =  isDefOperator f operator default_operators;
+  match isDefaultOperator with
+  | True  => 
+    delete revokedDefaultOperators[_sender][operator];
+    e = { _eventname : "ReAuthorizedDefaultOperator"; operator : operator  ; sender : _sender};
+    event e
+  | False =>
+  end
+end
+
+transition revokeDefaultOperator(operator : ByStr20)
+  isDefaultOperator =  isDefOperator f operator default_operators;
+  match isDefaultOperator with
+  | True  => 
+    revokedDefaultOperators[_sender][operator] := true;
+    e = { _eventname : "RevokedDefaultOperator"; operator : operator; sender : _sender};
+    event e
+  | False =>
+  end
+end
 
 (*Allows the current owner to transfer control of the contract to a newOwner.*)
 transition transferOwnership (newOwner : ByStr20)
@@ -69,6 +100,7 @@ transition transferOwnership (newOwner : ByStr20)
     | False=>
     end
 end 
+
 
 transition pause()
     current_pauser <- pauser;
@@ -201,6 +233,66 @@ transition approve (spender : ByStr20, value : Uint128)
   | True => 
   end
 end
+
+transition operatorSend (from : ByStr20, to : ByStr20, value : Uint128)
+  isPaused <- paused;
+  isblacklisted_sender <- exists blacklisted[_sender];   
+  isblacklisted_receipient <- exists blacklisted[to];
+  isblacklisted_from <- exists blacklisted[from];
+  or_res = orb_4 isPaused isblacklisted_sender isblacklisted_receipient isblacklisted_from;
+  match or_res with
+  | True =>  
+  | False => 
+    bal <- balances[from];
+    
+    isHolder = builtin eq _sender from; 
+    isDefaultOperator =  isDefOperator f _sender default_operators;
+    isRevokedOperator <- exists revokedDefaultOperators[from][_sender];
+    isAllowedDefaultOperator = let isNotRevokedOperator = negb isRevokedOperator in andb  isNotRevokedOperator isDefaultOperator;
+    isallowed =  orb isHolder isAllowedDefaultOperator;
+    match isallowed with
+    | False =>
+    | True  =>
+      match bal with
+      | Some b =>
+        can_do = uint128_le value b;
+        match can_do with
+        | True =>
+          (* subtract tokens from from and add it to "to" *)
+          new_from_bal = builtin sub b value;
+          balances[from] := new_from_bal;
+        
+          (* Adds tokens to "to" address *)
+          to_bal <- balances[to];
+          new_to_bal = match to_bal with
+          | Some x => builtin add x value
+          | None => value
+          end;
+          balances[to] := new_to_bal;
+          msg = { _tag : "operatorSendSuccess"; _recipient : _sender; _amount : zero;
+                operator : _sender; from : from; recipient : to; amount : value};
+          msgs = one_msg msg;
+          send msgs
+        | False =>
+          (* balance not sufficient. *)
+          msg = { _tag : "operatorSendFailure"; _recipient : _sender; _amount : zero;
+                  operator : _sender; from : from;  recipient : to; amount : zero};
+          msgs = one_msg msg;
+          send msgs
+        end
+      | None =>
+        (* no balance record, can't transfer *)
+        msg = { _tag : "operatorSendFailure"; _recipient : _sender; _amount : zero;
+                operator : _sender; from : from; sender : _sender; recipient : to; amount : zero};
+        msgs = one_msg msg;
+        send msgs
+      end
+    end
+  end
+end
+
+
+
 
 transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128)
   isPaused <- paused;
