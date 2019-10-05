@@ -47,7 +47,8 @@ symbol : String,
 currency : String,
 decimals : Uint32,
 init_owner : ByStr20,
-default_operators : List ByStr20
+default_operators : List ByStr20,
+proxy_address : ByStr20
 )
 
 
@@ -66,408 +67,494 @@ field totalSupply : Uint128  = zero
 field minters : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 
-transition reauthorizeDefaultOperator(operator : ByStr20, caller : ByStr20)
-  isDefaultOperator =  isDefOperator f operator default_operators;
-  match isDefaultOperator with
-  | True  => 
-    delete revokedDefaultOperators[_sender][operator];
-    e = { _eventname : "ReAuthorizedDefaultOperator"; operator : operator  ; sender : _sender};
-    event e
-  | False =>
-  end
+transition reauthorizeDefaultOperator(operator : ByStr20, initiator : ByStr20)  
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True  => 
+      isDefaultOperator =  isDefOperator f operator default_operators;
+      match isDefaultOperator with
+      | True  => 
+        delete revokedDefaultOperators[initiator][operator];
+        e = { _eventname : "ReAuthorizedDefaultOperator"; operator : operator  ; sender : initiator};
+        event e
+      | False =>
+      end
+    end
 end
 
-transition revokeDefaultOperator(operator : ByStr20)
-  isDefaultOperator =  isDefOperator f operator default_operators;
-  match isDefaultOperator with
-  | True  => 
-    revokedDefaultOperators[_sender][operator] := true;
-    e = { _eventname : "RevokedDefaultOperator"; operator : operator; sender : _sender};
-    event e
-  | False =>
-  end
+transition revokeDefaultOperator(operator : ByStr20, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True =>
+      isDefaultOperator =  isDefOperator f operator default_operators;
+      match isDefaultOperator with
+      | True  => 
+        revokedDefaultOperators[initiator][operator] := true;
+        e = { _eventname : "RevokedDefaultOperator"; operator : operator; sender : initiator};
+        event e
+      | False =>
+      end
+    end
 end
 
 (*Allows the current owner to transfer control of the contract to a newOwner.*)
-transition transferOwnership (newOwner : ByStr20)
-    current_owner <- owner;
-    isowner = builtin eq _sender current_owner;
-    match isowner with
+transition transferOwnership (newOwner : ByStr20, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
     | True =>
-      owner := newOwner;
-      e = { _eventname : "OwnershipTransferred"; from : _sender  ; to : newOwner};
-	  event e 
-    | False=>
+      current_owner <- owner;
+      isowner = builtin eq initiator current_owner;
+      match isowner with
+      | True =>
+        owner := newOwner;
+        e = { _eventname : "OwnershipTransferred"; from : initiator  ; to : newOwner};
+	    event e 
+      | False=>
+      end
     end
 end 
 
 
-transition pause()
-    current_pauser <- pauser;
-    ispauser = builtin eq current_pauser _sender;
-    match ispauser with
-    | True  =>
-      paused := true;
-      e = { _eventname : "Pause"};
-      event e
+transition pause(initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
     | False =>
+    | True =>
+      current_pauser <- pauser;
+      ispauser = builtin eq current_pauser initiator;
+      match ispauser with
+      | True  =>
+        paused := true;
+        e = { _eventname : "Pause"};
+        event e
+      | False =>
+      end
     end
 end
 
-transition unpause()
-    current_pauser <- pauser;
-    ispauser = builtin eq current_pauser _sender;
-    match ispauser with
-    | True  =>
-      paused := false;   
-      e = { _eventname : "Unpause"};
-      event e
+transition unpause(initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
     | False =>
+    | True =>
+      current_pauser <- pauser;
+      ispauser = builtin eq current_pauser initiator;
+      match ispauser with
+      | True  =>
+        paused := false;   
+        e = { _eventname : "Unpause"};
+        event e
+      | False =>
+      end
     end
 end
  
-transition updatePauser(newPauser : ByStr20)
-    current_owner <- owner;
-    isowner = builtin eq _sender current_owner;
-    match isowner with
-    | True  =>  
-      pauser := newPauser;
-      e = {_eventname : "PauseChanged"; pauser : newPauser};  
-      event e
-    | False => 
+transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True =>
+      current_owner <- owner;
+      isowner = builtin eq initiator current_owner;
+      match isowner with
+      | True  =>  
+        pauser := newPauser;
+        e = {_eventname : "PauseChanged"; pauser : newPauser};  
+        event e
+      | False => 
+      end
     end   
 end
 
 
-transition blacklist(address : ByStr20)
-    current_blacklister <- blacklister;
-    isblacklister = builtin eq current_blacklister _sender;
-    match isblacklister with 
-    | True =>
-      blacklisted[address] := one;
-      e = {_eventname : "Blacklisted"; address : address};  
-      event e
-    | False => 
-    end 
-end
-
-transition unBlacklist(address : ByStr20)
-    current_blacklister <- blacklister;
-    isblacklister = builtin eq current_blacklister _sender;
-    match isblacklister with 
-    | True =>
-      delete blacklisted[address];
-      e = {_eventname : "UnBlacklisted"; address : address};  
-      event e
-    | False => 
-    end 
-end
-
-transition updateBlacklister(newBlacklister : ByStr20)
-    current_owner <- owner;
-    isowner = builtin eq _sender current_owner;
-    match isowner with
-    | True =>
-      blacklister:= newBlacklister;
-      e = {_eventname : "BlacklisterChanged"; blacklister : newBlacklister};  
-      event e
+transition blacklist(address : ByStr20, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
     | False =>
+    | True =>
+      current_blacklister <- blacklister;
+      isblacklister = builtin eq current_blacklister initiator;
+      match isblacklister with 
+      | True =>
+        blacklisted[address] := one;
+        e = {_eventname : "Blacklisted"; address : address};  
+        event e
+      | False => 
+      end
     end 
 end
 
-transition mint(to: ByStr20, amount : Uint128 )
-  isPaused <- paused;
-  isblacklisted_sender <- exists blacklisted[_sender];
-  isblacklisted_receipient <- exists blacklisted[to];
-  isMinter <- exists minters[_sender];
-  or_res =
-      let isNotMinter = negb isMinter in
-      orb_4 isPaused isblacklisted_sender isblacklisted_receipient isNotMinter;
- 
-  match or_res with   
-  | False =>
-    allowed_amount <- minterAllowed[_sender];
-    match allowed_amount with
-    | Some a => 
-      within_limits = uint128_le amount a;
-      match within_limits with
+transition unBlacklist(address : ByStr20, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True =>
+      current_blacklister <- blacklister;
+      isblacklister = builtin eq current_blacklister initiator;
+      match isblacklister with 
       | True =>
-        t <- totalSupply;
-        new_tokens = builtin add amount t;
-        totalSupply := new_tokens;
-        x <- balances[to];
-        current_val = match x with
-            | Some v => v 
-            | None => zero
-            end;        
-        new_bal = builtin add amount current_val;
-        balances[to] := new_bal;
-        new_allowed_amount = builtin sub a amount;
-        minterAllowed[_sender] := new_allowed_amount;
-        e1 = { _eventname : "Mint"; minter : _sender; amount : amount; recipient : to};
-        event e1;
-        e2 = { _eventname : "Transfer"; from : _sender; amount : amount; recipient : to};
-        event e2 
+        delete blacklisted[address];
+        e = {_eventname : "UnBlacklisted"; address : address};  
+        event e
+      | False => 
+      end
+    end 
+end
+
+transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True =>
+      current_owner <- owner;
+      isowner = builtin eq initiator current_owner;
+      match isowner with
+      | True =>
+        blacklister:= newBlacklister;
+        e = {_eventname : "BlacklisterChanged"; blacklister : newBlacklister};  
+        event e
       | False =>
       end
-    | None => 
-    end
-  | True =>      
-  end
+    end 
 end
 
-transition approve (spender : ByStr20, value : Uint128)
-  isPaused <- paused;
-  isblacklisted_sender <- exists blacklisted[_sender];
-  isblacklisted_spender <- exists blacklisted[spender];
-  or_res = orb_3 isPaused isblacklisted_sender isblacklisted_spender;
-  match or_res with
-  | False =>
-    allowed[_sender][spender] := value;
-    e = {_eventname : "Approval"; sender : _sender; spender : spender; amount : value};
-    event e;
-    msg = { _tag : "ApproveSuccess"; _recipient : _sender; _amount : zero;
-          approver : _sender; spender : spender; amount : value };
-    msgs = one_msg msg;
-    send msgs
-  | True => 
-  end
-end
-
-transition operatorSend (from : ByStr20, to : ByStr20, value : Uint128)
-  isPaused <- paused;
-  isblacklisted_sender <- exists blacklisted[_sender];   
-  isblacklisted_receipient <- exists blacklisted[to];
-  isblacklisted_from <- exists blacklisted[from];
-  or_res = orb_4 isPaused isblacklisted_sender isblacklisted_receipient isblacklisted_from;
-  match or_res with
-  | True =>  
-  | False => 
-    bal <- balances[from];
-    
-    isHolder = builtin eq _sender from; 
-    isDefaultOperator =  isDefOperator f _sender default_operators;
-    isRevokedOperator <- exists revokedDefaultOperators[from][_sender];
-    isAllowedDefaultOperator = let isNotRevokedOperator = negb isRevokedOperator in andb  isNotRevokedOperator isDefaultOperator;
-    isallowed =  orb isHolder isAllowedDefaultOperator;
-    match isallowed with
+transition mint(to: ByStr20, amount : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
     | False =>
-    | True  =>
-      match bal with
-      | Some b =>
-        can_do = uint128_le value b;
-        match can_do with
-        | True =>
-          (* subtract tokens from from and add it to "to" *)
-          new_from_bal = builtin sub b value;
-          balances[from] := new_from_bal;
-        
-          (* Adds tokens to "to" address *)
-          to_bal <- balances[to];
-          new_to_bal = match to_bal with
-          | Some x => builtin add x value
-          | None => value
-          end;
-          balances[to] := new_to_bal;
-          msg = { _tag : "operatorSendSuccess"; _recipient : _sender; _amount : zero;
-                operator : _sender; from : from; recipient : to; amount : value};
-          msgs = one_msg msg;
-          send msgs
-        | False =>
-          (* balance not sufficient. *)
-          msg = { _tag : "operatorSendFailure"; _recipient : _sender; _amount : zero;
-                  operator : _sender; from : from;  recipient : to; amount : zero};
-          msgs = one_msg msg;
-          send msgs
+    | True =>
+      isPaused <- paused;
+      isblacklistedinitiator <- exists blacklisted[_sender];
+      isblacklisted_receipient <- exists blacklisted[to];
+      isMinter <- exists minters[initiator];
+      or_res =
+         let isNotMinter = negb isMinter in
+         orb_4 isPaused isblacklistedinitiator isblacklisted_receipient isNotMinter;
+ 
+      match or_res with   
+      | False =>
+        allowed_amount <- minterAllowed[initiator];
+        match allowed_amount with
+        | Some a => 
+          within_limits = uint128_le amount a;
+          match within_limits with
+          | True =>
+            t <- totalSupply;
+            new_tokens = builtin add amount t;
+            totalSupply := new_tokens;
+            x <- balances[to];
+            current_val = match x with
+                          | Some v => v 
+                          | None => zero
+                          end;        
+            new_bal = builtin add amount current_val;
+            balances[to] := new_bal;
+            new_allowed_amount = builtin sub a amount;
+            minterAllowed[initiator] := new_allowed_amount;
+            e1 = { _eventname : "Mint"; minter : initiator; amount : amount; recipient : to};
+            event e1;
+            e2 = { _eventname : "Transfer"; from : initiator; amount : amount; recipient : to};
+            event e2 
+          | False =>
+          end
+        | None => 
         end
-      | None =>
-        (* no balance record, can't transfer *)
-        msg = { _tag : "operatorSendFailure"; _recipient : _sender; _amount : zero;
-                operator : _sender; from : from; sender : _sender; recipient : to; amount : zero};
-        msgs = one_msg msg;
-        send msgs
+      | True =>      
       end
     end
+end
+
+transition approve (spender : ByStr20, value : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True =>
+      isPaused <- paused;
+      isblacklistedinitiator <- exists blacklisted[_sender];
+      isblacklisted_spender <- exists blacklisted[spender];
+      or_res = orb_3 isPaused isblacklistedinitiator isblacklisted_spender;
+      match or_res with
+      | False =>
+        allowed[initiator][spender] := value;
+        e = {_eventname : "Approval"; sender : initiator; spender : spender; amount : value};
+        event e;
+        msg = {_tag : "ApproveSuccess"; _recipient : initiator; _amount : zero;
+               approver : initiator; spender : spender; amount : value };
+        msgs = one_msg msg;
+        send msgs
+      | True => 
+      end
+    end
+end
+
+transition operatorSend (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True =>
+      isPaused <- paused;
+      isblacklistedinitiator <- exists blacklisted[_sender];   
+      isblacklisted_receipient <- exists blacklisted[to];
+      isblacklisted_from <- exists blacklisted[from];
+      or_res = orb_4 isPaused isblacklistedinitiator isblacklisted_receipient isblacklisted_from;
+      match or_res with
+      | True =>  
+      | False => 
+        bal <- balances[from];
+        isHolder = builtin eq initiator from; 
+        isDefaultOperator =  isDefOperator f initiator default_operators;
+        isRevokedOperator <- exists revokedDefaultOperators[from][initiator];
+        isAllowedDefaultOperator = let isNotRevokedOperator = negb isRevokedOperator in andb  isNotRevokedOperator isDefaultOperator;
+        isallowed =  orb isHolder isAllowedDefaultOperator;
+        match isallowed with
+        | False =>
+        | True  =>
+          match bal with
+          | Some b =>
+            can_do = uint128_le value b;
+            match can_do with
+            | True =>
+              (* subtract tokens from from and add it to "to" *)
+              new_from_bal = builtin sub b value;
+              balances[from] := new_from_bal;
+        
+              (* Adds tokens to "to" address *)
+              to_bal <- balances[to];
+              new_to_bal = match to_bal with
+              | Some x => builtin add x value
+              | None => value
+              end;
+              balances[to] := new_to_bal;
+              msg = { _tag : "operatorSendSuccess"; _recipient : initiator; _amount : zero;
+                      operator : initiator; from : from; recipient : to; amount : value};
+              msgs = one_msg msg;
+              send msgs
+            | False =>
+             (* balance not sufficient. *)
+             msg = {_tag : "operatorSendFailure"; _recipient : initiator; _amount : zero;
+                    operator : initiator; from : from;  recipient : to; amount : zero};
+             msgs = one_msg msg;
+             send msgs
+            end
+          | None =>
+            (* no balance record, can't transfer *)
+            msg = {_tag : "operatorSendFailure"; _recipient : initiator; _amount : zero;
+                  operator : initiator; from : from; sender : _sender; recipient : to; amount : zero};
+            msgs = one_msg msg;
+            send msgs
+          end
+        end
+     end
   end
 end
 
-
-
-
-transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128)
-  isPaused <- paused;
-  isblacklisted_sender <- exists blacklisted[_sender];   
-  isblacklisted_receipient <- exists blacklisted[to];
-  isblacklisted_from <- exists blacklisted[from];
-  or_res = orb_4 isPaused isblacklisted_sender isblacklisted_receipient isblacklisted_from;
-  match or_res with
-  | False => 
-    bal <- balances[from];
-    (* Check if _sender has been authorized by "from" *)
-    sender_allowed_from <- allowed[from][_sender];
-    match bal with
-    | Some a =>
-      match sender_allowed_from with
-      | Some b =>
-        (* We can only transfer the minimum of available or authorized tokens *)
-        can_do = uint128_le value b;
-        match can_do with
-        | True =>
-            (* tokens is what we should subtract from "from" and add to "to" *)
-            new_from_bal = builtin sub a value;
-            balances[from] := new_from_bal;
-            to_bal <- balances[to];
-            match to_bal with
-            | Some tb =>
+transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True =>
+      isPaused <- paused;
+      isblacklistedinitiator <- exists blacklisted[_sender];   
+      isblacklisted_receipient <- exists blacklisted[to];
+      isblacklisted_from <- exists blacklisted[from];
+      or_res = orb_4 isPaused isblacklistedinitiator isblacklisted_receipient isblacklisted_from;
+      match or_res with
+      | False => 
+        bal <- balances[from];
+        (* Check if initiator has been authorized by "from" *)
+        sender_allowed_from <- allowed[from][initiator];
+        match bal with
+        | Some a =>
+          match sender_allowed_from with
+          | Some b =>
+          (* We can only transfer the minimum of available or authorized tokens *)
+            can_do = uint128_le value b;
+            match can_do with
+            | True =>
+              (* tokens is what we should subtract from "from" and add to "to" *)
+              new_from_bal = builtin sub a value;
+              balances[from] := new_from_bal;
+              to_bal <- balances[to];
+              match to_bal with
+              | Some tb =>
                 new_to_bal = builtin add tb value;
                 balances[to] := new_to_bal
-            | None =>
+              | None =>
                 (* "to" has no balance. So just set it to tokens *)
                 balances[to] := value
-            end;
-            (* reduce "allowed" by "tokens" *)
-            new_allowed = builtin sub b value;
-            allowed[from][_sender] := new_allowed;
-            msg = { _tag : "TransferFromSuccess"; _recipient : _sender; _amount : zero;
-                    sender : from; recipient : to; amount : value };
+              end;
+              (* reduce "allowed" by "tokens" *)
+              new_allowed = builtin sub b value;
+              allowed[from][initiator] := new_allowed;
+              msg = {_tag : "TransferFromSuccess"; _recipient : initiator; _amount : zero;
+                     sender : from; recipient : to; amount : value };
+              msgs = one_msg msg;
+              send msgs
+            | False =>
+              msg = {_tag : "TransferFromFailure"; _recipient : initiator; _amount : zero;
+                     sender : from; recipient : to; amount : zero };
+              msgs = one_msg msg;
+              send msgs
+            end
+          | None =>
+            msg = {_tag : "TransferFromFailure"; _recipient : initiator; _amount : zero;
+                   sender : from; recipient : to; amount : zero };
             msgs = one_msg msg;
             send msgs
-        | False =>
-            msg = { _tag : "TransferFromFailure"; _recipient : _sender; _amount : zero;
-                    sender : from; recipient : to; amount : zero };
-            msgs = one_msg msg;
-            send msgs
+          end
+        | None =>
+	      msg = {_tag : "TransferFromFailure"; _recipient : initiator; _amount : zero;
+                 sender : from; recipient : to; amount : zero };
+          msgs = one_msg msg;
+          send msgs
         end
-    | None =>
-        msg = { _tag : "TransferFromFailure"; _recipient : _sender; _amount : zero;
-                sender : from; recipient : to; amount : zero };
-        msgs = one_msg msg;
-        send msgs
-    end
-  | None =>
-	msg = { _tag : "TransferFromFailure"; _recipient : _sender; _amount : zero;
-            sender : from; recipient : to; amount : zero };
-    msgs = one_msg msg;
-    send msgs
-  end
- | True => 
-end
-end
-
-transition transfer (to : ByStr20, value : Uint128)
-  isPaused <- paused;
-  isblacklisted_sender <- exists blacklisted[_sender];   
-  isblacklisted_receipient <- exists blacklisted[to];
-  or_res = orb_3 isPaused isblacklisted_sender isblacklisted_receipient;
-  match or_res with
-  | False => 
-    bal <- balances[_sender];
-    match bal with
-    | Some b =>
-      can_do = uint128_le value b;
-      match can_do with
-    | True =>
-      (* subtract tokens from _sender and add it to "to" *)
-      new_sender_bal = builtin sub b value;
-      balances[_sender] := new_sender_bal;
-
-      (* Adds tokens to "to" address *)
-      to_bal <- balances[to];
-      new_to_bal = match to_bal with
-      | Some x => builtin add x value
-      | None => value
-      end;
-
-      balances[to] := new_to_bal;
-      msg = { _tag : "TransferSuccess"; _recipient : _sender; _amount : zero;
-              sender : _sender; recipient : to; amount : value};
-      msgs = one_msg msg;
-      send msgs
-    | False =>
-      (* balance not sufficient. *)
-      msg = { _tag : "TransferFailure"; _recipient : _sender; _amount : zero;
-              sender : _sender; recipient : to; amount : zero};
-      msgs = one_msg msg;
-      send msgs
-    end
-  | None =>
-    (* no balance record, can't transfer *)
-    msg = { _tag : "TransferFailure"; _recipient : _sender; _amount : zero;
-            sender : _sender; recipient : to; amount : zero};
-    msgs = one_msg msg;
-    send msgs
-  end
- | True =>
-end
-end
-
-transition burn(value : Uint128)
-  isPaused <- paused;
-  isMinter <- exists minters[_sender];
-  isblacklisted_sender <- exists blacklisted[_sender];    
-  or_res =
-    let isNotMinter = negb isMinter in
-    orb_3 isPaused isblacklisted_sender isNotMinter;
-
-  match or_res with 
-  | False => 
-    bal <- balances[_sender];
-    match bal with
-    | Some b =>
-      can_do = uint128_le value b;
-      match can_do with
-      | True=>
-        new_balance = builtin sub b value;
-        balances[_sender] := new_balance;    
-        currentSupply <- totalSupply;
-        new_supply = builtin sub currentSupply value;
-        totalSupply := new_supply;         
-        e = { _eventname : "Burn"; burner : _sender; amount : value};
-        event e      
-      | False =>      
+      | True => 
       end
-   | None =>
-   end    
-  | True =>
-  end
+   end
 end
 
-transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128)
-    isPaused <- paused;
-    currentMasterMinter <- masterMinter;
-    isMasterMinter = builtin eq _sender currentMasterMinter;
-    or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
-    match or_res with
+transition transfer (to : ByStr20, value : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
     | False =>
-      minters[minter] := one;
-      minterAllowed[minter] := minterAllowedAmount;
-      e = { _eventname : "MinterConfigured"; minter : minter; amount : minterAllowedAmount};
-      event e
     | True =>
-    end  
+      isPaused <- paused;
+      isblacklisted_initiator <- exists blacklisted[initiator];   
+      isblacklisted_receipient <- exists blacklisted[to];
+      or_res = orb_3 isPaused isblacklisted_initiator isblacklisted_receipient;
+      match or_res with
+      | False => 
+        bal <- balances[initiator];
+        match bal with
+        | Some b =>
+          can_do = uint128_le value b;
+          match can_do with
+          | True =>
+            (* subtract tokens from initiator and add it to "to" *)
+            new_initiator_bal = builtin sub b value;
+            balances[initiator] := new_initiator_bal;
+
+            (* Adds tokens to "to" address *)
+            to_bal <- balances[to];
+            new_to_bal = match to_bal with
+                | Some x => builtin add x value
+                | None => value
+            end;
+
+            balances[to] := new_to_bal;
+            msg = {_tag : "TransferSuccess"; _recipient : initiator; _amount : zero;
+                   sender : initiator; recipient : to; amount : value};
+            msgs = one_msg msg;
+            send msgs
+          | False =>
+            (* balance not sufficient. *)
+            msg = {_tag : "TransferFailure"; _recipient : initiator; _amount : zero;
+                   sender : initiator; recipient : to; amount : zero};
+            msgs = one_msg msg;
+            send msgs
+          end
+        | None =>
+         (* no balance record, can't transfer *)
+          msg = {_tag : "TransferFailure"; _recipient : initiator; _amount : zero;
+                 sender : initiator; recipient : to; amount : zero};
+          msgs = one_msg msg;
+          send msgs
+        end
+      | True =>
+      end
+   end
 end
 
-transition removeMinter(minter : ByStr20)
-    currentMasterMinter <- masterMinter;
-    isMasterMinter = builtin eq _sender currentMasterMinter;
-    match isMasterMinter with
-    | True => 
-      delete minters[minter];
-      minterAllowed[minter] := zero;
-      e = { _eventname : "MinterRemoved"; minter : minter};
-      event e
+transition burn(value : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
     | False =>
-    end
+    | True  =>
+      isPaused <- paused;
+      isMinter <- exists minters[initiator];
+      isblacklistedinitiator <- exists blacklisted[_sender];    
+      or_res =
+      let isNotMinter = negb isMinter in
+      orb_3 isPaused isblacklistedinitiator isNotMinter;
+
+      match or_res with 
+      | False => 
+        bal <- balances[initiator];
+        match bal with
+        | Some b =>
+          can_do = uint128_le value b;
+          match can_do with
+          | True=>
+            new_balance = builtin sub b value;
+            balances[initiator] := new_balance;    
+            currentSupply <- totalSupply;
+            new_supply = builtin sub currentSupply value;
+            totalSupply := new_supply;         
+            e = { _eventname : "Burn"; burner : initiator; amount : value};
+            event e      
+          | False =>      
+          end
+        | None =>
+        end    
+      | True =>
+      end
+   end
 end
 
-transition updateMasterMinter(newMasterMinter : ByStr20)
-    current_owner <- owner;
-    isowner = builtin eq _sender current_owner;
-    match isowner with
-    | True =>
-      masterMinter := newMasterMinter;
-      e = {_eventname : "MasterMinterChanged"; masterMinter : newMasterMinter};  
-      event e
+transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
     | False =>
+    | True  =>
+      isPaused <- paused;
+      currentMasterMinter <- masterMinter;
+      isMasterMinter = builtin eq initiator currentMasterMinter;
+      or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
+      match or_res with
+      | False =>
+        minters[minter] := one;
+        minterAllowed[minter] := minterAllowedAmount;
+        e = { _eventname : "MinterConfigured"; minter : minter; amount : minterAllowedAmount};
+        event e
+      | True =>
+      end
+   end  
+end
+
+transition removeMinter(minter : ByStr20, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True  =>
+      currentMasterMinter <- masterMinter;
+      isMasterMinter = builtin eq initiator currentMasterMinter;
+      match isMasterMinter with
+      | True => 
+        delete minters[minter];
+        minterAllowed[minter] := zero;
+        e = { _eventname : "MinterRemoved"; minter : minter};
+        event e
+      | False =>
+      end
+   end
+end
+
+transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+    | True  =>
+      current_owner <- owner;
+      isowner = builtin eq initiator current_owner;
+      match isowner with
+      | True =>
+        masterMinter := newMasterMinter;
+        e = {_eventname : "MasterMinterChanged"; masterMinter : newMasterMinter};  
+        event e
+      | False =>
+      end
     end 
 end
