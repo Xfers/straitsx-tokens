@@ -40,12 +40,12 @@ transition upgradeTo(newImplementation : ByStr20)
 end
 
 transition changeAdmin(newAdmin : ByStr20)
-    
+    currentAdmin <- admin;
     isAdmin = builtin eq currentAdmin _sender;
     match isAdmin with
     | True =>
       admin := newAdmin;
-      e = {_eventname : "AdminChanged", oldAdmin : currentAdmin; newAdmin : newAdmin};
+      e = {_eventname : "AdminChanged"; oldAdmin : currentAdmin; newAdmin : newAdmin};
       event e
     | False =>
     end 
@@ -169,6 +169,7 @@ transition proxyRemoveMinter(minter : ByStr20)
     msg = {_tag : "removeMinter"; _recipient : current_impl; _amount : zero; minter : minter; 
            initiator : _sender};
     msgs = one_msg msg;
+    send msgs
 end
 
 transition proxyUpdateMasterMinter(newMasterMinter : ByStr20)
@@ -176,5 +177,6 @@ transition proxyUpdateMasterMinter(newMasterMinter : ByStr20)
     msg = {_tag : "updateMasterMinter"; _recipient : current_impl; _amount : zero; newMasterMinter : newMasterMinter; 
            initiator : _sender};
     msgs = one_msg msg;
+    send msgs
 end
 
