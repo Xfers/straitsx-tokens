@@ -23,14 +23,16 @@ let one_msg =
         let nil_msg = Nil {Message} in
         Cons {Message} msg nil_msg
 
-let f =
+(* A util function to test equality *)
+let f_eq =
   fun (a : ByStr20) =>
   fun (b : ByStr20) =>
     builtin eq a b
 
+(* Instantiate a type function to test membership in a list *)
+let isDefaultOperator = @list_mem ByStr20
 
-let isDefOperator = @list_mem ByStr20
-
+(* Simple global constants *)
 let zero = Uint128 0
 let one  = Uint128 1
 let true = True
@@ -42,13 +44,13 @@ let false = False
 
 contract SGDXContract 
 (
-name : String,
-symbol : String,
-currency : String,
-decimals : Uint32,
-init_owner : ByStr20,
-default_operators : List ByStr20,
-proxy_address : ByStr20
+  name :    String,
+  symbol :  String,
+  currency : String,
+  decimals : Uint32,
+  init_owner : ByStr20,
+  default_operators : List ByStr20,
+  proxy_address : ByStr20
 )
 
 
@@ -67,158 +69,171 @@ field totalSupply : Uint128  = zero
 field minters : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 
+(* Re-authorize a default operator for an initiator *)
 transition reauthorizeDefaultOperator(operator : ByStr20, initiator : ByStr20)  
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  => 
+    isDefaultOperator = isDefaultOperator f_eq operator default_operators;
+    match isDefaultOperator with
     | True  => 
-      isDefaultOperator =  isDefOperator f operator default_operators;
-      match isDefaultOperator with
-      | True  => 
-        delete revokedDefaultOperators[initiator][operator];
-        e = { _eventname : "ReAuthorizedDefaultOperator"; operator : operator  ; sender : initiator};
-        event e
-      | False =>
-      end
+      delete revokedDefaultOperators[initiator][operator];
+      e = { _eventname : "ReAuthorizedDefaultOperator"; operator : operator; sender : initiator};
+      event e
+    | False =>
     end
+  end
 end
 
+(* Revoke a default operator for an initiator *)
 transition revokeDefaultOperator(operator : ByStr20, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    isDefaultOperator =  isDefaultOperator f_eq operator default_operators;
+    match isDefaultOperator with
+    | True  => 
+      revokedDefaultOperators[initiator][operator] := true;
+      e = {_eventname : "RevokedDefaultOperator"; operator : operator; sender : initiator};
+      event e
     | False =>
-    | True =>
-      isDefaultOperator =  isDefOperator f operator default_operators;
-      match isDefaultOperator with
-      | True  => 
-        revokedDefaultOperators[initiator][operator] := true;
-        e = { _eventname : "RevokedDefaultOperator"; operator : operator; sender : initiator};
-        event e
-      | False =>
-      end
     end
+  end
 end
 
-(*Allows the current owner to transfer control of the contract to a newOwner.*)
-transition transferOwnership (newOwner : ByStr20, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
+(* Allows the current owner to transfer control of the contract to a newOwner *)
+transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    current_owner <- owner;
+    isowner = builtin eq initiator current_owner;
+    match isowner with
     | True =>
-      current_owner <- owner;
-      isowner = builtin eq initiator current_owner;
-      match isowner with
-      | True =>
-        owner := newOwner;
-        e = { _eventname : "OwnershipTransferred"; from : initiator  ; to : newOwner};
+      owner := newOwner;
+      e = {_eventname : "OwnershipTransferred"; from : initiator; to : newOwner};
 	    event e 
-      | False=>
-      end
+    | False =>
     end
+  end
 end 
 
-
+(* Pause the contract to temporarily stop all transfer of tokens. *)
+(* Other housekeeping transitions can still be invoked. *)
+(* Only the current pauser can invoke this transition. *)
 transition pause(initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    current_pauser <- pauser;
+    ispauser = builtin eq current_pauser initiator;
+    match ispauser with
+    | True  =>
+      paused := true;
+      e = { _eventname : "Paused"};
+      event e
     | False =>
-    | True =>
-      current_pauser <- pauser;
-      ispauser = builtin eq current_pauser initiator;
-      match ispauser with
-      | True  =>
-        paused := true;
-        e = { _eventname : "Pause"};
-        event e
-      | False =>
-      end
     end
+  end
 end
 
+(* Unpause the contract to reallow transfer of tokens. *)
+(* Only the current pauser can invoke this transition. *)
 transition unpause(initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    current_pauser <- pauser;
+    ispauser = builtin eq current_pauser initiator;
+    match ispauser with
+    | True  =>
+      paused := false;   
+      e = {_eventname : "Unpaused"};
+      event e
     | False =>
-    | True =>
-      current_pauser <- pauser;
-      ispauser = builtin eq current_pauser initiator;
-      match ispauser with
-      | True  =>
-        paused := false;   
-        e = { _eventname : "Unpause"};
-        event e
-      | False =>
-      end
     end
+  end
 end
- 
+
+(* Replace the current pauser with the newPauser *)
+(* Only the current owner can invoke this transition *)
 transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
-    | True =>
-      current_owner <- owner;
-      isowner = builtin eq initiator current_owner;
-      match isowner with
-      | True  =>  
-        pauser := newPauser;
-        e = {_eventname : "PauseChanged"; pauser : newPauser};  
-        event e
-      | False => 
-      end
-    end   
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    current_owner <- owner;
+    isowner = builtin eq initiator current_owner;
+    match isowner with
+    | True  =>  
+      pauser := newPauser;
+      e = {_eventname : "PauserUpdated"; pauser : newPauser};  
+      event e
+    | False => 
+    end
+  end   
 end
 
-
+(* Blacklist a given address. Only the current blacklister can invoke this transition. *)
+(* A blacklisted address can neither send or receive tokens. *)
 transition blacklist(address : ByStr20, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    current_blacklister <- blacklister;
+    isblacklister = builtin eq current_blacklister initiator;
+    match isblacklister with 
     | True =>
-      current_blacklister <- blacklister;
-      isblacklister = builtin eq current_blacklister initiator;
-      match isblacklister with 
-      | True =>
-        blacklisted[address] := one;
-        e = {_eventname : "Blacklisted"; address : address};  
-        event e
-      | False => 
-      end
-    end 
+      blacklisted[address] := one;
+      e = {_eventname : "Blacklisted"; address : address};  
+      event e
+    | False => 
+    end
+  end 
 end
 
+(* Remove a given address from the blacklist. *) 
+(* Only the current blacklister can invoke this transition. *)
 transition unBlacklist(address : ByStr20, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    current_blacklister <- blacklister;
+    isblacklister = builtin eq current_blacklister initiator;
+    match isblacklister with 
     | True =>
-      current_blacklister <- blacklister;
-      isblacklister = builtin eq current_blacklister initiator;
-      match isblacklister with 
-      | True =>
-        delete blacklisted[address];
-        e = {_eventname : "UnBlacklisted"; address : address};  
-        event e
-      | False => 
-      end
-    end 
+      delete blacklisted[address];
+      e = {_eventname : "UnBlacklisted"; address : address};  
+      event e
+    | False => 
+    end
+  end 
 end
 
+(* Replace the current blacklister with the newBlacklister *)
+(* Only the current owner can invoke this transition *)
 transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True =>
+    current_owner <- owner;
+    isowner = builtin eq initiator current_owner;
+    match isowner with
     | True =>
-      current_owner <- owner;
-      isowner = builtin eq initiator current_owner;
-      match isowner with
-      | True =>
-        blacklister:= newBlacklister;
-        e = {_eventname : "BlacklisterChanged"; blacklister : newBlacklister};  
-        event e
-      | False =>
-      end
-    end 
+      blacklister:= newBlacklister;
+      e = {_eventname : "BlacklisterChanged"; blacklister : newBlacklister};  
+      event e
+    | False =>
+    end
+  end 
 end
 
 transition mint(to: ByStr20, amount : Uint128, initiator : ByStr20)
@@ -305,7 +320,7 @@ transition operatorSend (from : ByStr20, to : ByStr20, value : Uint128, initiato
       | False => 
         bal <- balances[from];
         isHolder = builtin eq initiator from; 
-        isDefaultOperator =  isDefOperator f initiator default_operators;
+        isDefaultOperator =  isDefaultOperator f_eq initiator default_operators;
         isRevokedOperator <- exists revokedDefaultOperators[from][initiator];
         isAllowedDefaultOperator = let isNotRevokedOperator = negb isRevokedOperator in andb  isNotRevokedOperator isDefaultOperator;
         isallowed =  orb isHolder isAllowedDefaultOperator;
