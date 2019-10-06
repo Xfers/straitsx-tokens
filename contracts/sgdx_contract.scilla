@@ -612,7 +612,7 @@ transition operatorSend (from : ByStr20, to : ByStr20, value : Uint128, initiato
             msgs = one_msg msg;
             send msgs
             | False =>
-             (* balance not sufficient. *)
+              (* balance not sufficient. *)
             end
         | None =>
           (* no balance record, can't transfer *)
