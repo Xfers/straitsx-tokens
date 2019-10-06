@@ -181,6 +181,7 @@ end
 
 (* Blacklist a given address. Only the current blacklister can invoke this transition. *)
 (* A blacklisted address can neither send or receive tokens. *)
+(* Minters can also be blacklisted. *)
 transition blacklist(address : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
@@ -236,44 +237,115 @@ transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
   end 
 end
 
-(* Mint new amount number of tokens and allocated them to the to address. *)
-(* Only the current minter can invoke this transition. *)
+(* Replace the current masterMinter with the newMasterMinter *)
+(* Only the current owner can invoke this transition *)
+transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    current_owner <- owner;
+    isowner = builtin eq initiator current_owner;
+    match isowner with
+    | True =>
+      masterMinter := newMasterMinter;
+      e = {_eventname : "MasterMinterUpdated"; masterMinter : newMasterMinter};  
+      event e
+    | False =>
+    end
+  end 
+end
+
+(* Add a new minter or update the quota for an existing minter. *)
+(* Only the masterMinter can inovke this transition. *)
+(* The contract should not be paused during this operation. *)
+transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    (* Proceed if the following conditions are met: *)
+    (* 1. Contract is not paused. *)
+    (* 2. Initiator is the masterMinter *)
+    isPaused <- paused;
+    currentMasterMinter <- masterMinter;
+    isMasterMinter = builtin eq initiator currentMasterMinter;
+    or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
+    match or_res with
+    | False =>
+      minters[minter] := one;
+      minterAllowed[minter] := minterAllowedAmount;
+      e = { _eventname : "MinterConfigured"; minter : minter; amount : minterAllowedAmount};
+      event e
+    | True =>
+    end
+  end  
+end
+
+(* Remove a given minter *)
+(* Only the masterMinter can invoke this transition *)
+transition removeMinter(minter : ByStr20, initiator : ByStr20)
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    currentMasterMinter <- masterMinter;
+    isMasterMinter = builtin eq initiator currentMasterMinter;
+    match isMasterMinter with
+    | True => 
+      delete minters[minter];
+      minterAllowed[minter] := zero;
+      e = { _eventname : "MinterRemoved"; minter : minter};
+      event e
+    | False =>
+    end
+  end
+end
+
+(* Mint value number of new tokens and allocated them to the to address. *)
+(* Only the non-blacklisted minters can invoke this transition. *)
 (* Minting can only be done when the contract is not paused. *)
-transition mint(to: ByStr20, amount : Uint128, initiator : ByStr20)
+transition mint(to: ByStr20, value : Uint128, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
   | True  =>
     isPaused <- paused;
-    isblacklistedinitiator <- exists blacklisted[_sender];
-    isblacklisted_receipient <- exists blacklisted[to];
     isMinter <- exists minters[initiator];
+    isBlacklistedMinter <- exists blacklisted[initiator];
+    isBlacklistedRecipient <- exists blacklisted[to];
     or_res =
         let isNotMinter = negb isMinter in
-         orb_4 isPaused isblacklistedinitiator isblacklisted_receipient isNotMinter;
- 
+         orb_4 isPaused isNotMinter isBlacklistedMinter isBlacklistedRecipient;
+    (* If the following conditions are met proceed: *)
+    (* 1) Contract is not paused *)
+    (* 2) Initiator is a minter and is not blacklisted *)
+    (* 3) Recepient is not blacklisted *)     
     match or_res with   
     | False =>
+      (* Check the amount that the minter is allowed to mint *)
       allowed_amount <- minterAllowed[initiator];
       match allowed_amount with
       | Some a => 
-        within_limits = uint128_le amount a;
+        (* Proceed if the amount is less than or equal to the minted value *)
+        within_limits = uint128_le value a;
         match within_limits with
         | True =>
+          (* Update totalSupply, recipient's balance, minter's quota *)
           t <- totalSupply;
-          new_tokens = builtin add amount t;
+          new_tokens = builtin add value t;
           totalSupply := new_tokens;
           x <- balances[to];
           current_val = match x with
                         | Some v => v 
-                        | None => zero
+                        | None   => zero
                         end;        
-          new_bal = builtin add amount current_val;
+          new_bal = builtin add value current_val;
           balances[to] := new_bal;
-          new_allowed_amount = builtin sub a amount;
+          new_allowed_amount = builtin sub a value;
           minterAllowed[initiator] := new_allowed_amount;
-          e1 = { _eventname : "Mint"; minter : initiator; amount : amount; recipient : to};
-          event e1; 
+          e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
+          event e
         | False =>
         end
       | None => 
@@ -282,6 +354,51 @@ transition mint(to: ByStr20, amount : Uint128, initiator : ByStr20)
     end
   end
 end
+
+(* Burn value number of tokens *)
+(* Only the non-blacklisted minters can invoke this transition. *)
+(* Minting can only be done when the contract is not paused. *)
+transition burn(value : Uint128, initiator : ByStr20)
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    (* If the following conditions are met proceed: *)
+    (* 1) Contract is not paused *)
+    (* 2) Initiator is a minter and is not blacklisted *)
+    isPaused <- paused;
+    isMinter <- exists minters[initiator];
+    isBlacklistedMinter <- exists blacklisted[initiator];    
+    or_res =
+    let isNotMinter = negb isMinter in
+      orb_3 isPaused isBlacklistedMinter isNotMinter;
+
+    match or_res with 
+    | False => 
+      bal <- balances[initiator];
+      match bal with
+      | Some b =>
+        (* Proceed if the minter has enough tokens to burn. *)
+        can_do = uint128_le value b;
+        match can_do with
+        | True =>
+          (* Update totalSupply and minter's balance *)
+          new_balance = builtin sub b value;
+          balances[initiator] := new_balance;    
+          currentSupply <- totalSupply;
+          new_supply = builtin sub currentSupply value;
+          totalSupply := new_supply;         
+          e = { _eventname : "Burnt"; burner : initiator; amount : value};
+          event e      
+        | False =>      
+        end
+      | None =>
+      end    
+    | True =>
+    end
+  end
+end
+
 
 transition approve (spender : ByStr20, value : Uint128, initiator : ByStr20)
     callerIsProxy = builtin eq _sender proxy_address;
@@ -482,95 +599,4 @@ transition transfer (to : ByStr20, value : Uint128, initiator : ByStr20)
       | True =>
       end
    end
-end
-
-transition burn(value : Uint128, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
-    | True  =>
-      isPaused <- paused;
-      isMinter <- exists minters[initiator];
-      isblacklistedinitiator <- exists blacklisted[_sender];    
-      or_res =
-      let isNotMinter = negb isMinter in
-      orb_3 isPaused isblacklistedinitiator isNotMinter;
-
-      match or_res with 
-      | False => 
-        bal <- balances[initiator];
-        match bal with
-        | Some b =>
-          can_do = uint128_le value b;
-          match can_do with
-          | True=>
-            new_balance = builtin sub b value;
-            balances[initiator] := new_balance;    
-            currentSupply <- totalSupply;
-            new_supply = builtin sub currentSupply value;
-            totalSupply := new_supply;         
-            e = { _eventname : "Burn"; burner : initiator; amount : value};
-            event e      
-          | False =>      
-          end
-        | None =>
-        end    
-      | True =>
-      end
-   end
-end
-
-transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
-    | True  =>
-      isPaused <- paused;
-      currentMasterMinter <- masterMinter;
-      isMasterMinter = builtin eq initiator currentMasterMinter;
-      or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
-      match or_res with
-      | False =>
-        minters[minter] := one;
-        minterAllowed[minter] := minterAllowedAmount;
-        e = { _eventname : "MinterConfigured"; minter : minter; amount : minterAllowedAmount};
-        event e
-      | True =>
-      end
-   end  
-end
-
-transition removeMinter(minter : ByStr20, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
-    | True  =>
-      currentMasterMinter <- masterMinter;
-      isMasterMinter = builtin eq initiator currentMasterMinter;
-      match isMasterMinter with
-      | True => 
-        delete minters[minter];
-        minterAllowed[minter] := zero;
-        e = { _eventname : "MinterRemoved"; minter : minter};
-        event e
-      | False =>
-      end
-   end
-end
-
-transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
-    | True  =>
-      current_owner <- owner;
-      isowner = builtin eq initiator current_owner;
-      match isowner with
-      | True =>
-        masterMinter := newMasterMinter;
-        e = {_eventname : "MasterMinterChanged"; masterMinter : newMasterMinter};  
-        event e
-      | False =>
-      end
-    end 
 end
