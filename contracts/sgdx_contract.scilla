@@ -229,57 +229,58 @@ transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
     match isowner with
     | True =>
       blacklister:= newBlacklister;
-      e = {_eventname : "BlacklisterChanged"; blacklister : newBlacklister};  
+      e = {_eventname : "BlacklisterUpdated"; blacklister : newBlacklister};  
       event e
     | False =>
     end
   end 
 end
 
+(* Mint new amount number of tokens and allocated them to the to address. *)
+(* Only the current minter can invoke this transition. *)
+(* Minting can only be done when the contract is not paused. *)
 transition mint(to: ByStr20, amount : Uint128, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
-    | False =>
-    | True =>
-      isPaused <- paused;
-      isblacklistedinitiator <- exists blacklisted[_sender];
-      isblacklisted_receipient <- exists blacklisted[to];
-      isMinter <- exists minters[initiator];
-      or_res =
-         let isNotMinter = negb isMinter in
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+  | True  =>
+    isPaused <- paused;
+    isblacklistedinitiator <- exists blacklisted[_sender];
+    isblacklisted_receipient <- exists blacklisted[to];
+    isMinter <- exists minters[initiator];
+    or_res =
+        let isNotMinter = negb isMinter in
          orb_4 isPaused isblacklistedinitiator isblacklisted_receipient isNotMinter;
  
-      match or_res with   
-      | False =>
-        allowed_amount <- minterAllowed[initiator];
-        match allowed_amount with
-        | Some a => 
-          within_limits = uint128_le amount a;
-          match within_limits with
-          | True =>
-            t <- totalSupply;
-            new_tokens = builtin add amount t;
-            totalSupply := new_tokens;
-            x <- balances[to];
-            current_val = match x with
-                          | Some v => v 
-                          | None => zero
-                          end;        
-            new_bal = builtin add amount current_val;
-            balances[to] := new_bal;
-            new_allowed_amount = builtin sub a amount;
-            minterAllowed[initiator] := new_allowed_amount;
-            e1 = { _eventname : "Mint"; minter : initiator; amount : amount; recipient : to};
-            event e1;
-            e2 = { _eventname : "Transfer"; from : initiator; amount : amount; recipient : to};
-            event e2 
-          | False =>
-          end
-        | None => 
+    match or_res with   
+    | False =>
+      allowed_amount <- minterAllowed[initiator];
+      match allowed_amount with
+      | Some a => 
+        within_limits = uint128_le amount a;
+        match within_limits with
+        | True =>
+          t <- totalSupply;
+          new_tokens = builtin add amount t;
+          totalSupply := new_tokens;
+          x <- balances[to];
+          current_val = match x with
+                        | Some v => v 
+                        | None => zero
+                        end;        
+          new_bal = builtin add amount current_val;
+          balances[to] := new_bal;
+          new_allowed_amount = builtin sub a amount;
+          minterAllowed[initiator] := new_allowed_amount;
+          e1 = { _eventname : "Mint"; minter : initiator; amount : amount; recipient : to};
+          event e1; 
+        | False =>
         end
-      | True =>      
+      | None => 
       end
+    | True =>      
     end
+  end
 end
 
 transition approve (spender : ByStr20, value : Uint128, initiator : ByStr20)
