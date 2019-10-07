@@ -2,7 +2,9 @@
 
 The SGDX stablecoin consists of two communicating contracts namely a [token contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/sgdx_contract.scilla) and a [proxy contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/proxy.scilla). The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. The purpose of the proxy contract is to allow upgradeability of the token contract in scenarios where the token contract is found to contain bugs.
 
-## Roles and Privileges in the Token Contract
+## Token Contract
+
+### Roles and Privileges
 
 Each of the contracts defines specific roles which comes with certain privileges. 
 
@@ -18,7 +20,7 @@ Each of the contracts defines specific roles which comes with certain privileges
 |`approvedSpender`| A token holder can designate a certain address to send a up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
 ||||
 
-## Immutable Parameters of the Token Contract
+### Immutable Parameters
 
 The table below list the parameters that are defined at the contrat deployment time and hence cannot be changed later on.
 
@@ -33,7 +35,7 @@ The table below list the parameters that are defined at the contrat deployment t
 |`proxy_address` | `ByStr20` | Address of the proxy contract. |
 |||
 
-## Mutable Fields of the Token Contract
+### Mutable Fields
 
 The table below presents the mutable fields of the contract and their initial values.
 
