@@ -56,7 +56,6 @@ contract SGDXContract
 (
   name :    String,
   symbol :  String,
-  currency : String,
   decimals : Uint32,
   init_owner : ByStr20,
   default_operators : List ByStr20,
