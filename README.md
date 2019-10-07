@@ -57,7 +57,7 @@ The table below presents the mutable fields of the contract and their initial va
 ### Transitions
 
 | Name | Params | Description |
-|--|--|--|--|
+|--|--|--|
 |`reauthorizeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` | Re-authorize a default operator for an initiator.
  |
 
