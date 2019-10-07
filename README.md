@@ -18,7 +18,7 @@ Each of the contracts defines specific roles which comes with certain privileges
 | `blacklister` | An account that can blacklist any other account. Blacklisted account can neither transfer or receive tokens. There is only one `blacklister`. |
 |`defaultOperators` | These are "trusted" parties defined at the contract deployment time who can any number of tokens on behalf of a token holder.|
 |`approvedSpender`| A token holder can designate a certain address to send a up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
-||||
+|`initiator`| The user who calls the proxy contract that in turns call the token contract. |
 
 ### Immutable Parameters
 
@@ -33,7 +33,7 @@ The table below list the parameters that are defined at the contrat deployment t
 |`init_owner`| `ByStr20` | The initial owner of the contract. |
 |`default_operators` | `List ByStr20` |A list of default operators for the contract. |
 |`proxy_address` | `ByStr20` | Address of the proxy contract. |
-|||
+
 
 ### Mutable Fields
 
