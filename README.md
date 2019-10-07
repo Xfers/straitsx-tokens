@@ -18,7 +18,7 @@ Each of the contracts defines specific roles which comes with certain privileges
 |`approvedSpender`| A token holder can designate a certain address to send a up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
 ||||
 
-## Immutable parameters of the Token Contract
+## Immutable Parameters of the Token Contract
 
 The table below list the parameters that are defined at the contrat deployment time and hence cannot be changed later on.
 
@@ -33,7 +33,7 @@ The table below list the parameters that are defined at the contrat deployment t
 |`proxy_address` | `ByStr20` | Address of the proxy contract. |
 |||
 
-## Mutable fields of the Token Contract
+## Mutable Fields of the Token Contract
 
 The table below presents the mutable fields of the contract and their initial values.
 
@@ -44,3 +44,11 @@ The table below presents the mutable fields of the contract and their initial va
 |`masterMinter`| `ByStr20` | `init_owner` | Current `masterMinter` in the contract.|
 |`blacklister`| `ByStr20` | `init_owner` | Current `blacklister` in the contract.|
 |`paused`| `Bool` | `False` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
+|`blacklisted`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Records the addresses that are blacklisted. An address that is present in the map is blacklisted irrespective of the value it is mapped to. |
+|`revokedDefaultOperators`| `Map ByStr20 (Map ByStr20 Bool)` | `Emp ByStr20 (Map ByStr20 Bool)` | Records the default operators that have been revoked for each token holder. The first key (outermost) in the map is the token holder, while the second key (innermost) in the map is the address of the default operator. A default operator that is present in the map is revoked irrespective of the value it is mapped to. |
+|`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
+|`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `approvedSpender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. |
+|`totalSupply`| `Uint128`| `0` | The total number of tokens that is in the supply. | 
+|`minters`| `Map ByStr20 Uint128`| `Emp ByStr20 Uint128` | Maintains the current `minter`s. An address that is present in the map is a `minter` irrespective of the value it is mapped to.| 
+|`minterAllowed`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the allowed number of tokens that a `minter` can mint. |
+
