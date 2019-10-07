@@ -54,3 +54,10 @@ The table below presents the mutable fields of the contract and their initial va
 |`minters`| `Map ByStr20 Uint128`| `Emp ByStr20 Uint128` | Maintains the current `minter`s. An address that is present in the map is a `minter` irrespective of the value it is mapped to.| 
 |`minterAllowed`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the allowed number of tokens that a `minter` can mint. |
 
+### Transitions
+
+| Name | Params | Description |
+|--|--|--|--|
+|`reauthorizeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` | Re-authorize a default operator for an initiator.
+ |
+
