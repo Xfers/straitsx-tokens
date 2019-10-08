@@ -159,7 +159,7 @@ All the transitions in the contract can be categorized into two categories:
 
 Note that these transitions are just meant to redirect calls to the corresponding token contract and hence their names have an added prefix `proxy`. While, redirecting the contract preapres the `initiator` value that is the address of the caller of the proxy contract.
 
-| Transition Signature | Target transition in the token contract |
+| Transition signature in the proxy contract  | Target transition in the token contract |
 |--|--|
 |`proxyReauthorizeDefaultOperator(operator : ByStr20)` | `reauthorizeDefaultOperator(operator : ByStr20, initiator : ByStr20)` |
 |`proxyRevokeDefaultOperator(operator : ByStr20)` | `revokeDefaultOperator(operator : ByStr20, initiator : ByStr20)` |
