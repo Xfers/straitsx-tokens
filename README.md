@@ -75,18 +75,18 @@ Each of these category of transitions are presented in further details below:
 |--|--|--|
 |`reauthorizeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` |  Re-authorize the default `operator` to send tokens on behalf of the `initiator`. |
 |`revokeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` | Revoke a default `operator` for the `initiator`. Post this call, the default `operator` will not be able to send tokens on behalf of the `initiator` |
-|`transferOwnership`|`newOwner : ByStr20, initiator : ByStr20`|Allows the current `owner` to transfer control of the contract to a `newOwner`. <br>  :warning: **Requirements:** `initiator` must be the current `owner` in the contract.  |
-|`updatePauser`| `newPauser : ByStr20, initiator : ByStr20` |  Replace the current `pauser` with the `newPauser`.  <br>  :warning: **Requirements:** `initiator` must be the current `owner` in the contract. |
-|`blacklist`|`address : ByStr20, initiator : ByStr20`| Blacklist a given address. A blacklisted address can neither send or receive tokens. A `minter` can also be blacklisted. <br> :warning: **Requirements**   `initiator` must be the current `blacklister` in the contract.|
-|`unBlacklist`|`address : ByStr20, initiator : ByStr20`| Remove a given address from the blacklist.  <br> :warning: **Requirements** `initiator` must be the current `blacklister` in the contract.|
-|`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`.  <br> :warning: **Requirements**  `initiator` must be the current `owner` in the contract.|
+|`transferOwnership`|`newOwner : ByStr20, initiator : ByStr20`|Allows the current `owner` to transfer control of the contract to a `newOwner`. <br>  :warning: **Note:** `initiator` must be the current `owner` in the contract.  |
+|`updatePauser`| `newPauser : ByStr20, initiator : ByStr20` |  Replace the current `pauser` with the `newPauser`.  <br>  :warning: **Note:** `initiator` must be the current `owner` in the contract. |
+|`blacklist`|`address : ByStr20, initiator : ByStr20`| Blacklist a given address. A blacklisted address can neither send or receive tokens. A `minter` can also be blacklisted. <br> :warning: **Note**   `initiator` must be the current `blacklister` in the contract.|
+|`unBlacklist`|`address : ByStr20, initiator : ByStr20`| Remove a given address from the blacklist.  <br> :warning: **Note** `initiator` must be the current `blacklister` in the contract.|
+|`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`.  <br> :warning: **Note**  `initiator` must be the current `owner` in the contract.|
 
 #### Pause Transitions
 
 | Name | Params | Description |
 |--|--|--|
-|`pause`| `initiator : ByStr20` | Pause the contract to temporarily stop all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Requirements:** `initiator` must be the current `pauser` in the contract.  |
-|`unpause`| `initiator : ByStr20` | Unpause the contract to re-allow all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Requirements:** `initiator` must be the current `pauser` in the contract.  |
+|`pause`| `initiator : ByStr20` | Pause the contract to temporarily stop all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** `initiator` must be the current `pauser` in the contract.  |
+|`unpause`| `initiator : ByStr20` | Unpause the contract to re-allow all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** `initiator` must be the current `pauser` in the contract.  |
 
 
  
