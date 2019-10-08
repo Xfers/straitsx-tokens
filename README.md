@@ -71,7 +71,7 @@ Each of these category of transitions are presented in further details below:
 #### HouseKeeping Transitions
 
 
-| Name | Params | Description | Functions when paused? |
+| Name | Params | Description | Callable when paused? |
 |--|--|--|--|
 |`reauthorizeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` |  Re-authorize the default `operator` to send tokens on behalf of the `initiator`. | :heavy_check_mark: |
 |`revokeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` | Revoke a default `operator` for the `initiator`. Post this call, the default `operator` will not be able to send tokens on behalf of the `initiator` | :heavy_check_mark: |
@@ -86,14 +86,14 @@ Each of these category of transitions are presented in further details below:
 
 #### Pause Transitions
 
-| Name | Params | Description | Functions when paused? |
+| Name | Params | Description | Callable when paused? |
 |--|--|--|--|
 |`pause`| `initiator : ByStr20` | Pause the contract to temporarily stop all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** `initiator` must be the current `pauser` in the contract.  | :heavy_check_mark: |
 |`unpause`| `initiator : ByStr20` | Unpause the contract to re-allow all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** `initiator` must be the current `pauser` in the contract.  | :heavy_check_mark: |
 
 #### Minting-related Transitions
 
-| Name | Params | Description | Functions when paused? |
+| Name | Params | Description | Callable when paused? |
 |--|--|--|--|
 |`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Only the non-blacklisted token holders can invoke this transition, i.e., `initiator` must be a non-blacklisted `tokenHolder`, 2) Minting can only be done when the contract is not paused. | <center>:x:</center> |
 |`burn`| `value : Uint128, initiator : ByStr20` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
@@ -101,7 +101,7 @@ Each of these category of transitions are presented in further details below:
 
 #### Token Transfer Transitions
 
-| Name | Params | Description | Functions when paused? |
+| Name | Params | Description | Callable when paused? |
 |--|--|--|--|
 |`approve`| `spender : ByStr20, value : Uint128, initiator : ByStr20` | Approve a `spender` to spend on behalf of a token holder (`initiator`) upto the `value` amount. <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
 |`transfer`| `to : ByStr20, value : Uint128, initiator : ByStr20` | Transfer `value` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator` and the `recipient` should not be blacklisted.|<center>:x:</center>  |
