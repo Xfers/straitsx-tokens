@@ -56,7 +56,13 @@ The table below presents the mutable fields of the contract and their initial va
 
 ### Transitions
 
+Note that each of the transitions in the token contract takes `initiator` as a parameter which as explained above is the caller that calls the proxy contract which in turn calls the token contract.
+
 | Name | Params | Description |
 |--|--|--|
-|`reauthorizeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` | Re-authorize a default operator for an initiator.|
+|`reauthorizeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` |  Re-authorize the default `operator` to send tokens on behalf of the `initiator`. |
+|`revokeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` | Revoke a default `operator` for the `initiator`. Post this call, the default `operator` will not be able to send tokens on behalf of the `initiator` |
+|`transferOwnership`|`newOwner : ByStr20, initiator : ByStr20`|Allows the current `owner` to transfer control of the contract to a `newOwner`. <br>  :warning: **Requirements:** `initiator` must be the current `owner` in the contract.  |
 
+
+ 
