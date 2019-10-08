@@ -95,11 +95,15 @@ Each of these category of transitions are presented in further details below:
 
 | Name | Params | Description |
 |--|--|--|
-|`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20` | Pause the contract to temporarily stop all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** Mint `value` number of new tokens and allocate them to the `to` address. <br>  :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` is a non-blacklisted `minter`, 2) Minting can only be done when the contract is not paused. |
-|`unpause`| `initiator : ByStr20` | Unpause the contract to re-allow all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** `initiator` must be the current `pauser` in the contract.  |
+|`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Only the non-blacklisted token holders can invoke this transition, i.e., `initiator` must be a non-blacklisted `tokenHolder`, 2) Minting can only be done when the contract is not paused. |
+|`burn`| `value : Uint128, initiator : ByStr20` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.|
 
 
+#### Token Transfer Transitions
 
-
-
- 
+| Name | Params | Description |
+|--|--|--|
+|`approve`| `spender : ByStr20, value : Uint128, initiator : ByStr20` | Approve a `spender` to spend on behalf of a token holder (`initiator`) upto the `value` amount. <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted, 3) Approval can only be done when the contract is not paused. |
+|`transfer`| `to : ByStr20, value : Uint128, initiator : ByStr20` | Transfer `value` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator` and the `recipient` should not be blacklisted. 2) Transfer can only be done when the contract is not paused.|
+|`transferFrom`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20` | Transfer `value` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator`, the `from` address and the `recipient` should not be blacklisted. 2) Transfer can only be done when the contract is not paused.|
+|`operatorSend`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20` | A transition for default operators to send tokens on behalf of a `from` address.  <br>  :warning: **Note:**   1) Only non-revoked default operators can invoke this transition. 2) Default operators can transfer any amount on behalf of a token holder. 3) The `initiator`, the `from` address and the `recipient` should not be blacklisted. 4) `OperatorSend` can only be done when the contract is not paused.|
