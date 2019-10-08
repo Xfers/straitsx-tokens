@@ -62,8 +62,8 @@ Note that each of the transitions in the token contract takes `initiator` as a p
 All the transitions in the contract can be categorized into three categories:
 - _housekeeping transitions_ meant to facilitate basic admin realted tasks. 
 - _pause_ transitions to pause and pause the contract.
-- _token transfer transitions_ allows to transfer tokens from one user to another.
 - _minting-related transitions_ that allows mining and burning of tokens.
+- _token transfer transitions_ allows to transfer tokens from one user to another.
 
 
 Each of these category of transitions are presented in further details below:
@@ -80,6 +80,9 @@ Each of these category of transitions are presented in further details below:
 |`blacklist`|`address : ByStr20, initiator : ByStr20`| Blacklist a given address. A blacklisted address can neither send or receive tokens. A `minter` can also be blacklisted. <br> :warning: **Note:**   `initiator` must be the current `blacklister` in the contract.|
 |`unBlacklist`|`address : ByStr20, initiator : ByStr20`| Remove a given address from the blacklist.  <br> :warning: **Note:** `initiator` must be the current `blacklister` in the contract.|
 |`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`.  <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract.|
+|`updateMasterMinter`| `newMasterMinter : ByStr20, initiator : ByStr20` | Replace the current `masterMinter` with the `newMasterMinter`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. |
+|`configureMinter`| `minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20` | Add a new `minter` or update the minting quota for an existing minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. |
+|`removeMinter`| `minter : ByStr20, initiator : ByStr20` | Remove a given minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. |
 
 #### Pause Transitions
 
@@ -87,6 +90,16 @@ Each of these category of transitions are presented in further details below:
 |--|--|--|
 |`pause`| `initiator : ByStr20` | Pause the contract to temporarily stop all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** `initiator` must be the current `pauser` in the contract.  |
 |`unpause`| `initiator : ByStr20` | Unpause the contract to re-allow all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** `initiator` must be the current `pauser` in the contract.  |
+
+#### Minting-related Transitions
+
+| Name | Params | Description |
+|--|--|--|
+|`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20` | Pause the contract to temporarily stop all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** Mint `value` number of new tokens and allocate them to the `to` address. <br>  :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` is a non-blacklisted `minter`, 2) Minting can only be done when the contract is not paused. |
+|`unpause`| `initiator : ByStr20` | Unpause the contract to re-allow all transfer of tokens and other operations. Only the current `pauser` can invoke this transition.  <br>  :warning: **Note:** `initiator` must be the current `pauser` in the contract.  |
+
+
+
 
 
  
