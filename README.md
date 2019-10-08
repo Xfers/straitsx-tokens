@@ -5,9 +5,10 @@ The SGDX stablecoin consists of two communicating contracts namely a [token cont
 
 ## Token Contract
 
+The token contract is heavily influenced by the [USDC stablecoin](https://github.com/centrehq/centre-tokens/tree/master/contracts) token contract but it also borrows the concept of default operators from the [ERC777](https://eips.ethereum.org/EIPS/eip-777) token contract standard. 
+
 ### Roles and Privileges
 
-Each of the contracts defines specific roles which comes with certain privileges. 
 
 | Name | Description & Privileges |
 |--|--|
@@ -108,3 +109,72 @@ Each of these category of transitions are presented in further details below:
 |`transferFrom`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20` | Transfer `value` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator`, the `from` address and the `recipient` should not be blacklisted.|<center>:x:</center>  |
 |`operatorSend`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20` | A transition for default operators to send tokens on behalf of a `from` address.  <br>  :warning: **Note:**   1) Only non-revoked default operators can invoke this transition. 2) Default operators can transfer any amount on behalf of a token holder. 3) The `initiator`, the `from` address and the `recipient` should not be blacklisted.| <center> :x: </center> |
 
+## Proxy Contract
+
+Proxy contract is a relay contract that redirects calls to it to the token contract. 
+
+### Roles and Privileges
+
+
+| Name | Description & Privileges |
+|--|--|
+|`init_admin` | The initial admin of the contract which is usually the creator of the contract.  `init_admin` is also the initial value of `admin`. |
+|`admin` | Current `admin` of the contract initialized to `init_admin`. Certain critical actions can only be performed by the `admin`, e.g., changing the current implementation of the token contract. |
+|`initiator`| The user who calls the proxy contract that in turns call the token contract. |
+
+### Immutable Parameters
+
+The table below list the parameters that are defined at the contrat deployment time and hence cannot be changed later on.
+
+| Name | Type | Description |
+|--|--|--|
+|`init_implementation`| `ByStr20` | The address of the token contract. |
+|`init_admin`| `ByStr20` | The address of the admin. |
+
+
+### Mutable Fields
+
+The table below presents the mutable fields of the contract and their initial values.
+
+| Name | Type | Initial Value |Description |
+|--|--|--|--|
+|`implementation`| `ByStr20` | `init_implementation` | Address of the current implementation of the token contract. |
+|`admin`| `ByStr20` | `init_owner` | Current `admin` in the contract. |
+
+### Transitions
+
+All the transitions in the contract can be categorized into two categories:
+- _housekeeping transitions_ meant to facilitate basic admin realted tasks. 
+- _relay_ transitions to redirect calls to the token contract.
+
+#### Housekeeping Transitions
+
+| Name | Params | Description |
+|--|--|--|
+|`upgradeTo`| `newImplementation : ByStr20` |  Change the current implementation address of the token contract. <br> :warning: **Note:** Only the `admin` can invoke this transition|
+|`changeAdmin`| `newAdmin : ByStr20` |  Change the current `admin` of the contract. <br> :warning: **Note:** Only the `admin` can invoke this transition|
+
+
+#### Relay Transitions
+
+Note that these transitions are just meant to redirect calls to the corresponding token contract and hence their names have an added prefix `proxy`. While, redirecting the contract preapres the `initiator` value that is the address of the caller of the proxy contract.
+
+| Transition Signature | Target transition in the token contract |
+|--|--|
+|`proxyReauthorizeDefaultOperator(operator : ByStr20)` | `reauthorizeDefaultOperator(operator : ByStr20, initiator : ByStr20)` |
+|`proxyRevokeDefaultOperator(operator : ByStr20)` | `revokeDefaultOperator(operator : ByStr20, initiator : ByStr20)` |
+|`proxyTransferOwnership(newOwner : ByStr20)` | `transferOwnership(newOwner : ByStr20, initiator : ByStr20)` |
+|`proxyPause()` | `pause(initiator : ByStr20)` |
+|`proxyUnPause()` | `unpause(initiator : ByStr20)` |
+|`proxyUpdatePauser(newPauser : ByStr20)` | `updatePauser(newPauser : ByStr20, initiator : ByStr20)` |
+|`proxyBlacklist(address : ByStr20)` | `blacklist(address : ByStr20, initiator : ByStr20)` |
+|`proxyUnBlacklist(address : ByStr20)` | `unBlacklist(address : ByStr20, initiator : ByStr20)` |
+|`proxyUpdateBlacklister(newBlacklister : ByStr20)` | `updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)` |
+|`proxyConfigureMinter(minter : ByStr20, minterAllowedAmount : Uint128)` | `configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)` |
+|`proxyRemoveMinter(minter : ByStr20)` | `removeMinter(minter : ByStr20, initiator : ByStr20)` |
+|`proxyUpdateMasterMinter(newMasterMinter : ByStr20)` | `updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)` |
+|`proxyMint(to: ByStr20, amount : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20)` |
+|`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20)` |
+|`proxyApprove(spender : ByStr20, value : Uint128)` | `approve(spender : ByStr20, value : Uint128, initiator : ByStr20)` |
+|`proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
+|`proxyOperatorSend (from : ByStr20, to : ByStr20, value : Uint128)` | `operatorSend (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
