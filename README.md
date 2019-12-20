@@ -5,7 +5,7 @@ The SGDX stablecoin consists of two communicating contracts namely a [token cont
 
 ## Token Contract
 
-The token contract is heavily influenced by the [USDC stablecoin](https://github.com/centrehq/centre-tokens/tree/master/contracts) token contract but it also borrows the concept of default operators from the [ERC777](https://eips.ethereum.org/EIPS/eip-777) token contract standard. 
+The token contract is heavily influenced by the [USDC stablecoin](https://github.com/centrehq/centre-tokens/tree/master/contracts) token contract but it also borrows the concept of default operators from the [ERC777](https://eips.ethereum.org/EIPS/eip-777) token contract standard.
 
 ### Roles and Privileges
 
@@ -18,18 +18,17 @@ The token contract is heavily influenced by the [USDC stablecoin](https://github
 |`masterMinter` | The master minter to manage the minters for the contract.  `masterMinter` can add or remove minters and configure the number of tokens that a minter is allowed to mint. There is only one `masterMinter` for the contract. |
 | `minter` | An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
 | `blacklister` | An account that can blacklist any other account. Blacklisted account can neither transfer or receive tokens. There is only one `blacklister`. |
-|`defaultOperators` | These are "trusted" parties defined at the contract deployment time who can any number of tokens on behalf of a token holder.|
-|`approvedSpender`| A token holder can designate a certain address to send a up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
+|`defaultOperators` | These are "trusted" parties defined at the contract deployment time who can transfer any number of tokens on behalf of a token holder.|
+|`approvedSpender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
 |`initiator`| The user who calls the proxy contract that in turns call the token contract. |
 
 ### Immutable Parameters
 
-The table below list the parameters that are defined at the contrat deployment time and hence cannot be changed later on.
+The table below list the parameters that are defined at the contract deployment time and hence cannot be changed later on.
 
 | Name | Type | Description |
 |--|--|--|
 |`name`| `String` | A human readable token name. |
-|`symbol`| `String` | A ticker symbol for the token. |
 |`symbol`| `String` | A ticker symbol for the token. |
 |`decimals`| `Uint32` | Defines the smallest unit of the tokens|
 |`init_owner`| `ByStr20` | The initial owner of the contract. |
@@ -52,16 +51,16 @@ The table below presents the mutable fields of the contract and their initial va
 |`revokedDefaultOperators`| `Map ByStr20 (Map ByStr20 Bool)` | `Emp ByStr20 (Map ByStr20 Bool)` | Records the default operators that have been revoked for each token holder. The first key (outermost) in the map is the token holder, while the second key (innermost) in the map is the address of the default operator. A default operator that is present in the map is revoked irrespective of the value it is mapped to. |
 |`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
 |`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `approvedSpender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. |
-|`totalSupply`| `Uint128`| `0` | The total number of tokens that is in the supply. | 
-|`minters`| `Map ByStr20 Uint128`| `Emp ByStr20 Uint128` | Maintains the current `minter`s. An address that is present in the map is a `minter` irrespective of the value it is mapped to.| 
+|`totalSupply`| `Uint128`| `0` | The total number of tokens that is in the supply. |
+|`minters`| `Map ByStr20 Uint128`| `Emp ByStr20 Uint128` | Maintains the current `minter`s. An address that is present in the map is a `minter` irrespective of the value it is mapped to.|
 |`minterAllowed`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the allowed number of tokens that a `minter` can mint. |
 
 ### Transitions
 
-Note that each of the transitions in the token contract takes `initiator` as a parameter which as explained above is the caller that calls the proxy contract which in turn calls the token contract. 
+Note that each of the transitions in the token contract takes `initiator` as a parameter which as explained above is the caller that calls the proxy contract which in turn calls the token contract.
 
 All the transitions in the contract can be categorized into three categories:
-- _housekeeping transitions_ meant to facilitate basic admin realted tasks. 
+- _housekeeping transitions_ meant to facilitate basic admin realted tasks.
 - _pause_ transitions to pause and pause the contract.
 - _minting-related transitions_ that allows mining and burning of tokens.
 - _token transfer transitions_ allows to transfer tokens from one user to another.
@@ -111,7 +110,7 @@ Each of these category of transitions are presented in further details below:
 
 ## Proxy Contract
 
-Proxy contract is a relay contract that redirects calls to it to the token contract. 
+Proxy contract is a relay contract that redirects calls to it to the token contract.
 
 ### Roles and Privileges
 
@@ -144,7 +143,7 @@ The table below presents the mutable fields of the contract and their initial va
 ### Transitions
 
 All the transitions in the contract can be categorized into two categories:
-- _housekeeping transitions_ meant to facilitate basic admin realted tasks. 
+- _housekeeping transitions_ meant to facilitate basic admin realted tasks.
 - _relay_ transitions to redirect calls to the token contract.
 
 #### Housekeeping Transitions
@@ -173,7 +172,7 @@ Note that these transitions are just meant to redirect calls to the correspondin
 |`proxyConfigureMinter(minter : ByStr20, minterAllowedAmount : Uint128)` | `configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)` |
 |`proxyRemoveMinter(minter : ByStr20)` | `removeMinter(minter : ByStr20, initiator : ByStr20)` |
 |`proxyUpdateMasterMinter(newMasterMinter : ByStr20)` | `updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)` |
-|`proxyMint(to: ByStr20, amount : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20)` |
+|`proxyMint(to: ByStr20, value : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20)` |
 |`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20)` |
 |`proxyApprove(spender : ByStr20, value : Uint128)` | `approve(spender : ByStr20, value : Uint128, initiator : ByStr20)` |
 |`proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
