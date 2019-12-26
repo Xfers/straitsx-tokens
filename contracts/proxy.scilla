@@ -144,7 +144,7 @@ end
 transition proxyOperatorSend (from : ByStr20, to : ByStr20, value : Uint128)
     current_impl <- implementation;
     msg = {_tag : "operatorSend"; _recipient : current_impl; _amount : zero;
-           from : from; value : value; initiator : _sender};
+           from : from; to : to; value : value; initiator : _sender};
     msgs = one_msg msg;
     send msgs
 end
