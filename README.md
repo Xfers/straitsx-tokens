@@ -1,14 +1,23 @@
-# Xfers SGDX Stable Coin
+# StraitsX SGD (XSGD)
 
-The SGDX stablecoin consists of two communicating contracts namely a [token contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/sgdx_contract.scilla) and a [proxy contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/proxy.scilla). The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. The purpose of the proxy contract is to allow upgradeability of the token contract in scenarios where the token contract is found to contain bugs.
+## Token Description
+StraitsX SGD (XSGD) tokens are SGD-collateralized tokens running on the Zilliqa blockchain and governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd.
 
+The Xfers payment service is regarded as a Widely Accepted Stored Value Facility under Singapore law. Xfers Pte. Ltd., is the Approved Holder of the Xfers Wallet Stored Value Facility.
 
-## Token Contract
+https://www.xfers.com/
 
-The token contract is heavily influenced by the [USDC stablecoin](https://github.com/centrehq/centre-tokens/tree/master/contracts) token contract but it also borrows the concept of default operators from the [ERC777](https://eips.ethereum.org/EIPS/eip-777) token contract standard.
+## Smart Contract Specifications
+The XSGD contract has been written by the StraitsX team to fit both the specific needs of the XSGD token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.
+
+The XSGD contract consists of two communicating contracts:
+
+a [token contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/sgdx_contract.scilla)
+a [proxy contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/proxy.scilla)
+
+The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. This allows upgrading the contract, as the original proxy can point to a newly deployed token contract.
 
 ### Roles and Privileges
-
 
 | Name | Description & Privileges |
 |--|--|
@@ -17,14 +26,14 @@ The token contract is heavily influenced by the [USDC stablecoin](https://github
 |`pauser` | Account that is allowed to (un)pause the contract. It is initialized to `init_owner`.  `pauser` can (un) pause the contract. There is only `pauser` for the contract. |
 |`masterMinter` | The master minter to manage the minters for the contract.  `masterMinter` can add or remove minters and configure the number of tokens that a minter is allowed to mint. There is only one `masterMinter` for the contract. |
 | `minter` | An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
-| `blacklister` | An account that can blacklist any other account. Blacklisted account can neither transfer or receive tokens. There is only one `blacklister`. |
+| `blacklister` | An account that can blacklist any other account. Blacklisted accounts can neither transfer or receive tokens. There is only one `blacklister`. |
 |`defaultOperators` | These are "trusted" parties defined at the contract deployment time who can transfer any number of tokens on behalf of a token holder.|
 |`approvedSpender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
 |`initiator`| The user who calls the proxy contract that in turns call the token contract. |
 
 ### Immutable Parameters
 
-The table below list the parameters that are defined at the contract deployment time and hence cannot be changed later on.
+The table below lists the parameters that are defined at the contract deployment time and hence cannot be changed later on.
 
 | Name | Type | Description |
 |--|--|--|
@@ -34,7 +43,6 @@ The table below list the parameters that are defined at the contract deployment 
 |`init_owner`| `ByStr20` | The initial owner of the contract. |
 |`default_operators` | `List ByStr20` |A list of default operators for the contract. |
 |`proxy_address` | `ByStr20` | Address of the proxy contract. |
-
 
 ### Mutable Fields
 
@@ -60,7 +68,7 @@ The table below presents the mutable fields of the contract and their initial va
 Note that each of the transitions in the token contract takes `initiator` as a parameter which as explained above is the caller that calls the proxy contract which in turn calls the token contract.
 
 All the transitions in the contract can be categorized into three categories:
-- _housekeeping transitions_ meant to facilitate basic admin realted tasks.
+- _housekeeping transitions_ meant to facilitate basic admin related tasks.
 - _pause_ transitions to pause and pause the contract.
 - _minting-related transitions_ that allows mining and burning of tokens.
 - _token transfer transitions_ allows to transfer tokens from one user to another.
@@ -69,7 +77,6 @@ All the transitions in the contract can be categorized into three categories:
 Each of these category of transitions are presented in further details below:
 
 #### HouseKeeping Transitions
-
 
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
@@ -143,7 +150,7 @@ The table below presents the mutable fields of the contract and their initial va
 ### Transitions
 
 All the transitions in the contract can be categorized into two categories:
-- _housekeeping transitions_ meant to facilitate basic admin realted tasks.
+- _housekeeping transitions_ meant to facilitate basic admin related tasks.
 - _relay_ transitions to redirect calls to the token contract.
 
 #### Housekeeping Transitions
@@ -156,7 +163,7 @@ All the transitions in the contract can be categorized into two categories:
 
 #### Relay Transitions
 
-Note that these transitions are just meant to redirect calls to the corresponding token contract and hence their names have an added prefix `proxy`. While, redirecting the contract preapres the `initiator` value that is the address of the caller of the proxy contract.
+Note that these transitions are just meant to redirect calls to the corresponding token contract and hence their names have an added prefix `proxy`. While, redirecting the contract prepares the `initiator` value that is the address of the caller of the proxy contract.
 
 | Transition signature in the proxy contract  | Target transition in the token contract |
 |--|--|
@@ -177,3 +184,4 @@ Note that these transitions are just meant to redirect calls to the correspondin
 |`proxyApprove(spender : ByStr20, value : Uint128)` | `approve(spender : ByStr20, value : Uint128, initiator : ByStr20)` |
 |`proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
 |`proxyOperatorSend (from : ByStr20, to : ByStr20, value : Uint128)` | `operatorSend (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
+
