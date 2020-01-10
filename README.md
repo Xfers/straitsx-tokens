@@ -1,7 +1,7 @@
 # StraitsX SGD (XSGD)
 
 ## Token Description
-StraitsX SGD (XSGD) tokens are SGD-collateralized tokens running on the Zilliqa blockchain and governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd.
+StraitsX SGD (XSGD) tokens are SGD-collateralized tokens running on Zilliqa's high-throughput decentralised blockchain and governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd.
 
 The Xfers payment service is regarded as a Widely Accepted Stored Value Facility under Singapore law. Xfers Pte. Ltd., is the Approved Holder of the Xfers Wallet Stored Value Facility.
 
