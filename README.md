@@ -13,6 +13,7 @@ The XSGD contract has been written by the StraitsX team to fit both the specific
 The XSGD contract consists of two communicating contracts:
 
 a [token contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/sgdx_contract.scilla)
+
 a [proxy contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/proxy.scilla)
 
 The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. This allows upgrading the contract, as the original proxy can point to a newly deployed token contract.
