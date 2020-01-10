@@ -12,7 +12,7 @@ The XSGD contract has been written by the StraitsX team to fit both the specific
 
 The XSGD contract consists of two communicating contracts:
 
-a [token contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/sgdx_contract.scilla)
+a [token contract](https://github.com/Xfers/SGDX-scilla/blob/master/contracts/sgdx_contract.scilla)
 
 a [proxy contract](https://github.com/AmritKumar/xfers-contracts/blob/master/contracts/proxy.scilla)
 
