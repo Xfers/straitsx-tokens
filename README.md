@@ -18,7 +18,7 @@ a [proxy contract](https://github.com/Xfers/SGDX-scilla/blob/master/contracts/pr
 
 The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. This allows upgrading the contract, as the original proxy can point to a newly deployed token contract.
 
-### Roles and Privileges
+### Token contract Roles and Privileges
 
 | Name | Description & Privileges |
 |--|--|
@@ -120,7 +120,7 @@ Each of these category of transitions are presented in further details below:
 
 Proxy contract is a relay contract that redirects calls to it to the token contract.
 
-### Roles and Privileges
+### Proxy contract Roles and Privileges
 
 
 | Name | Description & Privileges |
