@@ -1,6 +1,6 @@
 scilla_version 0
 import BoolUtils IntUtils ListUtils
-library SGDXContract
+library XSGDContract
 let min_int =
 fun (a : Uint128) => fun (b : Uint128) =>
 let alt = builtin lt a b in
