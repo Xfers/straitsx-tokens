@@ -100,6 +100,7 @@ Each of these category of transitions are presented in further details below:
 |--|--|--|--|
 |`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Only the non-blacklisted token holders can invoke this transition, i.e., `initiator` must be a non-blacklisted `tokenHolder`, 2) Minting can only be done when the contract is not paused. | <center>:x:</center> |
 |`burn`| `value : Uint128, initiator : ByStr20` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
+|`lawEnforcementWipingBurn`| `address : ByStr20, initiator : ByStr20` | Burn entire balance of tokens from `address`.  <br>  :warning: **Note:**   1) Only the blacklister can invoke this transition, i.e., `initiator` must be the `blacklister`. 2) Burning can only be done when the contract is not paused. 3) Only accounts that have been blacklisted by the blacklister may have their funds wiped.| <center>:x:</center>  |
 
 
 #### Token Transfer Transitions
@@ -174,6 +175,7 @@ Note that these transitions are just meant to redirect calls to the correspondin
 |`proxyUpdateMasterMinter(newMasterMinter : ByStr20)` | `updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)` |
 |`proxyMint(to: ByStr20, value : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20)` |
 |`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20)` |
+|`proxyLawEnforcementWipingBurn(address : ByStr20)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)` |
 |`proxyApprove(spender : ByStr20, value : Uint128)` | `approve(spender : ByStr20, value : Uint128, initiator : ByStr20)` |
 |`proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
 
