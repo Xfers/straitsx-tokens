@@ -12,9 +12,9 @@ The XSGD contract has been written by the StraitsX team to fit both the specific
 
 The XSGD contract consists of two communicating contracts:
 
-a [token contract](https://github.com/Xfers/SGDX-scilla/blob/master/contracts/sgdx_contract.scilla)
+a [token contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/xsgd_contract.scilla)
 
-a [proxy contract](https://github.com/Xfers/SGDX-scilla/blob/master/contracts/proxy.scilla)
+a [proxy contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/proxy.scilla)
 
 The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. This allows upgrading the contract, as the original proxy can point to a newly deployed token contract.
 
@@ -27,8 +27,7 @@ The token contract represents a standard fungible token contract with minting an
 |`pauser` | Account that is allowed to (un)pause the contract. It is initialized to `init_owner`.  `pauser` can (un) pause the contract. There is only `pauser` for the contract. |
 |`masterMinter` | The master minter to manage the minters for the contract.  `masterMinter` can add or remove minters and configure the number of tokens that a minter is allowed to mint. There is only one `masterMinter` for the contract. |
 | `minter` | An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
-| `blacklister` | An account that can blacklist any other account. Blacklisted accounts can neither transfer or receive tokens. There is only one `blacklister`. |
-|`defaultOperators` | These are "trusted" parties defined at the contract deployment time who can transfer any number of tokens on behalf of a token holder.|
+| `blacklister` | An account that can blacklist any other account and when compelled by law enforcement entities, to wipe funds from an account for funds seizure. Blacklisted accounts can neither transfer or receive tokens. There is only one `blacklister`. |
 |`approvedSpender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
 |`initiator`| The user who calls the proxy contract that in turns call the token contract. |
 
@@ -42,7 +41,6 @@ The table below lists the parameters that are defined at the contract deployment
 |`symbol`| `String` | A ticker symbol for the token. |
 |`decimals`| `Uint32` | Defines the smallest unit of the tokens|
 |`init_owner`| `ByStr20` | The initial owner of the contract. |
-|`default_operators` | `List ByStr20` |A list of default operators for the contract. |
 |`proxy_address` | `ByStr20` | Address of the proxy contract. |
 
 ### Mutable Fields
@@ -57,7 +55,6 @@ The table below presents the mutable fields of the contract and their initial va
 |`blacklister`| `ByStr20` | `init_owner` | Current `blacklister` in the contract.|
 |`paused`| `Bool` | `False` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
 |`blacklisted`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Records the addresses that are blacklisted. An address that is present in the map is blacklisted irrespective of the value it is mapped to. |
-|`revokedDefaultOperators`| `Map ByStr20 (Map ByStr20 Bool)` | `Emp ByStr20 (Map ByStr20 Bool)` | Records the default operators that have been revoked for each token holder. The first key (outermost) in the map is the token holder, while the second key (innermost) in the map is the address of the default operator. A default operator that is present in the map is revoked irrespective of the value it is mapped to. |
 |`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
 |`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `approvedSpender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. |
 |`totalSupply`| `Uint128`| `0` | The total number of tokens that is in the supply. |
@@ -81,8 +78,6 @@ Each of these category of transitions are presented in further details below:
 
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
-|`reauthorizeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` |  Re-authorize the default `operator` to send tokens on behalf of the `initiator`. | :heavy_check_mark: |
-|`revokeDefaultOperator`| `operator : ByStr20, initiator : ByStr20` | Revoke a default `operator` for the `initiator`. Post this call, the default `operator` will not be able to send tokens on behalf of the `initiator` | :heavy_check_mark: |
 |`transferOwnership`|`newOwner : ByStr20, initiator : ByStr20`|Allows the current `owner` to transfer control of the contract to a `newOwner`. <br>  :warning: **Note:** `initiator` must be the current `owner` in the contract.  | :heavy_check_mark: |
 |`updatePauser`| `newPauser : ByStr20, initiator : ByStr20` |  Replace the current `pauser` with the `newPauser`.  <br>  :warning: **Note:** `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
 |`blacklist`|`address : ByStr20, initiator : ByStr20`| Blacklist a given address. A blacklisted address can neither send or receive tokens. A `minter` can also be blacklisted. <br> :warning: **Note:**   `initiator` must be the current `blacklister` in the contract.| :heavy_check_mark: |
@@ -114,7 +109,6 @@ Each of these category of transitions are presented in further details below:
 |`approve`| `spender : ByStr20, value : Uint128, initiator : ByStr20` | Approve a `spender` to spend on behalf of a token holder (`initiator`) upto the `value` amount. <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
 |`transfer`| `to : ByStr20, value : Uint128, initiator : ByStr20` | Transfer `value` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator` and the `recipient` should not be blacklisted.|<center>:x:</center>  |
 |`transferFrom`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20` | Transfer `value` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator`, the `from` address and the `recipient` should not be blacklisted.|<center>:x:</center>  |
-|`operatorSend`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20` | A transition for default operators to send tokens on behalf of a `from` address.  <br>  :warning: **Note:**   1) Only non-revoked default operators can invoke this transition. 2) Default operators can transfer any amount on behalf of a token holder. 3) The `initiator`, the `from` address and the `recipient` should not be blacklisted.| <center> :x: </center> |
 
 ## Proxy Contract
 
@@ -168,8 +162,6 @@ Note that these transitions are just meant to redirect calls to the correspondin
 
 | Transition signature in the proxy contract  | Target transition in the token contract |
 |--|--|
-|`proxyReauthorizeDefaultOperator(operator : ByStr20)` | `reauthorizeDefaultOperator(operator : ByStr20, initiator : ByStr20)` |
-|`proxyRevokeDefaultOperator(operator : ByStr20)` | `revokeDefaultOperator(operator : ByStr20, initiator : ByStr20)` |
 |`proxyTransferOwnership(newOwner : ByStr20)` | `transferOwnership(newOwner : ByStr20, initiator : ByStr20)` |
 |`proxyPause()` | `pause(initiator : ByStr20)` |
 |`proxyUnPause()` | `unpause(initiator : ByStr20)` |
@@ -184,5 +176,4 @@ Note that these transitions are just meant to redirect calls to the correspondin
 |`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20)` |
 |`proxyApprove(spender : ByStr20, value : Uint128)` | `approve(spender : ByStr20, value : Uint128, initiator : ByStr20)` |
 |`proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
-|`proxyOperatorSend (from : ByStr20, to : ByStr20, value : Uint128)` | `operatorSend (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
 
