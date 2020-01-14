@@ -55,22 +55,6 @@ transition changeAdmin(newAdmin : ByStr20)
     end
 end
 
-transition proxyReauthorizeDefaultOperator(operator : ByStr20)
-    current_impl <- implementation;
-    msg = {_tag : "reauthorizeDefaultOperator"; _recipient : current_impl; _amount : zero;
-           operator : operator; initiator : _sender};
-    msgs = one_msg msg;
-    send msgs
-end
-
-transition proxyRevokeDefaultOperator(operator : ByStr20)
-    current_impl <- implementation;
-    msg = {_tag : "revokeDefaultOperator"; _recipient : current_impl; _amount : zero;
-           operator : operator; initiator : _sender};
-    msgs = one_msg msg;
-    send msgs
-end
-
 transition proxyTransferOwnership(newOwner : ByStr20)
     current_impl <- implementation;
     msg = {_tag : "transferOwnership"; _recipient : current_impl; _amount : zero;
@@ -141,14 +125,6 @@ transition proxyApprove (spender : ByStr20, value : Uint128)
     send msgs
 end
 
-transition proxyOperatorSend (from : ByStr20, to : ByStr20, value : Uint128)
-    current_impl <- implementation;
-    msg = {_tag : "operatorSend"; _recipient : current_impl; _amount : zero;
-           from : from; to : to; value : value; initiator : _sender};
-    msgs = one_msg msg;
-    send msgs
-end
-
 transition proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)
     current_impl <- implementation;
     msg = {_tag : "transferFrom"; _recipient : current_impl; _amount : zero;
@@ -168,6 +144,13 @@ end
 transition proxyBurn(value : Uint128)
     current_impl <- implementation;
     msg = {_tag : "burn"; _recipient : current_impl; _amount : zero; value : value; initiator : _sender};
+    msgs = one_msg msg;
+    send msgs
+end
+
+transition proxyLawEnforcementWipingBurn(address : ByStr20)
+    current_impl <- implementation;
+    msg = {_tag : "lawEnforcementWipingBurn"; _recipient : current_impl; _amount : zero; address : address; initiator : _sender};
     msgs = one_msg msg;
     send msgs
 end

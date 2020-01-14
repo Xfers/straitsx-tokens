@@ -44,7 +44,7 @@ type Error =
 (* Error events *)
 let mk_error_event =
   fun (err : Error) =>
-  let err_code = 
+  let err_code =
     match err with
     | NonOwnerCannotSign        => Int32 -1
     | UnknownTransactionId      => Int32 -2
@@ -71,7 +71,7 @@ let transaction_inc = one
 (* Specified at https://github.com/Xfers/SGDX-scilla *)
 (* All calls are made to the proxy contract *)
 type TokenTransaction =
-(* proxyTransferOwnership (newOwner : ByStr20) *) 
+(* proxyTransferOwnership (newOwner : ByStr20) *)
 | TransferOwnership of ByStr20
 (* proxyUpdatePauser      (newPauser : ByStr20)  *)
 | UpdatePauser of ByStr20
@@ -81,6 +81,8 @@ type TokenTransaction =
 | UnBlacklist of ByStr20
 (* proxyUpdateBlacklister (newBlacklister : ByStr20)  *)
 | UpdateBlacklister of ByStr20
+(* proxyLawEnforcementWipingBurn (address : ByStr20) *)
+| LawEnforcementWipingBurn of ByStr20
 (* proxyUpdateMasterMinter(newMasterMinter : ByStr20)  *)
 | UpdateMasterMinter of ByStr20
 (* proxyConfigureMinter   (minter : ByStr20, minterAllowedAmount : Uint128)  *)
@@ -91,8 +93,6 @@ type TokenTransaction =
 | Pause
 (* proxyUnpause           ()  *)
 | UnPause
-(* proxyOperatorSend      (from : ByStr20, to : ByStr20, value : Uint128)  *)
-| OperatorSend of ByStr20 ByStr20 Uint128
 (* UpgradeTo         (newImplementation : ByStr20)  *)
 | ProxyUpgradeTo of ByStr20
 (* changeAdmin       (newAdmin : ByStr20)  *)
@@ -120,8 +120,8 @@ let mk_owners_map =
     folder iter init owners
 
 (* Wrap single message into singleton list *)
-let one_msg = 
-  fun (msg : Message) => 
+let one_msg =
+  fun (msg : Message) =>
     let nil_msg = Nil {Message} in
     Cons {Message} msg nil_msg
 
@@ -137,10 +137,10 @@ let native_transaction_msg_as_list =
 let custom_token_transaction_msg_as_list =
   fun (proxyTokenContract : ByStr20) =>
   fun (tokenTransaction : TokenTransaction) =>
-    let msg = 
+    let msg =
       match tokenTransaction with
       | TransferOwnership newOwner =>
-        (* proxyTransferOwnership (newOwner : ByStr20) *) 
+        (* proxyTransferOwnership (newOwner : ByStr20) *)
         {_recipient : proxyTokenContract ;
          _tag : "proxyTransferOwnership" ;
          _amount : Uint128 0 ;
@@ -169,6 +169,12 @@ let custom_token_transaction_msg_as_list =
          _tag : "proxyUpdateBlacklister" ;
          _amount : Uint128 0 ;
          newBlacklister : newBlacklister }
+      | LawEnforcementWipingBurn address =>
+        (* proxyLawEnforcementWipingBurn (address : ByStr20)  *)
+        {_recipient : proxyTokenContract ;
+         _tag : "proxyLawEnforcementWipingBurn" ;
+         _amount : Uint128 0 ;
+         address : address }
       | UpdateMasterMinter newMasterMinter =>
         (* proxyUpdateMasterMinter(newMasterMinter : ByStr20)  *)
         {_recipient : proxyTokenContract ;
@@ -198,14 +204,6 @@ let custom_token_transaction_msg_as_list =
         {_recipient : proxyTokenContract ;
          _tag : "proxyUnPause" ;
          _amount : Uint128 0 }
-      | OperatorSend from to value =>
-        (* proxyOperatorSend      (from : ByStr20, to : ByStr20, value : Uint128)  *)
-        {_recipient : proxyTokenContract ;
-         _tag : "proxyOperatorSend" ;
-         _amount : Uint128 0 ;
-         from : from ;
-         to : to ;
-         value : value }
       | ProxyUpgradeTo newImplementation =>
         (* UpgradeTo         (newImplementation : ByStr20)  *)
         {_recipient : proxyTokenContract ;
@@ -331,7 +329,7 @@ field signatures       : Map Uint32 (Map ByStr20 Bool) =
 field signature_counts : Map Uint32 Uint32 =
   Emp Uint32 Uint32
 
-(* Transactions *) 
+(* Transactions *)
 field transactions     : Map Uint32 Transaction =
                            Emp Uint32 Transaction
 
@@ -374,7 +372,7 @@ procedure SubmitTransaction (transaction : Transaction)
     MakeError err
   | True =>
     tc <- transactionCount;
-    transactions[tc] := transaction; 
+    transactions[tc] := transaction;
     (* Sender implicitly signs *)
     AddSignature tc _sender;
     (* Increment transaction counter *)
@@ -438,6 +436,12 @@ transition SubmitCustomUpdateBlacklisterTransaction (proxyTokenContract : ByStr2
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
+(* Submit a new LawEnforcementWipingBurn transaction for future signoff *)
+transition SubmitCustomLawEnforcementWipingBurnTransaction (proxyTokenContract : ByStr20, address : ByStr20)
+  transaction = LawEnforcementWipingBurn address;
+  SubmitCustomTransaction proxyTokenContract transaction
+end
+
 (* Submit a new UpdateMasterMinter transaction for future signoff *)
 transition SubmitCustomUpdateMasterMinterTransaction (proxyTokenContract : ByStr20, newMasterMinter : ByStr20)
   transaction = UpdateMasterMinter newMasterMinter;
@@ -468,19 +472,13 @@ transition SubmitCustomUnPauseTransaction (proxyTokenContract : ByStr20)
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
-(* Submit a new OperatorSend transaction for future signoff *)
-transition SubmitCustomOperatorSendTransaction (proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, value : Uint128)
-  transaction = OperatorSend from to value;
-  SubmitCustomTransaction proxyTokenContract transaction
-end
-
-(* Submit a new OperatorSend transaction for future signoff *)
+(* Submit a new UpgradeTo transaction for future signoff *)
 transition SubmitCustomProxyUpgradeToTransaction (proxyTokenContract : ByStr20, newImplementation : ByStr20)
   transaction = ProxyUpgradeTo newImplementation;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
-(* Submit a new OperatorSend transaction for future signoff *)
+(* Submit a new ChangeAdmin transaction for future signoff *)
 transition SubmitCustomProxyChangeAdminTransaction (proxyTokenContract : ByStr20, newAdmin : ByStr20)
   transaction = ProxyChangeAdmin newAdmin;
   SubmitCustomTransaction proxyTokenContract transaction
