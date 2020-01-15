@@ -68,7 +68,7 @@ let one = Uint32 1
 let transaction_inc = one
 
 (* Type of token transactions. *)
-(* Specified at https://github.com/Xfers/SGDX-scilla *)
+(* Specified at https://github.com/Xfers/XSGD-scilla *)
 (* All calls are made to the proxy contract *)
 type TokenTransaction =
 (* proxyTransferOwnership (newOwner : ByStr20) *)
