@@ -27,7 +27,7 @@ The token contract represents a standard fungible token contract with minting an
 |`pauser` | Account that is allowed to (un)pause the contract. It is initialized to `init_owner`.  `pauser` can (un) pause the contract. There is only `pauser` for the contract. |
 |`masterMinter` | The master minter to manage the minters for the contract.  `masterMinter` can add or remove minters and configure the number of tokens that a minter is allowed to mint. There is only one `masterMinter` for the contract. |
 | `minter` | An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
-| `blacklister` | An account that can blacklist any other account and when compelled by law enforcement entities, to wipe funds from an account for funds seizure. Blacklisted accounts can neither transfer or receive tokens. There is only one `blacklister`. |
+| `blacklister` | An account that can freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister`. |
 |`approvedSpender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
 |`initiator`| The user who calls the proxy contract that in turns call the token contract. |
 
