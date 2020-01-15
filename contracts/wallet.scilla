@@ -467,6 +467,18 @@ transition SubmitCustomLawEnforcementWipingBurnTransaction (proxyTokenContract :
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
+(* Submit a new Transfer transaction for future signoff *)
+transition SubmitCustomTransferTransaction (to : ByStr20, value : Uint128)
+  transaction = Transfer to value;
+  SubmitCustomTransaction proxyTokenContract transaction
+end
+
+(* Submit a new TransferFrom transaction for future signoff *)
+transition SubmitCustomTransferFromTransaction (from : ByStr20, to : ByStr20, value : Uint128)
+  transaction = TransferFrom address;
+  SubmitCustomTransaction proxyTokenContract transaction
+end
+
 (* Submit a new UpdateMasterMinter transaction for future signoff *)
 transition SubmitCustomUpdateMasterMinterTransaction (proxyTokenContract : ByStr20, newMasterMinter : ByStr20)
   transaction = UpdateMasterMinter newMasterMinter;
@@ -479,7 +491,7 @@ transition SubmitCustomConfigureMinterTransaction (proxyTokenContract : ByStr20,
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
-(* Submit a new ConfigureMinter transaction for future signoff *)
+(* Submit a new RemoveMinter transaction for future signoff *)
 transition SubmitCustomRemoveMinterTransaction (proxyTokenContract : ByStr20, minter : ByStr20)
   transaction = RemoveMinter minter;
   SubmitCustomTransaction proxyTokenContract transaction
