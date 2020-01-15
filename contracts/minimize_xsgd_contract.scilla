@@ -361,14 +361,14 @@ current_blacklister <- blacklister;
 isBlacklister = builtin eq current_blacklister initiator;
 or_res =
 let isNotBlacklistedAddress = negb isBlacklistedAddress in
-orb_3 isPaused isNotBlacklistedAddress isBlacklister;
+let isNotBlacklister = negb isBlacklister in
+orb_3 isPaused isNotBlacklistedAddress isNotBlacklister;
 match or_res with
 | False =>
 bal <- balances[address];
 match bal with
 | Some b =>
-new_balance = zero;
-balances[address] := new_balance;
+balances[address] := zero;
 currentSupply <- totalSupply;
 new_supply = builtin sub currentSupply bal;
 otalSupply := new_supply;
@@ -511,7 +511,7 @@ end
 | None =>
 e = { _eventname : "transferFrom FailedNoBalance"; to : to; from : from; value: value; sender : initiator};
 event e
-	    end
+end
 | True =>
 e = { _eventname : "transferFrom FailedPausedOrBlacklisted"; to : to; from : from; value: value; sender : initiator};
 event e
