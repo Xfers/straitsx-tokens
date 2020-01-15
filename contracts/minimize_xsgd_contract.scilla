@@ -30,13 +30,13 @@ fun (a : ByStr20) =>
 fun (b : ByStr20) =>
 builtin eq a b
 let zero = Uint128 0
-let one  = Uint128 1
+let one= Uint128 1
 let true = True
 let false = False
 contract XSGDContract
 (
-name :    String,
-symbol :  String,
+name :String,
+symbol :String,
 decimals : Uint32,
 init_owner : ByStr20,
 proxy_address : ByStr20
@@ -49,40 +49,40 @@ field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
-field totalSupply : Uint128  = zero
+field totalSupply : Uint128= zero
 field minters : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
-ransition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
+transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "transferOwnership FailedNotProxy"; newOwner : newOwner; sender : initiator};
 event e
-| True  =>
+| True=>
 current_owner <- owner;
 isowner = builtin eq initiator current_owner;
 match isowner with
 | True =>
 owner := newOwner;
 e = {_eventname : "OwnershipTransferred"; from : initiator; to : newOwner};
-	    event e
+	event e
 | False =>
 e = { _eventname : "transferOwnership FailedNotOwner"; newOwner : newOwner; sender : initiator};
 event e
 end
 end
 end
-ransition pause(initiator : ByStr20)
+transition pause(initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "pause FailedNotProxy"; sender : initiator};
 event e
-| True  =>
+| True=>
 current_pauser <- pauser;
 ispauser = builtin eq current_pauser initiator;
 match ispauser with
-| True  =>
+| True=>
 paused := true;
 e = { _eventname : "Paused"; sender : initiator};
 event e
@@ -92,17 +92,17 @@ event e
 end
 end
 end
-ransition unpause(initiator : ByStr20)
+transition unpause(initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "unpause FailedNotProxy"; sender : initiator};
 event e
-| True  =>
+| True=>
 current_pauser <- pauser;
 ispauser = builtin eq current_pauser initiator;
 match ispauser with
-| True  =>
+| True=>
 paused := false;
 e = {_eventname : "Unpaused"; sender : initiator};
 event e
@@ -112,17 +112,17 @@ event e
 end
 end
 end
-ransition updatePauser(newPauser : ByStr20, initiator : ByStr20)
+transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "updatePauser FailedNotProxy"; newPauser : newPauser; sender : initiator};
 event e
-| True  =>
+| True=>
 current_owner <- owner;
 isowner = builtin eq initiator current_owner;
 match isowner with
-| True  =>
+| True=>
 pauser := newPauser;
 e = {_eventname : "PauserUpdated"; pauser : newPauser; sender : initiator};
 event e
@@ -132,13 +132,13 @@ event e
 end
 end
 end
-ransition blacklist(address : ByStr20, initiator : ByStr20)
+transition blacklist(address : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "blacklist FailedNotProxy"; address : address; sender : initiator};
 event e
-| True  =>
+| True=>
 current_blacklister <- blacklister;
 isBlacklister = builtin eq current_blacklister initiator;
 match isBlacklister with
@@ -152,13 +152,13 @@ event e
 end
 end
 end
-ransition unBlacklist(address : ByStr20, initiator : ByStr20)
+transition unBlacklist(address : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "unBlacklist FailedNotProxy"; address : address; sender : initiator};
 event e
-| True  =>
+| True=>
 current_blacklister <- blacklister;
 isBlacklister = builtin eq current_blacklister initiator;
 match isBlacklister with
@@ -172,7 +172,7 @@ event e
 end
 end
 end
-ransition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
+transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
@@ -192,13 +192,13 @@ event e
 end
 end
 end
-ransition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
+transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "updateMasterMinter FailedNotProxy"; newMasterMinter : newMasterMinter; sender : initiator};
 event e
-| True  =>
+| True=>
 current_owner <- owner;
 isowner = builtin eq initiator current_owner;
 match isowner with
@@ -212,13 +212,13 @@ event e
 end
 end
 end
-ransition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)
+transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "configureMinter FailedNotProxy"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
 event e
-| True  =>
+| True=>
 isPaused <- paused;
 currentMasterMinter <- masterMinter;
 isMasterMinter = builtin eq initiator currentMasterMinter;
@@ -235,13 +235,13 @@ event e
 end
 end
 end
-ransition removeMinter(minter : ByStr20, initiator : ByStr20)
+transition removeMinter(minter : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "removeMinter FailedNotProxy"; minter : minter; sender : initiator};
 event e
-| True  =>
+| True=>
 currentMasterMinter <- masterMinter;
 isMasterMinter = builtin eq initiator currentMasterMinter;
 match isMasterMinter with
@@ -256,20 +256,20 @@ event e
 end
 end
 end
-ransition mint(to: ByStr20, value : Uint128, initiator : ByStr20)
+transition mint(to: ByStr20, value : Uint128, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "mint FailedNotProxy"; to : to; value : value; sender : initiator};
 event e
-| True  =>
+| True=>
 isPaused <- paused;
 isMinter <- exists minters[initiator];
 isBlacklistedMinter <- exists blacklisted[initiator];
 isBlacklistedRecipient <- exists blacklisted[to];
 or_res =
 let isNotMinter = negb isMinter in
-orb_4 isPaused isNotMinter isBlacklistedMinter isBlacklistedRecipient;
+ orb_4 isPaused isNotMinter isBlacklistedMinter isBlacklistedRecipient;
 match or_res with
 | False =>
 allowed_amount <- minterAllowed[initiator];
@@ -278,13 +278,13 @@ match allowed_amount with
 within_limits = uint128_le value a;
 match within_limits with
 | True =>
-<- totalSupply;
+t <- totalSupply;
 new_tokens = builtin add value t;
-otalSupply := new_tokens;
+totalSupply := new_tokens;
 x <- balances[to];
 current_val = match x with
 | Some v => v
-| None   => zero
+| None => zero
 end;
 new_bal = builtin add value current_val;
 balances[to] := new_bal;
@@ -306,13 +306,13 @@ event e
 end
 end
 end
-ransition burn(value : Uint128, initiator : ByStr20)
+transition burn(value : Uint128, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "burn FailedNotProxy"; value : value; sender : initiator};
 event e
-| True  =>
+| True=>
 isPaused <- paused;
 isMinter <- exists minters[initiator];
 isBlacklistedMinter <- exists blacklisted[initiator];
@@ -331,7 +331,7 @@ new_balance = builtin sub b value;
 balances[initiator] := new_balance;
 currentSupply <- totalSupply;
 new_supply = builtin sub currentSupply value;
-otalSupply := new_supply;
+totalSupply := new_supply;
 e = { _eventname : "Burnt"; burner : initiator; amount : value};
 event e
 | False =>
@@ -348,13 +348,13 @@ event e
 end
 end
 end
-ransition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
+transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "lawEnforcementWipingBurn FailedNotProxy"; address : address; sender : initiator};
 event e
-| True  =>
+| True=>
 isPaused <- paused;
 isBlacklistedAddress <- exists blacklisted[address];
 current_blacklister <- blacklister;
@@ -362,7 +362,7 @@ isBlacklister = builtin eq current_blacklister initiator;
 or_res =
 let isNotBlacklistedAddress = negb isBlacklistedAddress in
 let isNotBlacklister = negb isBlacklister in
-orb_3 isPaused isNotBlacklistedAddress isNotBlacklister;
+ orb_3 isPaused isNotBlacklistedAddress isNotBlacklister;
 match or_res with
 | False =>
 bal <- balances[address];
@@ -370,11 +370,10 @@ match bal with
 | Some b =>
 balances[address] := zero;
 currentSupply <- totalSupply;
-new_supply = builtin sub currentSupply bal;
-otalSupply := new_supply;
+new_supply = builtin sub currentSupply b;
+totalSupply := new_supply;
 e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : bal};
 event e
-end
 | None =>
 e = { _eventname : "lawEnforcementWipingBurn FailedNoBalance"; address : address; sender : initiator};
 event e
@@ -385,16 +384,16 @@ event e
 end
 end
 end
-ransition approve(spender : ByStr20, value : Uint128, initiator : ByStr20)
+transition approve(spender : ByStr20, value : Uint128, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "approve FailedNotProxy"; spender : spender; value : value; sender : initiator};
 event e
-| True  =>
+| True=>
 isPaused <- paused;
 isBlacklistedInitiator <- exists blacklisted[initiator];
-isBlacklistedSpender   <- exists blacklisted[spender];
+isBlacklistedSpender <- exists blacklisted[spender];
 or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedSpender;
 match or_res with
 | False =>
@@ -402,7 +401,7 @@ allowed[initiator][spender] := value;
 e = {_eventname : "Approved"; sender : initiator; spender : spender; amount : value};
 event e;
 msg = {_tag : "ApproveSuccessCallBack"; _recipient : initiator; _amount : zero;
-sender : initiator; spender : spender; amount : value };
+ sender : initiator; spender : spender; amount : value };
 msgs = one_msg msg;
 send msgs
 | True =>
@@ -411,16 +410,16 @@ event e
 end
 end
 end
-ransition transfer(to : ByStr20, value : Uint128, initiator : ByStr20)
+transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "transfer FailedNotProxy"; to : to; value : value; sender : initiator};
 event e
-| True  =>
+| True=>
 isPaused <- paused;
-isBlacklistedInitiator  <- exists blacklisted[initiator];
-isBlacklistedRecipient  <- exists blacklisted[to];
+isBlacklistedInitiator<- exists blacklisted[initiator];
+isBlacklistedRecipient<- exists blacklisted[to];
 or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedRecipient;
 match or_res with
 | False =>
@@ -432,7 +431,7 @@ match can_do with
 | True =>
 new_initiator_bal = builtin sub b value;
 balances[initiator] := new_initiator_bal;
-o_bal <- balances[to];
+to_bal <- balances[to];
 new_to_bal = match to_bal with
 | Some x => builtin add x value
 | None => value
@@ -441,7 +440,7 @@ balances[to] := new_to_bal;
 e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
 event e;
 msg = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
-sender : initiator; recipient : to; amount : value};
+ sender : initiator; recipient : to; amount : value};
 msgs = one_msg msg;
 send msgs
 | False =>
@@ -456,15 +455,15 @@ end
 e = { _eventname : "transfer FailedPausedOrBlacklisted"; to : to; value: value; sender : initiator};
 event e
 end
+ end
 end
-end
-ransition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)
+transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
 e = { _eventname : "transferFrom FailedNotProxy"; from : from; to : to; value : value; sender : initiator};
 event e
-| True  =>
+| True=>
 isPaused <- paused;
 isBlacklistedInitiator <- exists blacklisted[initiator];
 isBlacklistedRecipient <- exists blacklisted[to];
@@ -478,13 +477,13 @@ match bal with
 sender_allowed_from <- allowed[from][initiator];
 match sender_allowed_from with
 | Some b =>
-= min_int a b;
+t = min_int a b;
 can_do = uint128_le value t;
 match can_do with
 | True =>
 new_from_bal = builtin sub a value;
 balances[from] := new_from_bal;
-o_bal <- balances[to];
+to_bal <- balances[to];
 match to_bal with
 | Some tb =>
 new_to_bal = builtin add tb value;
@@ -497,7 +496,7 @@ allowed[from][initiator] := new_allowed;
 e = {_eventname : "TransferFromSuccess"; recipient : to; sender : from; initiator : initiator; amount : value};
 event e;
 msg = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
-sender : from; recipient : to; amount : value };
+ sender : from; recipient : to; amount : value };
 msgs = one_msg msg;
 send msgs
 | False =>
@@ -511,7 +510,7 @@ end
 | None =>
 e = { _eventname : "transferFrom FailedNoBalance"; to : to; from : from; value: value; sender : initiator};
 event e
-end
+	end
 | True =>
 e = { _eventname : "transferFrom FailedPausedOrBlacklisted"; to : to; from : from; value: value; sender : initiator};
 event e
