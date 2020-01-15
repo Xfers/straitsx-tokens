@@ -209,7 +209,7 @@ let custom_token_transaction_msg_as_list =
          _tag : "proxyTransfer" ;
          _amount : Uint128 0 ;
          to : to ;
-         value : value}
+         value : value }
       | TransferFrom from to value =>
         (* TransferFrom      (from : ByStr20, to : ByStr20, value : Uint128)  *)
         {_recipient : proxyTokenContract ;
@@ -217,13 +217,7 @@ let custom_token_transaction_msg_as_list =
          _amount : Uint128 0 ;
          from : from ;
          to : to ;
-         value : value}
-      | UpdatePauser newPauser =>
-        (* proxyUpdatePauser      (newPauser : ByStr20)  *)
-        {_recipient : proxyTokenContract ;
-         _tag : "proxyUpdatePauser" ;
-         _amount : Uint128 0 ;
-         newPauser : newPauser }
+         value : value }
       | UnPause =>
         (* proxyUnpause           ()  *)
         {_recipient : proxyTokenContract ;
