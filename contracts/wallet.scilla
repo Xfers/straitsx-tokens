@@ -630,7 +630,3 @@ end
 transition AddFunds ()
   accept
 end
-
-(* Callback transition - no action required, but must be defined, since operatorSend will fail otherwise. *)
-transition operatorSendSuccess (operator : ByStr20, from : ByStr20, recipient : ByStr20, amount : Uint128)
-end

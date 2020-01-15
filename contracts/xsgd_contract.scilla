@@ -361,14 +361,14 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
     isBlacklister = builtin eq current_blacklister initiator;
     or_res =
     let isNotBlacklistedAddress = negb isBlacklistedAddress in
-      orb_3 isPaused isNotBlacklistedAddress isBlacklister;
+    let isNotBlacklister = negb isBlacklister in
+     orb_3 isPaused isNotBlacklistedAddress isNotBlacklister;
     match or_res with
     | False =>
       bal <- balances[address];
       match bal with
       | Some b =>
-        new_balance = zero;
-        balances[address] := new_balance;
+        balances[address] := zero;
         currentSupply <- totalSupply;
         new_supply = builtin sub currentSupply bal;
         totalSupply := new_supply;
