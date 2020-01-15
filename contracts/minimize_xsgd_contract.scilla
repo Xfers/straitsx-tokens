@@ -33,7 +33,7 @@ let zero = Uint128 0
 let one  = Uint128 1
 let true = True
 let false = False
-contract SGDXContract
+contract XSGDContract
 (
 name :    String,
 symbol :  String,
