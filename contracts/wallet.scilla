@@ -101,6 +101,10 @@ type TokenTransaction =
 | Transfer of ByStr20 Uint128
 (* transferFrom      (from : ByStr20, to : ByStr20, value : Uint128)  *)
 | TransferFrom of ByStr20 ByStr20 Uint128
+(* Burn      (value : Uint128)  *)
+| Burn of Uint128
+(* Mint      (to : ByStr20, value : Uint128)  *)
+| Mint of ByStr20 Uint128
 
 (* Type of (outstanding) transactions *)
 type Transaction =
@@ -203,6 +207,19 @@ let custom_token_transaction_msg_as_list =
         {_recipient : proxyTokenContract ;
          _tag : "proxyPause" ;
          _amount : Uint128 0 }
+      | Burn =>
+        (* Burn             (value : Uint128)  *)
+        {_recipient : proxyTokenContract ;
+         _tag : "proxyBurn" ;
+         _amount : Uint128 0 ;
+         value : value }
+      | Mint =>
+        (* Mint             (to : ByStr20, value : Uint128)  *)
+        {_recipient : proxyTokenContract ;
+         _tag : "proxyMint" ;
+         _amount : Uint128 0 ;
+         to : to ;
+         value : value }
       | Transfer to value =>
         (* Transfer      (to : ByStr20, value : Uint128)  *)
         {_recipient : proxyTokenContract ;
@@ -461,9 +478,15 @@ transition SubmitCustomLawEnforcementWipingBurnTransaction (proxyTokenContract :
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
-(* Submit a new LawEnforcementWipingBurn transaction for future signoff *)
-transition SubmitCustomLawEnforcementWipingBurnTransaction (proxyTokenContract : ByStr20, address : ByStr20)
-  transaction = LawEnforcementWipingBurn address;
+(* Submit a new Burn transaction for future signoff *)
+transition SubmitCustomBurnTransaction (proxyTokenContract : ByStr20, value : Uint128)
+  transaction = Burn value;
+  SubmitCustomTransaction proxyTokenContract transaction
+end
+
+(* Submit a new Mint transaction for future signoff *)
+transition SubmitCustomMintTransaction (proxyTokenContract : ByStr20, to : ByStr20, value : Uint128)
+  transaction = Mint to value;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
