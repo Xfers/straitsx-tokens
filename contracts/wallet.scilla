@@ -502,6 +502,12 @@ transition SubmitCustomTransferFromTransaction (proxyTokenContract : ByStr20, fr
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
+(* Submit a new UpdateMasterMinter transaction for future signoff *)
+transition SubmitCustomUpdateMasterMinterTransaction (proxyTokenContract : ByStr20, newMasterMinter : ByStr20)
+  transaction = UpdateMasterMinter newMasterMinter;
+  SubmitCustomTransaction proxyTokenContract transaction
+end
+
 (* Submit a new ConfigureMinter transaction for future signoff *)
 transition SubmitCustomConfigureMinterTransaction (proxyTokenContract : ByStr20, minter : ByStr20, minterAllowedAmount : Uint128)
   transaction = ConfigureMinter minter minterAllowedAmount;
