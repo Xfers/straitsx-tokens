@@ -52,7 +52,7 @@ field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uin
 field totalSupply : Uint128  = zero
 field minters : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
-ttransition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
+transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
 | False =>
@@ -278,9 +278,9 @@ match allowed_amount with
 within_limits = uint128_le value a;
 match within_limits with
 | True =>
-<- totalSupply;
+t <- totalSupply;
 new_tokens = builtin add value t;
-otalSupply := new_tokens;
+totalSupply := new_tokens;
 x <- balances[to];
 current_val = match x with
 | Some v => v
@@ -331,7 +331,7 @@ new_balance = builtin sub b value;
 balances[initiator] := new_balance;
 currentSupply <- totalSupply;
 new_supply = builtin sub currentSupply value;
-otalSupply := new_supply;
+totalSupply := new_supply;
 e = { _eventname : "Burnt"; burner : initiator; amount : value};
 event e
 | False =>
@@ -371,7 +371,7 @@ match bal with
 balances[address] := zero;
 currentSupply <- totalSupply;
 new_supply = builtin sub currentSupply bal;
-otalSupply := new_supply;
+totalSupply := new_supply;
 e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : bal};
 event e
 end
@@ -516,7 +516,7 @@ match can_do with
 | True =>
 new_initiator_bal = builtin sub b value;
 balances[initiator] := new_initiator_bal;
-o_bal <- balances[to];
+to_bal <- balances[to];
 new_to_bal = match to_bal with
 | Some x => builtin add x value
 | None => value
@@ -562,13 +562,13 @@ match bal with
 sender_allowed_from <- allowed[from][initiator];
 match sender_allowed_from with
 | Some b =>
-= min_int a b;
+t = min_int a b;
 can_do = uint128_le value t;
 match can_do with
 | True =>
 new_from_bal = builtin sub a value;
 balances[from] := new_from_bal;
-o_bal <- balances[to];
+to_bal <- balances[to];
 match to_bal with
 | Some tb =>
 new_to_bal = builtin add tb value;
