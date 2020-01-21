@@ -406,7 +406,91 @@ transition approve(spender : ByStr20, value : Uint128, initiator : ByStr20)
         msgs = one_msg msg;
         send msgs
       | True =>
-        e = { _eventname : "approve FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
+        e = { _eventname : "approve FailedPausedOrBlacklisted"; spender : spender; value : value; sender : initiator};
+        event e
+      end
+    end
+end
+transition increaseApproval(spender : ByStr20, value : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+      e = { _eventname : "increaseApproval FailedNotProxy"; spender : spender; value : value; sender : initiator};
+      event e
+    | True  =>
+      isPaused <- paused;
+      isBlacklistedInitiator <- exists blacklisted[initiator];
+      isBlacklistedSpender   <- exists blacklisted[spender];
+      or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedSpender;
+      match or_res with
+      | False =>
+        currentAllowance <- allowed[initiator][spender];
+        match currentAllowance with
+        | Some ca =>
+          allowed[initiator][spender] := builtin add ca value;
+          e = {_eventname : "ApprovalIncreased"; sender : initiator; spender : spender; amount : value};
+          event e;
+          msg = {_tag : "IncreaseApprovalSuccessCallBack"; _recipient : initiator; _amount : zero;
+                 sender : initiator; spender : spender; amount : value };
+          msgs = one_msg msg;
+          send msgs
+        end
+        | None =>
+          e = { _eventname : "increaseApproval FailedNoCurrentAllowance"; spender : spender; value : value sender : initiator};
+          event e
+        end
+      | True =>
+        e = { _eventname : "increaseApproval FailedPausedOrBlacklisted"; spender : spender; value : value; sender : initiator};
+        event e
+      end
+    end
+end
+transition decreaseApproval(spender : ByStr20, value : Uint128, initiator : ByStr20)
+    callerIsProxy = builtin eq _sender proxy_address;
+    match callerIsProxy with
+    | False =>
+      e = { _eventname : "decreaseApproval FailedNotProxy"; spender : spender; value : value; sender : initiator};
+      event e
+    | True  =>
+      isPaused <- paused;
+      isBlacklistedInitiator <- exists blacklisted[initiator];
+      isBlacklistedSpender   <- exists blacklisted[spender];
+      or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedSpender;
+      match or_res with
+      | False =>
+        currentAllowance <- allowed[initiator][spender];
+        match currentAllowance with
+        | Some ca =>
+          finalAllowance := builtin sub currentAllowance value;
+          match finalAllowance with
+          | Some fa =>
+            lessThanZero = uint128_le fa zero;
+            match lessThanZero with
+            | True =>
+              allowed[initiator][spender] := zero;
+            end
+            | False =>
+              allowed[initiator][spender] := fa;
+            end
+            e = {_eventname : "ApprovalDecreased"; sender : initiator; spender : spender; amount : value};
+            event e;
+            msg = {_tag : "DecreaseApprovalSuccessCallBack"; _recipient : initiator; _amount : zero;
+                   sender : initiator; spender : spender; amount : value };
+            msgs = one_msg msg;
+            send msgs
+          end
+          | None =>
+            e = { _eventname : "decreaseApproval FailedFinalAllowanceIsNone"; spender : spender; value : value; sender : initiator};
+            event e
+          end
+            within_limits = uint128_le value a;
+        end
+        | None =>
+          e = { _eventname : "decreaseApproval FailedNoCurrentAllowance"; spender : spender; value : value sender : initiator};
+          event e
+        end
+      | True =>
+        e = { _eventname : "decreaseApproval FailedPausedOrBlacklisted"; spender : spender; value : value; sender : initiator};
         event e
       end
     end
@@ -445,15 +529,15 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20)
             msgs = one_msg msg;
             send msgs
           | False =>
-            e = { _eventname : "transfer FailedInsufficientBalance"; to : to; value: value; sender : initiator};
+            e = { _eventname : "transfer FailedInsufficientBalance"; to : to; value : value; sender : initiator};
             event e
           end
         | None =>
-          e = { _eventname : "transfer FailedNoBalance"; to : to; value: value; sender : initiator};
+          e = { _eventname : "transfer FailedNoBalance"; to : to; value : value; sender : initiator};
           event e
         end
       | True =>
-        e = { _eventname : "transfer FailedPausedOrBlacklisted"; to : to; value: value; sender : initiator};
+        e = { _eventname : "transfer FailedPausedOrBlacklisted"; to : to; value : value; sender : initiator};
         event e
       end
    end
@@ -501,19 +585,19 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
             msgs = one_msg msg;
             send msgs
           | False =>
-            e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value: value; sender : initiator};
+            e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value : value; sender : initiator};
             event e
           end
           | None =>
-            e = { _eventname : "transferFrom FailedInsufficientAllowance"; to : to; from : from; value: value; sender : initiator};
+            e = { _eventname : "transferFrom FailedInsufficientAllowance"; to : to; from : from; value : value; sender : initiator};
             event e
           end
         | None =>
-          e = { _eventname : "transferFrom FailedNoBalance"; to : to; from : from; value: value; sender : initiator};
+          e = { _eventname : "transferFrom FailedNoBalance"; to : to; from : from; value : value; sender : initiator};
           event e
 	    end
     | True =>
-      e = { _eventname : "transferFrom FailedPausedOrBlacklisted"; to : to; from : from; value: value; sender : initiator};
+      e = { _eventname : "transferFrom FailedPausedOrBlacklisted"; to : to; from : from; value : value; sender : initiator};
       event e
     end
   end

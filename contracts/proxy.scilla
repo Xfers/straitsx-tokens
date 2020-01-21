@@ -125,6 +125,22 @@ transition proxyApprove (spender : ByStr20, value : Uint128)
     send msgs
 end
 
+transition proxyIncreaseApproval (spender : ByStr20, value : Uint128)
+    current_impl <- implementation;
+    msg = {_tag : "increaseApproval"; _recipient : current_impl; _amount : zero;
+           spender : spender; value : value; initiator : _sender};
+    msgs = one_msg msg;
+    send msgs
+end
+
+transition proxyDecreaseApproval (spender : ByStr20, value : Uint128)
+    current_impl <- implementation;
+    msg = {_tag : "decreaseApproval"; _recipient : current_impl; _amount : zero;
+           spender : spender; value : value; initiator : _sender};
+    msgs = one_msg msg;
+    send msgs
+end
+
 transition proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)
     current_impl <- implementation;
     msg = {_tag : "transferFrom"; _recipient : current_impl; _amount : zero;
