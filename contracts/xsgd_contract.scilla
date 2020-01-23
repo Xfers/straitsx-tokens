@@ -385,31 +385,71 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
     end
   end
 end
-transition approve(spender : ByStr20, value : Uint128, initiator : ByStr20)
-    callerIsProxy = builtin eq _sender proxy_address;
-    match callerIsProxy with
+transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+    e = { _eventname : "increaseAllowance FailedNotProxy"; spender : spender; value : value; sender : initiator};
+    event e
+  | True  =>
+    isPaused <- paused;
+    isBlacklistedInitiator <- exists blacklisted[initiator];
+    isBlacklistedSpender   <- exists blacklisted[spender];
+    or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedSpender;
+    match or_res with
     | False =>
-      e = { _eventname : "approve FailedNotProxy"; spender : spender; value : value; sender : initiator};
+      get_current_allowance <- allowed[initiator][spender];
+      current_allowance = 
+        match get_current_allowance with
+        | Some allowance => allowance
+        | None => zero
+        end;
+      new_allowance = builtin add current_allowance value;
+      allowed[initiator][spender] := new_allowance;
+      e = {_eventname : "IncreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
+      event e;
+      msg = {_tag : "IncreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
+              sender : initiator; spender : spender; amount : value };
+      msgs = one_msg msg;
+      send msgs
+    | True =>
+      e = { _eventname : "increaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
       event e
-    | True  =>
-      isPaused <- paused;
-      isBlacklistedInitiator <- exists blacklisted[initiator];
-      isBlacklistedSpender   <- exists blacklisted[spender];
-      or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedSpender;
-      match or_res with
-      | False =>
-        allowed[initiator][spender] := value;
-        e = {_eventname : "Approved"; sender : initiator; spender : spender; amount : value};
-        event e;
-        msg = {_tag : "ApproveSuccessCallBack"; _recipient : initiator; _amount : zero;
-               sender : initiator; spender : spender; amount : value };
-        msgs = one_msg msg;
-        send msgs
-      | True =>
-        e = { _eventname : "approve FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
-        event e
-      end
     end
+  end
+end
+transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
+  callerIsProxy = builtin eq _sender proxy_address;
+  match callerIsProxy with
+  | False =>
+    e = { _eventname : "decreaseAllowance FailedNotProxy"; spender : spender; value : value; sender : initiator};
+    event e
+  | True  =>
+    isPaused <- paused;
+    isBlacklistedInitiator <- exists blacklisted[initiator];
+    isBlacklistedSpender   <- exists blacklisted[spender];
+    or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedSpender;
+    match or_res with
+    | False =>
+      get_current_allowance <- allowed[initiator][spender];
+      current_allowance = 
+        match get_current_allowance with
+        | Some allowance => allowance
+        | None => zero
+        end;
+      new_allowance = builtin sub current_allowance value;
+      allowed[initiator][spender] := new_allowance;
+      e = {_eventname : "DecreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
+      event e;
+      msg = {_tag : "DecreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
+              sender : initiator; spender : spender; amount : value };
+      msgs = one_msg msg;
+      send msgs
+    | True =>
+      e = { _eventname : "decreaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
+      event e
+    end
+  end
 end
 transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20)
     callerIsProxy = builtin eq _sender proxy_address;

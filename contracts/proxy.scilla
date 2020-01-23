@@ -117,9 +117,17 @@ transition proxyMint(to: ByStr20, value : Uint128 )
     send msgs
 end
 
-transition proxyApprove (spender : ByStr20, value : Uint128)
+transition proxyIncreaseAllowance (spender : ByStr20, value : Uint128)
     current_impl <- implementation;
-    msg = {_tag : "approve"; _recipient : current_impl; _amount : zero;
+    msg = {_tag : "increaseAllowance"; _recipient : current_impl; _amount : zero;
+           spender : spender; value : value; initiator : _sender};
+    msgs = one_msg msg;
+    send msgs
+end
+
+transition proxyDecreaseAllowance (spender : ByStr20, value : Uint128)
+    current_impl <- implementation;
+    msg = {_tag : "decreaseAllowance"; _recipient : current_impl; _amount : zero;
            spender : spender; value : value; initiator : _sender};
     msgs = one_msg msg;
     send msgs
