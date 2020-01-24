@@ -29,7 +29,7 @@ The token contract represents a standard fungible token contract with minting an
 | `minter` | An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
 | `blacklister` | An account that can freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister`. |
 |`approvedSpender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
-|`initiator`| The user who calls the proxy contract that in turns call the token contract. |
+|`initiator`| The user who calls the proxy contract that in turns call the token contract. After deployment, the address of the proxy contract will be made known to the user and the code will be visible directly from the block explorer. |
 
 ### Immutable Parameters
 
