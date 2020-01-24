@@ -370,7 +370,7 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
       | Some b =>
         balances[address] := zero;
         currentSupply <- totalSupply;
-        new_supply = builtin sub currentSupply b;
+        new_supply = builtin sub currentSupply bal;
         totalSupply := new_supply;
         e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : bal};
         event e
