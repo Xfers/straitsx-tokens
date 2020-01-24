@@ -322,7 +322,8 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
         msg = {_tag : "burnCallBack"; _recipient : _sender; _amount : Uint128 0; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
         msgs = one_msg msg;
         e = { _eventname : "Burnt"; burner : initiator; amount : value};
-        event e
+        event e;
+        send msgs
       | False =>
         e = { _eventname : "burn FailedInsufficientBalance"; value : value; sender : initiator};
         event e
@@ -354,7 +355,8 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr
         msg = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : Uint128 0; address : address; new_supply : new_supply};
         msgs = one_msg msg;
         e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
-        event e
+        event e;
+        send msgs
     | True =>
       e = { _eventname : "lawEnforcementWipingBurn FailedPausedOrNotBlacklistedOrNotBlacklister"; address : address; sender : initiator};
       event e
@@ -440,14 +442,14 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
     | False =>
       sender_allowed_from <- allowed[from][initiator];
       match sender_allowed_from with
-      | Some allowed =>
-        t = min_int from_bal allowed;
+      | Some allowance =>
+        t = min_int from_bal allowance;
         can_do = uint128_le value t;
         match can_do with
         | True =>
           new_from_bal = builtin sub from_bal value;
           new_to_bal = builtin add to_bal value;
-          new_allowed = builtin sub allowed value;
+          new_allowed = builtin sub allowance value;
           allowed[from][initiator] := new_allowed;
           e = {_eventname : "TransferFromSuccess"; recipient : to; sender : from; initiator : initiator; amount : value};
           event e;
