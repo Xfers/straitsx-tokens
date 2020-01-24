@@ -44,7 +44,7 @@ contract XSGDContract
 field owner : ByStr20 = init_owner
 field pauser : ByStr20 = init_owner
 field masterMinter : ByStr20 = init_owner
-field paused : Bool = True
+field paused : Bool = False
 field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
