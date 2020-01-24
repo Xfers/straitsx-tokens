@@ -220,15 +220,13 @@ transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   | True  =>
     isPaused <- paused;
     currentMasterMinter <- masterMinter;
-    isBlacklisted <- exists blacklisted[minter];
     isMasterMinter = builtin eq initiator currentMasterMinter;
-    isNotMasterMinter = negb isMasterMinter;
-    or_res = orb_3 isNotMasterMinter isPaused isBlacklisted;
+    or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
     match or_res with
     | False =>
-      get_mint_allowance <- minterAllowed[minter];
+      get_mint_allowance <- mintAllowed[minter];
       mint_allowance =
-        match get_mint_allowance with
+        match get_minter_allowance with
         | Some allowance => allowance
         | None => zero
         end;
@@ -251,15 +249,13 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   | True  =>
     isPaused <- paused;
     currentMasterMinter <- masterMinter;
-    isBlacklisted <- exists blacklisted[minter];
     isMasterMinter = builtin eq initiator currentMasterMinter;
-    isNotMasterMinter = negb isMasterMinter;
-    or_res = orb_3 isNotMasterMinter isPaused isBlacklisted;
+    or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
     match or_res with
     | False =>
-      get_mint_allowance <- minterAllowed[minter];
+      get_mint_allowance <- mintAllowed[minter];
       mint_allowance =
-        match get_mint_allowance with
+        match get_minter_allowance with
         | Some allowance => allowance
         | None => zero
         end;
@@ -387,10 +383,11 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
       | Some b =>
         balances[address] := zero;
         currentSupply <- totalSupply;
-        new_supply = builtin sub currentSupply b;
+        new_supply = builtin sub currentSupply bal;
         totalSupply := new_supply;
         e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : bal};
         event e
+      end
       | None =>
         e = { _eventname : "lawEnforcementWipingBurn FailedNoBalance"; address : address; sender : initiator};
         event e
