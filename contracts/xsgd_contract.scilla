@@ -437,7 +437,12 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
         | Some allowance => allowance
         | None => zero
         end;
-      new_allowance = builtin sub current_allowance value;
+      new_allowance =
+        let value_le_allowance = uint128_le value current_allowance in
+        match value_le_allowance with
+        | True => builtin sub current_allowance value
+        | False => zero
+        end;
       allowed[initiator][spender] := new_allowance;
       e = {_eventname : "DecreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
       event e;
