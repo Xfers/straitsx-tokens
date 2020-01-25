@@ -266,6 +266,12 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
         | True => builtin sub mint_allowance amount
         | False => zero
         end;
+      new_mint_allowance =
+        let amount_le_allowance = uint128_le amount mint_allowance in
+        match amount_le_allowance with
+        | True => builtin sub mint_allowance amount
+        | False => zero
+        end;
       minterAllowed[minter] := new_mint_allowance;
       e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
       event e
