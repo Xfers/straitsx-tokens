@@ -29,7 +29,7 @@ The token contract represents a standard fungible token contract with minting an
 | `minter` | An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
 | `blacklister` | An account that can freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister`. |
 |`approvedSpender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
-|`initiator`| The user who calls the proxy contract that in turns call the token contract. |
+|`initiator`| The user who calls the proxy contract that in turns call the token contract. After deployment, the address of the token contract will be made known to the user and the code will be visible directly from the block explorer. |
 
 ### Immutable Parameters
 
@@ -53,7 +53,7 @@ The table below presents the mutable fields of the contract and their initial va
 |`pauser`| `ByStr20` | `init_owner` | Current `pauser` in the contract. |
 |`masterMinter`| `ByStr20` | `init_owner` | Current `masterMinter` in the contract.|
 |`blacklister`| `ByStr20` | `init_owner` | Current `blacklister` in the contract.|
-|`paused`| `Bool` | `False` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
+|`paused`| `Bool` | `True` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
 |`blacklisted`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Records the addresses that are blacklisted. An address that is present in the map is blacklisted irrespective of the value it is mapped to. |
 |`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
 |`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `approvedSpender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. |
@@ -84,7 +84,7 @@ Each of these category of transitions are presented in further details below:
 |`unBlacklist`|`address : ByStr20, initiator : ByStr20`| Remove a given address from the blacklist.  <br> :warning: **Note:** `initiator` must be the current `blacklister` in the contract.| :heavy_check_mark: |
 |`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`.  <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract.| :heavy_check_mark: |
 |`updateMasterMinter`| `newMasterMinter : ByStr20, initiator : ByStr20` | Replace the current `masterMinter` with the `newMasterMinter`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
-|`configureMinter`| `minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20` | Add a new `minter` or update the minting quota for an existing minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :x: |
+|`configureMinter`| `minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20` | Add a new `minter` or update the minting quota for an existing minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
 |`removeMinter`| `minter : ByStr20, initiator : ByStr20` | Remove a given minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
 
 #### Pause Transitions
@@ -98,8 +98,8 @@ Each of these category of transitions are presented in further details below:
 
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
-|`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Only the non-blacklisted token holders can invoke this transition, i.e., `initiator` must be a non-blacklisted `tokenHolder`, 2) Minting can only be done when the contract is not paused. | <center>:x:</center> |
-|`burn`| `value : Uint128, initiator : ByStr20` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
+|`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Minting is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. , 2) Minting can only be done when the contract is not paused. | <center>:x:</center> |
+|`burn`| `value : Uint128, initiator : ByStr20` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Burning is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
 |`lawEnforcementWipingBurn`| `address : ByStr20, initiator : ByStr20` | Burn entire balance of tokens from `address`.  <br>  :warning: **Note:**   1) Only the blacklister can invoke this transition, i.e., `initiator` must be the `blacklister`. 2) Burning can only be done when the contract is not paused. 3) Only accounts that have been blacklisted by the blacklister may have their funds wiped.| <center>:x:</center>  |
 
 
@@ -122,7 +122,7 @@ Proxy contract is a relay contract that redirects calls to it to the token contr
 |--|--|
 |`init_admin` | The initial admin of the contract which is usually the creator of the contract.  `init_admin` is also the initial value of `admin`. |
 |`admin` | Current `admin` of the contract initialized to `init_admin`. Certain critical actions can only be performed by the `admin`, e.g., changing the current implementation of the token contract. |
-|`initiator`| The user who calls the proxy contract that in turns call the token contract. |
+|`initiator`| The user who calls the proxy contract that in turns call the token contract. After deployment, the address of the proxy contract will be made known to the user and the code will be visible directly from the block explorer. |
 
 ### Immutable Parameters
 
