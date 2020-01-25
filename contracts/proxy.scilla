@@ -239,7 +239,7 @@ end
 transition proxyLawEnforcementWipingBurn(address : ByStr20)
     current_impl <- implementation;
     current_supply <- totalSupply;
-    get_addr_bal <- balances[_sender];
+    get_addr_bal <- balances[address];
     addr_bal =
         match get_addr_bal with
         | Some bal => bal
