@@ -213,7 +213,7 @@ let custom_token_transaction_msg_as_list =
          _tag : "proxyBurn" ;
          _amount : Uint128 0 ;
          value : value }
-      | Mint to value =>
+      | Mint =>
         (* Mint             (to : ByStr20, value : Uint128)  *)
         {_recipient : proxyTokenContract ;
          _tag : "proxyMint" ;
