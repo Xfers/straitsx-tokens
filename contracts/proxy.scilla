@@ -26,6 +26,8 @@ init_admin : ByStr20
 
 field implementation : ByStr20 = init_implementation
 field admin : ByStr20 = init_admin
+field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
+field totalSupply : Uint128 = zero
 
 transition upgradeTo(newImplementation : ByStr20)
     currentAdmin <- admin;
@@ -109,12 +111,31 @@ transition proxyUpdateBlacklister(newBlacklister : ByStr20)
     send msgs
 end
 
-transition proxyMint(to: ByStr20, value : Uint128 )
+transition proxyMint(to: ByStr20, value : Uint128)
     current_impl <- implementation;
+    current_supply <- totalSupply;
+    get_to_bal <- balances[to];
+    to_bal =
+        match get_to_bal with
+        | Some bal => bal
+        | None => zero
+        end;
     msg = {_tag : "mint"; _recipient : current_impl; _amount : zero; to : to;
-           value : value; initiator : _sender};
+           value : value; initiator : _sender; to_bal : to_bal; current_supply : current_supply};
     msgs = one_msg msg;
     send msgs
+end
+
+transition mintCallBack(to: ByStr20, new_to_bal: Uint128, new_supply : Uint128)
+    current_impt <- implementation;
+    is_current_imp = builtin eq current_impt _sender;
+    match is_current_imp with
+    | False =>
+        throw
+    | True =>
+        balances[to] := new_to_bal;
+        totalSupply := new_supply
+    end
 end
 
 transition proxyApprove (spender : ByStr20, value : Uint128)
@@ -127,32 +148,118 @@ end
 
 transition proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)
     current_impl <- implementation;
+    get_to_bal <- balances[to];
+    to_bal =
+        match get_to_bal with
+        | Some bal => bal
+        | None => zero
+        end;
+    get_from_bal <- balances[from];
+    from_bal =
+        match get_from_bal with
+        | Some bal => bal
+        | None => zero
+        end;
     msg = {_tag : "transferFrom"; _recipient : current_impl; _amount : zero;
-           from : from; to : to; value : value; initiator : _sender};
+           from : from; to : to; value : value; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
     msgs = one_msg msg;
     send msgs
+end
+
+transition transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)
+    current_impt <- implementation;
+    is_current_imp = builtin eq current_impt _sender;
+    match is_current_imp with
+    | False =>
+        throw
+    | True =>
+        balances[to] := new_to_bal;
+        balances[from] := new_from_bal
+    end
 end
 
 transition proxyTransfer (to : ByStr20, value : Uint128)
     current_impl <- implementation;
+    get_to_bal <- balances[to];
+    to_bal =
+        match get_to_bal with
+        | Some bal => bal
+        | None => zero
+        end;
+    get_init_bal <- balances[_sender];
+    init_bal =
+        match get_init_bal with
+        | Some bal => bal
+        | None => zero
+        end;
     msg = {_tag : "transfer"; _recipient : current_impl; _amount : zero; to : to;
-           value : value; initiator : _sender};
+           value : value; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
     msgs = one_msg msg;
     send msgs
+end
+
+transition transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)
+    current_impt <- implementation;
+    is_current_imp = builtin eq current_impt _sender;
+    match is_current_imp with
+    | False =>
+        throw
+    | True =>
+        balances[to] := new_to_bal;
+        balances[initiator] := new_init_bal
+    end
 end
 
 transition proxyBurn(value : Uint128)
     current_impl <- implementation;
-    msg = {_tag : "burn"; _recipient : current_impl; _amount : zero; value : value; initiator : _sender};
+    current_supply <- totalSupply;
+    get_burn_bal <- balances[_sender];
+    burn_bal =
+        match get_burn_bal with
+        | Some bal => bal
+        | None => zero
+        end;
+    msg = {_tag : "burn"; _recipient : current_impl; _amount : zero; value : value; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
     msgs = one_msg msg;
     send msgs
 end
 
+transition burnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)
+    current_impt <- implementation;
+    is_current_imp = builtin eq current_impt _sender;
+    match is_current_imp with
+    | False =>
+        throw
+    | True =>
+        balances[initiator] := new_burn_balance;
+        totalSupply := new_supply
+    end
+end
+
 transition proxyLawEnforcementWipingBurn(address : ByStr20)
     current_impl <- implementation;
-    msg = {_tag : "lawEnforcementWipingBurn"; _recipient : current_impl; _amount : zero; address : address; initiator : _sender};
+    current_supply <- totalSupply;
+    get_addr_bal <- balances[address];
+    addr_bal =
+        match get_addr_bal with
+        | Some bal => bal
+        | None => zero
+        end;
+    msg = {_tag : "lawEnforcementWipingBurn"; _recipient : current_impl; _amount : zero; address : address; initiator : _sender; addr_bal : addr_bal; current_supply : current_supply};
     msgs = one_msg msg;
     send msgs
+end
+
+transition lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)
+    current_impt <- implementation;
+    is_current_imp = builtin eq current_impt _sender;
+    match is_current_imp with
+    | False =>
+        throw
+    | True =>
+        balances[address] := zero;
+        totalSupply := new_supply
+    end
 end
 
 transition proxyConfigureMinter(minter : ByStr20, minterAllowedAmount : Uint128)
