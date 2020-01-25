@@ -53,7 +53,7 @@ The table below presents the mutable fields of the contract and their initial va
 |`pauser`| `ByStr20` | `init_owner` | Current `pauser` in the contract. |
 |`masterMinter`| `ByStr20` | `init_owner` | Current `masterMinter` in the contract.|
 |`blacklister`| `ByStr20` | `init_owner` | Current `blacklister` in the contract.|
-|`paused`| `Bool` | `False` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
+|`paused`| `Bool` | `True` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
 |`blacklisted`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Records the addresses that are blacklisted. An address that is present in the map is blacklisted irrespective of the value it is mapped to. |
 |`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
 |`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `approvedSpender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. |
