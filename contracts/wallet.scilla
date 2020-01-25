@@ -207,13 +207,13 @@ let custom_token_transaction_msg_as_list =
         {_recipient : proxyTokenContract ;
          _tag : "proxyPause" ;
          _amount : Uint128 0 }
-      | Burn =>
+      | Burn value =>
         (* Burn             (value : Uint128)  *)
         {_recipient : proxyTokenContract ;
          _tag : "proxyBurn" ;
          _amount : Uint128 0 ;
          value : value }
-      | Mint =>
+      | Mint to value =>
         (* Mint             (to : ByStr20, value : Uint128)  *)
         {_recipient : proxyTokenContract ;
          _tag : "proxyMint" ;
@@ -691,10 +691,18 @@ transition AddFunds ()
   accept
 end
 
-(* Callback transition - no action required, but must be defined, since transfer will fail otherwise. *)
+(* Callback transition - no action required, but must be defined, since transfers from the wallet will fail otherwise. *)
 transition TransferSuccessCallBack (sender : ByStr20, recipient : ByStr20, amount : Uint128)
 end
 
-(* Callback transition - no action required, but must be defined, since transferFrom will fail otherwise. *)
+(* Acceptance transition - no action required, but must be defined, since transfers to the wallet will fail otherwise. *)
+transition RecipientAcceptTransfer (sender : ByStr20, recipient : ByStr20, amount : Uint128)
+end
+
+(* Callback transition - no action required, but must be defined, since transferFroms from the wallet will fail otherwise. *)
 transition TransferFromSuccessCallBack (sender : ByStr20, recipient : ByStr20, amount : Uint128)
+end
+
+(* Acceptance transition - no action required, but must be defined, since transfers to the wallet will fail otherwise. *)
+transition RecipientAcceptTransferFrom (sender : ByStr20, recipient : ByStr20, amount : Uint128)
 end

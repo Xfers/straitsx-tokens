@@ -1,6 +1,9 @@
 scilla_version 0
+
 import BoolUtils IntUtils ListUtils
+
 library XSGDContract
+
 let min_int =
   fun (a : Uint128) => fun (b : Uint128) =>
   let alt = builtin lt a b in
@@ -25,6 +28,11 @@ let one_msg =
     fun (msg : Message) =>
         let nil_msg = Nil {Message} in
         Cons {Message} msg nil_msg
+let two_msgs =
+  fun (msg1 : Message) =>
+  fun (msg2 : Message) =>
+    let msgs_tmp = one_msg msg2 in
+    Cons {Message} msg1 msgs_tmp
 let f_eq =
   fun (a : ByStr20) =>
   fun (b : ByStr20) =>
@@ -41,6 +49,26 @@ contract XSGDContract
   init_owner : ByStr20,
   proxy_address : ByStr20
 )
+with
+  let string_is_not_empty =
+    fun (s : String) =>
+      let zero = Uint32 0 in
+      let s_length = builtin strlen s in
+      let s_empty = builtin eq s_length zero in
+      negb s_empty
+  in
+  let name_ok = string_is_not_empty name in
+  let symbol_ok = string_is_not_empty symbol in
+  orb name_ok symbol_ok
+  (* Additional possible check: *)
+  (* let decimals_ok = *)
+  (*   let six = Uint32 6 in *)
+  (*   let nine = Uint32 9 in *)
+  (*   let decimals_at_least_6 = uint32_le six decimals in *)
+  (*   let decimals_no_more_than_9 = uint32_le decimals nine in *)
+  (*   andb decimals_at_least_6 decimals_no_more_than_9 *)
+=>
+    
 field owner : ByStr20 = init_owner
 field pauser : ByStr20 = init_owner
 field masterMinter : ByStr20 = init_owner
@@ -217,18 +245,16 @@ transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, init
     e = { _eventname : "configureMinter FailedNotProxy"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
     event e
   | True  =>
-    isPaused <- paused;
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
-    or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
-    match or_res with
-    | False =>
+    match isMasterMinter with
+    | True =>
       minters[minter] := one;
       minterAllowed[minter] := minterAllowedAmount;
       e = { _eventname : "MinterConfigured"; minter : minter; amount : minterAllowedAmount; sender : initiator};
       event e
-    | True =>
-      e = { _eventname : "configureMinter FailedNotMasterMinterOrPaused"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
+    | False =>
+      e = { _eventname : "configureMinter FailedNotMasterMinter"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
       event e
     end
   end
@@ -409,17 +435,19 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
           new_to_bal = builtin add to_bal value;
           e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
           event e;
-          msg1 = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
-                sender : initiator; recipient : to; amount : value};
-          msg2 = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
+          msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
                 to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
-          msgs = one_msg msg1;
-          msgs2 = Cons {Message} msg2 msgs;
-          send msgs2
+          msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
+                sender : initiator; recipient : to; amount : value};      
+          msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
+                                sender : initiator; recipient : to; amount : value};
+          msgs = two_msgs msg_to_proxy msg_to_recipient;                     
+          msgs_final = Cons {Message} msg_to_sender msgs;
+          send msgs_final
         | False =>
           e = { _eventname : "transfer FailedInsufficientBalance"; to : to; value: value; sender : initiator};
           event e
-        end
+          end
       | True =>
         e = { _eventname : "transfer FailedPausedOrBlacklisted"; to : to; value: value; sender : initiator};
         event e
@@ -453,13 +481,15 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
           allowed[from][initiator] := new_allowed;
           e = {_eventname : "TransferFromSuccess"; recipient : to; sender : from; initiator : initiator; amount : value};
           event e;
-          msg1 = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
+          msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
                   sender : from; recipient : to; amount : value };
-          msg2 = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
+          msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
                   from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
-          msgs = one_msg msg1;
-          msgs2 = Cons {Message} msg2 msgs;
-          send msgs2
+          msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
+                                sender : from; recipient : to; amount : value};  
+          msgs = two_msgs msg_to_proxy msg_to_recipient;                     
+          msgs_final = Cons {Message} msg_to_sender msgs;
+          send msgs_final        
         | False =>
           e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value: value; sender : initiator};
           event e
