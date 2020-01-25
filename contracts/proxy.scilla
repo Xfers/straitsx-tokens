@@ -270,18 +270,18 @@ transition lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint
     end
 end
 
-transition proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128)
+transition proxyConfigureMinter(minter : ByStr20, minterAllowedAmount : Uint128)
     current_impl <- implementation;
-    msg = {_tag : "increaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
-           amount : amount; initiator : _sender};
+    msg = {_tag : "configureMinter"; _recipient : current_impl; _amount : zero; minter : minter;
+           minterAllowedAmount : minterAllowedAmount; initiator : _sender};
     msgs = one_msg msg;
     send msgs
 end
 
-transition proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128)
+transition proxyRemoveMinter(minter : ByStr20)
     current_impl <- implementation;
-    msg = {_tag : "decreaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
-           amount : amount; initiator : _sender};
+    msg = {_tag : "removeMinter"; _recipient : current_impl; _amount : zero; minter : minter;
+           initiator : _sender};
     msgs = one_msg msg;
     send msgs
 end
