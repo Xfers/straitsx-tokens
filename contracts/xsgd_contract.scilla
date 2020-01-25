@@ -374,7 +374,6 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
         totalSupply := new_supply;
         e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : bal};
         event e
-      end
       | None =>
         e = { _eventname : "lawEnforcementWipingBurn FailedNoBalance"; address : address; sender : initiator};
         event e
