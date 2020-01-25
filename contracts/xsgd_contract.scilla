@@ -1,6 +1,9 @@
 scilla_version 0
+
 import BoolUtils IntUtils ListUtils
+
 library XSGDContract
+
 let min_int =
   fun (a : Uint128) => fun (b : Uint128) =>
   let alt = builtin lt a b in
@@ -41,6 +44,26 @@ contract XSGDContract
   init_owner : ByStr20,
   proxy_address : ByStr20
 )
+with
+  let string_is_not_empty =
+    fun (s : String) =>
+      let zero = Uint32 0 in
+      let s_length = builtin strlen s in
+      let s_empty = builtin eq s_length zero in
+      negb s_empty
+  in
+  let name_ok = string_is_not_empty name in
+  let symbol_ok = string_is_not_empty symbol in
+  orb name_ok symbol_ok
+  (* Additional possible check: *)
+  (* let decimals_ok = *)
+  (*   let six = Uint32 6 in *)
+  (*   let nine = Uint32 9 in *)
+  (*   let decimals_at_least_6 = uint32_le six decimals in *)
+  (*   let decimals_no_more_than_9 = uint32_le decimals nine in *)
+  (*   andb decimals_at_least_6 decimals_no_more_than_9 *)
+=>
+    
 field owner : ByStr20 = init_owner
 field pauser : ByStr20 = init_owner
 field masterMinter : ByStr20 = init_owner
