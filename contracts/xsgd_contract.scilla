@@ -76,6 +76,7 @@ field paused : Bool = False
 field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
+field minters : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
@@ -237,61 +238,44 @@ transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
     end
   end
 end
-transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
+transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "increaseMinterAllowance FailedNotProxy"; minter : minter; amount : amount; sender : initiator};
+    e = { _eventname : "configureMinter FailedNotProxy"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
     event e
   | True  =>
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
     match isMasterMinter with
     | True =>
-      get_minter_allowance <- mintAllowed[minter];
-      mint_allowance =
-        match get_minter_allowance with
-        | Some allowance => allowance
-        | None => zero
-        end;
-      new_mint_allowance = builtin add mint_allowance amount;
-      minterAllowed[minter] := new_mint_allowance;
-      e = { _eventname : "IncreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
+      minters[minter] := one;
+      minterAllowed[minter] := minterAllowedAmount;
+      e = { _eventname : "MinterConfigured"; minter : minter; amount : minterAllowedAmount; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "increaseMinterAllowance FailedNotMasterMinter"; minter : minter; amount : amount; sender : initiator};
+      e = { _eventname : "configureMinter FailedNotMasterMinter"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
       event e
     end
   end
 end
-transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
+transition removeMinter(minter : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "decreaseMinterAllowance FailedNotProxy"; minter : minter; amount : amount; sender : initiator};
+    e = { _eventname : "removeMinter FailedNotProxy"; minter : minter; sender : initiator};
     event e
   | True  =>
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
     match isMasterMinter with
     | True =>
-      get_minter_allowance <- mintAllowed[minter];
-      mint_allowance =
-        match get_minter_allowance with
-        | Some allowance => allowance
-        | None => zero
-        end;
-      new_mint_allowance =
-        let amount_le_allowance = uint128_le amount mint_allowance in
-        match amount_le_allowance with
-        | True => builtin sub mint_allowance amount
-        | False => zero
-        end;
-      minterAllowed[minter] := new_mint_allowance;
-      e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
+      delete minters[minter];
+      minterAllowed[minter] := zero;
+      e = { _eventname : "MinterRemoved"; minter : minter; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "decreaseMinterAllowance FailedNotMasterMinter"; minter : minter; amount : amount; sender : initiator};
+      e = { _eventname : "removeMinter FailedNotMasterMinter"; minter : minter; sender : initiator};
       event e
     end
   end
@@ -304,7 +288,7 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
     event e
   | True  =>
     isPaused <- paused;
-    isMinter <- exists minterAllowed[initiator];
+    isMinter <- exists minters[initiator];
     isBlacklistedMinter <- exists blacklisted[initiator];
     isBlacklistedRecipient <- exists blacklisted[to];
     or_res =
@@ -349,7 +333,7 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
     event e
   | True  =>
     isPaused <- paused;
-    isMinter <- exists minterAllowed[initiator];
+    isMinter <- exists minters[initiator];
     isBlacklistedMinter <- exists blacklisted[initiator];
     or_res =
     let isNotMinter = negb isMinter in

@@ -85,10 +85,10 @@ type TokenTransaction =
 | LawEnforcementWipingBurn of ByStr20
 (* proxyUpdateMasterMinter(newMasterMinter : ByStr20)  *)
 | UpdateMasterMinter of ByStr20
-(* proxyIncreaseMinterAllowance (minter : ByStr20, amount : Uint128) *)
-| IncreaseMinterAllowance of ByStr20 Uint128
-(* proxyDecreaseMinterAllowance (minter : ByStr20, amount : Uint128) *)
-| DecreaseMinterAllowance of ByStr20 Uint128
+(* proxyConfigureMinter   (minter : ByStr20, minterAllowedAmount : Uint128)  *)
+| ConfigureMinter of ByStr20 Uint128
+(* proxyRemoveMinter      (minter : ByStr20)  *)
+| RemoveMinter of ByStr20
 (* proxyPause             ()  *)
 | Pause
 (* proxyUnpause           ()  *)
@@ -189,17 +189,17 @@ let custom_token_transaction_msg_as_list =
          _tag : "proxyUpdateMasterMinter" ;
          _amount : Uint128 0 ;
          newMasterMinter : newMasterMinter }
-      | IncreaseMinterAllowance minter amount =>
-        (* proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128) *)
+      | ConfigureMinter minter minterAllowedAmount =>
+        (* proxyConfigureMinter   (minter : ByStr20, minterAllowedAmount : Uint128)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyIncreaseMinterAllowance" ;
+         _tag : "proxyConfigureMinter" ;
          _amount : Uint128 0 ;
          minter : minter ;
-         amount : amount }
-      | DecreaseMinterAllowance minter amount =>
-        (* proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128) *)
+         minterAllowedAmount : minterAllowedAmount }
+      | RemoveMinter minter =>
+        (* proxyRemoveMinter      (minter : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyDecreaseMinterAllowance" ;
+         _tag : "proxyRemoveMinter" ;
          _amount : Uint128 0 ;
          minter : minter }
       | Pause =>
@@ -508,15 +508,15 @@ transition SubmitCustomUpdateMasterMinterTransaction (proxyTokenContract : ByStr
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
-(* Submit a new IncreaseMinterAllowance transaction for future signoff *)
-transition SubmitCustomIncreaseMinterAllowanceTransaction (proxyTokenContract : ByStr20, minter : ByStr20, amount : Uint128)
-  transaction = IncreaseMinterAllowance minter amount;
+(* Submit a new ConfigureMinter transaction for future signoff *)
+transition SubmitCustomConfigureMinterTransaction (proxyTokenContract : ByStr20, minter : ByStr20, minterAllowedAmount : Uint128)
+  transaction = ConfigureMinter minter minterAllowedAmount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
-(* Submit a new DecreaseMinterAllowance transaction for future signoff *)
-transition SubmitCustomDecreaseMinterAllowanceTransaction (proxyTokenContract : ByStr20, minter : ByStr20, amount : Uint128)
-  transaction = DecreaseMinterAllowance minter amount;
+(* Submit a new RemoveMinter transaction for future signoff *)
+transition SubmitCustomRemoveMinterTransaction (proxyTokenContract : ByStr20, minter : ByStr20)
+  transaction = RemoveMinter minter;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
