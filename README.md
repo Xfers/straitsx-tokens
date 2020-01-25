@@ -84,7 +84,7 @@ Each of these category of transitions are presented in further details below:
 |`unBlacklist`|`address : ByStr20, initiator : ByStr20`| Remove a given address from the blacklist.  <br> :warning: **Note:** `initiator` must be the current `blacklister` in the contract.| :heavy_check_mark: |
 |`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`.  <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract.| :heavy_check_mark: |
 |`updateMasterMinter`| `newMasterMinter : ByStr20, initiator : ByStr20` | Replace the current `masterMinter` with the `newMasterMinter`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
-|`configureMinter`| `minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20` | Add a new `minter` or update the minting quota for an existing minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :x: |
+|`configureMinter`| `minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20` | Add a new `minter` or update the minting quota for an existing minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
 |`removeMinter`| `minter : ByStr20, initiator : ByStr20` | Remove a given minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
 
 #### Pause Transitions

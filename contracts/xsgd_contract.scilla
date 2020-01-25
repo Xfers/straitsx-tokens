@@ -242,18 +242,16 @@ transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, init
     e = { _eventname : "configureMinter FailedNotProxy"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
     event e
   | True  =>
-    isPaused <- paused;
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
-    or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
-    match or_res with
-    | False =>
+    match isMasterMinter with
+    | True =>
       minters[minter] := one;
       minterAllowed[minter] := minterAllowedAmount;
       e = { _eventname : "MinterConfigured"; minter : minter; amount : minterAllowedAmount; sender : initiator};
       event e
-    | True =>
-      e = { _eventname : "configureMinter FailedNotMasterMinterOrPaused"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
+    | False =>
+      e = { _eventname : "configureMinter FailedNotMasterMinter"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
       event e
     end
   end
