@@ -1,6 +1,9 @@
 scilla_version 0
+
 import BoolUtils IntUtils ListUtils
+
 library XSGDContract
+
 let min_int =
   fun (a : Uint128) => fun (b : Uint128) =>
   let alt = builtin lt a b in
@@ -25,6 +28,11 @@ let one_msg =
     fun (msg : Message) =>
         let nil_msg = Nil {Message} in
         Cons {Message} msg nil_msg
+let two_msgs =
+  fun (msg1 : Message) =>
+  fun (msg2 : Message) =>
+    let msgs_tmp = one_msg msg2 in
+    Cons {Message} msg1 msgs_tmp
 let f_eq =
   fun (a : ByStr20) =>
   fun (b : ByStr20) =>
@@ -41,15 +49,33 @@ contract XSGDContract
   init_owner : ByStr20,
   proxy_address : ByStr20
 )
+with
+  let string_is_not_empty =
+    fun (s : String) =>
+      let zero = Uint32 0 in
+      let s_length = builtin strlen s in
+      let s_empty = builtin eq s_length zero in
+      negb s_empty
+  in
+  let name_ok = string_is_not_empty name in
+  let symbol_ok = string_is_not_empty symbol in
+  orb name_ok symbol_ok
+  (* Additional possible check: *)
+  (* let decimals_ok = *)
+  (*   let six = Uint32 6 in *)
+  (*   let nine = Uint32 9 in *)
+  (*   let decimals_at_least_6 = uint32_le six decimals in *)
+  (*   let decimals_no_more_than_9 = uint32_le decimals nine in *)
+  (*   andb decimals_at_least_6 decimals_no_more_than_9 *)
+=>
+    
 field owner : ByStr20 = init_owner
 field pauser : ByStr20 = init_owner
 field masterMinter : ByStr20 = init_owner
 field paused : Bool = False
 field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
-field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
-field totalSupply : Uint128  = zero
 field minters : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
@@ -219,18 +245,16 @@ transition configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, init
     e = { _eventname : "configureMinter FailedNotProxy"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
     event e
   | True  =>
-    isPaused <- paused;
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
-    or_res = let tmp = negb isMasterMinter in orb isPaused tmp;
-    match or_res with
-    | False =>
+    match isMasterMinter with
+    | True =>
       minters[minter] := one;
       minterAllowed[minter] := minterAllowedAmount;
       e = { _eventname : "MinterConfigured"; minter : minter; amount : minterAllowedAmount; sender : initiator};
       event e
-    | True =>
-      e = { _eventname : "configureMinter FailedNotMasterMinterOrPaused"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
+    | False =>
+      e = { _eventname : "configureMinter FailedNotMasterMinter"; minter : minter; minterAllowedAmount : minterAllowedAmount; sender : initiator};
       event e
     end
   end
@@ -256,7 +280,7 @@ transition removeMinter(minter : ByStr20, initiator : ByStr20)
     end
   end
 end
-transition mint(to: ByStr20, value : Uint128, initiator : ByStr20)
+transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
@@ -278,20 +302,15 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20)
         within_limits = uint128_le value a;
         match within_limits with
         | True =>
-          t <- totalSupply;
-          new_tokens = builtin add value t;
-          totalSupply := new_tokens;
-          x <- balances[to];
-          current_val = match x with
-                        | Some v => v
-                        | None   => zero
-                        end;
-          new_bal = builtin add value current_val;
-          balances[to] := new_bal;
+          new_supply = builtin add value current_supply;
+          new_to_bal = builtin add value to_bal;
           new_allowed_amount = builtin sub a value;
           minterAllowed[initiator] := new_allowed_amount;
           e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
-          event e
+          event e;
+          msg = {_tag : "mintCallBack"; _recipient : _sender; _amount : Uint128 0; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
+          msgs = one_msg msg;
+          send msgs
         | False =>
           e = { _eventname : "mint FailedNotWithinLimits"; to : to; value : value; sender : initiator};
           event e
@@ -306,7 +325,7 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20)
     end
   end
 end
-transition burn(value : Uint128, initiator : ByStr20)
+transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
@@ -321,25 +340,18 @@ transition burn(value : Uint128, initiator : ByStr20)
       orb_3 isPaused isBlacklistedMinter isNotMinter;
     match or_res with
     | False =>
-      bal <- balances[initiator];
-      match bal with
-      | Some b =>
-        can_do = uint128_le value b;
-        match can_do with
-        | True =>
-          new_balance = builtin sub b value;
-          balances[initiator] := new_balance;
-          currentSupply <- totalSupply;
-          new_supply = builtin sub currentSupply value;
-          totalSupply := new_supply;
-          e = { _eventname : "Burnt"; burner : initiator; amount : value};
-          event e
-        | False =>
-          e = { _eventname : "burn FailedInsufficientBalance"; value : value; sender : initiator};
-          event e
-        end
-      | None =>
-        e = { _eventname : "burn FailedNoBalance"; value : value; sender : initiator};
+      can_do = uint128_le value initiator_balance;
+      match can_do with
+      | True =>
+        new_burn_balance = builtin sub initiator_balance value;
+        new_supply = builtin sub current_supply value;
+        msg = {_tag : "burnCallBack"; _recipient : _sender; _amount : Uint128 0; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
+        msgs = one_msg msg;
+        e = { _eventname : "Burnt"; burner : initiator; amount : value};
+        event e;
+        send msgs
+      | False =>
+        e = { _eventname : "burn FailedInsufficientBalance"; value : value; sender : initiator};
         event e
       end
     | True =>
@@ -348,7 +360,7 @@ transition burn(value : Uint128, initiator : ByStr20)
     end
   end
 end
-transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
+transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
@@ -365,20 +377,12 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)
      orb_3 isPaused isNotBlacklistedAddress isNotBlacklister;
     match or_res with
     | False =>
-      bal <- balances[address];
-      match bal with
-      | Some b =>
-        balances[address] := zero;
-        currentSupply <- totalSupply;
-        new_supply = builtin sub currentSupply bal;
-        totalSupply := new_supply;
-        e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : bal};
-        event e
-      end
-      | None =>
-        e = { _eventname : "lawEnforcementWipingBurn FailedNoBalance"; address : address; sender : initiator};
-        event e
-      end
+        new_supply = builtin sub current_supply addr_bal;
+        msg = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : Uint128 0; address : address; new_supply : new_supply};
+        msgs = one_msg msg;
+        e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
+        event e;
+        send msgs
     | True =>
       e = { _eventname : "lawEnforcementWipingBurn FailedPausedOrNotBlacklistedOrNotBlacklister"; address : address; sender : initiator};
       event e
@@ -456,7 +460,7 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
     end
   end
 end
-transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20)
+transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)
     callerIsProxy = builtin eq _sender proxy_address;
     match callerIsProxy with
     | False =>
@@ -469,41 +473,33 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20)
       or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedRecipient;
       match or_res with
       | False =>
-        bal <- balances[initiator];
-        match bal with
-        | Some b =>
-          can_do = uint128_le value b;
-          match can_do with
-          | True =>
-            new_initiator_bal = builtin sub b value;
-            balances[initiator] := new_initiator_bal;
-            to_bal <- balances[to];
-            new_to_bal = match to_bal with
-                | Some x => builtin add x value
-                | None => value
-            end;
-            balances[to] := new_to_bal;
-            e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
-            event e;
-            msg = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
-                   sender : initiator; recipient : to; amount : value};
-            msgs = one_msg msg;
-            send msgs
-          | False =>
-            e = { _eventname : "transfer FailedInsufficientBalance"; to : to; value: value; sender : initiator};
-            event e
-          end
-        | None =>
-          e = { _eventname : "transfer FailedNoBalance"; to : to; value: value; sender : initiator};
+        can_do = uint128_le value init_bal;
+        match can_do with
+        | True =>
+          new_init_bal = builtin sub init_bal value;
+          new_to_bal = builtin add to_bal value;
+          e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
+          event e;
+          msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
+                to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
+          msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
+                sender : initiator; recipient : to; amount : value};      
+          msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
+                                sender : initiator; recipient : to; amount : value};
+          msgs = two_msgs msg_to_proxy msg_to_recipient;                     
+          msgs_final = Cons {Message} msg_to_sender msgs;
+          send msgs_final
+        | False =>
+          e = { _eventname : "transfer FailedInsufficientBalance"; to : to; value: value; sender : initiator};
           event e
-        end
+          end
       | True =>
         e = { _eventname : "transfer FailedPausedOrBlacklisted"; to : to; value: value; sender : initiator};
         event e
       end
    end
 end
-transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)
+transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
@@ -517,45 +513,35 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
     or_res = orb_4 isPaused isBlacklistedInitiator isBlacklistedRecipient isBlacklistedFrom;
     match or_res with
     | False =>
-      bal <- balances[from];
-      match bal with
-      | Some a =>
-        sender_allowed_from <- allowed[from][initiator];
-        match sender_allowed_from with
-        | Some b =>
-          t = min_int a b;
-          can_do = uint128_le value t;
-          match can_do with
-          | True =>
-            new_from_bal = builtin sub a value;
-            balances[from] := new_from_bal;
-            to_bal <- balances[to];
-            match to_bal with
-            | Some tb =>
-              new_to_bal = builtin add tb value;
-              balances[to] := new_to_bal
-            | None =>
-              balances[to] := value
-            end;
-            new_allowed = builtin sub b value;
-            allowed[from][initiator] := new_allowed;
-            e = {_eventname : "TransferFromSuccess"; recipient : to; sender : from; initiator : initiator; amount : value};
-            event e;
-            msg = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
-                   sender : from; recipient : to; amount : value };
-            msgs = one_msg msg;
-            send msgs
-          | False =>
-            e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value: value; sender : initiator};
-            event e
-          end
-          | None =>
-            e = { _eventname : "transferFrom FailedInsufficientAllowance"; to : to; from : from; value: value; sender : initiator};
-            event e
-          end
-        | None =>
-          e = { _eventname : "transferFrom FailedNoBalance"; to : to; from : from; value: value; sender : initiator};
+      sender_allowed_from <- allowed[from][initiator];
+      match sender_allowed_from with
+      | Some allowance =>
+        t = min_int from_bal allowance;
+        can_do = uint128_le value t;
+        match can_do with
+        | True =>
+          new_from_bal = builtin sub from_bal value;
+          new_to_bal = builtin add to_bal value;
+          new_allowed = builtin sub allowance value;
+          allowed[from][initiator] := new_allowed;
+          e = {_eventname : "TransferFromSuccess"; recipient : to; sender : from; initiator : initiator; amount : value};
+          event e;
+          msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
+                  sender : from; recipient : to; amount : value };
+          msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
+                  from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
+          msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
+                                sender : from; recipient : to; amount : value};  
+          msgs = two_msgs msg_to_proxy msg_to_recipient;                     
+          msgs_final = Cons {Message} msg_to_sender msgs;
+          send msgs_final        
+        | False =>
+          e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value: value; sender : initiator};
           event e
+        end
+      | None =>
+        e = { _eventname : "transferFrom FailedInsufficientAllowance"; to : to; from : from; value: value; sender : initiator};
+        event e
 	    end
     | True =>
       e = { _eventname : "transferFrom FailedPausedOrBlacklisted"; to : to; from : from; value: value; sender : initiator};
