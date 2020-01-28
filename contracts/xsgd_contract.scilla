@@ -68,11 +68,11 @@ with
   (*   let decimals_no_more_than_9 = uint32_le decimals nine in *)
   (*   andb decimals_at_least_6 decimals_no_more_than_9 *)
 =>
-    
+
 field owner : ByStr20 = init_owner
 field pauser : ByStr20 = init_owner
 field masterMinter : ByStr20 = init_owner
-field paused : Bool = False
+field paused : Bool = True
 field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
@@ -419,7 +419,7 @@ transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
     match or_res with
     | False =>
       get_current_allowance <- allowed[initiator][spender];
-      current_allowance = 
+      current_allowance =
         match get_current_allowance with
         | Some allowance => allowance
         | None => zero
@@ -452,7 +452,7 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
     match or_res with
     | False =>
       get_current_allowance <- allowed[initiator][spender];
-      current_allowance = 
+      current_allowance =
         match get_current_allowance with
         | Some allowance => allowance
         | None => zero
@@ -499,10 +499,10 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
           msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
                 to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
           msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
-                sender : initiator; recipient : to; amount : value};      
+                sender : initiator; recipient : to; amount : value};
           msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
                                 sender : initiator; recipient : to; amount : value};
-          msgs = two_msgs msg_to_proxy msg_to_recipient;                     
+          msgs = two_msgs msg_to_proxy msg_to_recipient;
           msgs_final = Cons {Message} msg_to_sender msgs;
           send msgs_final
         | False =>
@@ -547,10 +547,10 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
           msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
                   from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
           msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
-                                sender : from; recipient : to; amount : value};  
-          msgs = two_msgs msg_to_proxy msg_to_recipient;                     
+                                sender : from; recipient : to; amount : value};
+          msgs = two_msgs msg_to_proxy msg_to_recipient;
           msgs_final = Cons {Message} msg_to_sender msgs;
-          send msgs_final        
+          send msgs_final
         | False =>
           e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value: value; sender : initiator};
           event e
@@ -565,4 +565,3 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
     end
   end
 end
-
