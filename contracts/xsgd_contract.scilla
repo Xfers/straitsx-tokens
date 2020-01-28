@@ -59,14 +59,14 @@ with
   in
   let name_ok = string_is_not_empty name in
   let symbol_ok = string_is_not_empty symbol in
-  orb name_ok symbol_ok
-  (* Additional possible check: *)
-  (* let decimals_ok = *)
-  (*   let six = Uint32 6 in *)
-  (*   let nine = Uint32 9 in *)
-  (*   let decimals_at_least_6 = uint32_le six decimals in *)
-  (*   let decimals_no_more_than_9 = uint32_le decimals nine in *)
-  (*   andb decimals_at_least_6 decimals_no_more_than_9 *)
+  let name_symbol_ok = andb name_ok symbol_ok in
+  let decimals_ok =
+    let six = Uint32 6 in
+    let eighteen = Uint32 18 in
+    let decimals_at_least_6 = uint32_le six decimals in
+    let decimals_no_more_than_18 = uint32_le decimals eighteen in
+    andb decimals_at_least_6 decimals_no_more_than_18 in
+  orb name_symbol_ok decimals_ok
 =>
 
 field owner : ByStr20 = init_owner
