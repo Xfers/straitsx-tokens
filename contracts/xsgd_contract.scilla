@@ -39,6 +39,7 @@ let f_eq =
     builtin eq a b
 let zero = Uint128 0
 let one  = Uint128 1
+let none_uint128 = None {Uint128}
 let true = True
 let false = False
 contract XSGDContract
@@ -72,11 +73,11 @@ with
 field owner : ByStr20 = init_owner
 field pauser : ByStr20 = init_owner
 field masterMinter : ByStr20 = init_owner
-field paused : Bool = False
+field paused : Bool = True
 field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
-field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
+field minterAllowed : Map ByStr20 (Option Uint128) = Emp ByStr20 (Option Uint128)
 transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
@@ -251,11 +252,12 @@ transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
       get_minter_allowance <- minterAllowed[minter];
       mint_allowance =
         match get_minter_allowance with
-        | Some allowance => allowance
-        | None => zero
+        | Some (Some allowance) => allowance
+        | _ => zero
         end;
       new_mint_allowance = builtin add mint_allowance amount;
-      minterAllowed[minter] := new_mint_allowance;
+      new_option_mint_allowance = Some {Uint128} new_mint_allowance;
+      minterAllowed[minter] := new_option_mint_allowance;
       e = { _eventname : "IncreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
       event e
     | False =>
@@ -278,17 +280,23 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
       get_minter_allowance <- minterAllowed[minter];
       mint_allowance =
         match get_minter_allowance with
-        | Some allowance => allowance
-        | None => zero
+        | Some (Some allowance) => allowance
+        | _ => zero
         end;
-      new_mint_allowance =
+      new_option_mint_allowance =
         let amount_le_allowance = uint128_le amount mint_allowance in
         match amount_le_allowance with
-        | True => builtin sub mint_allowance amount
-        | False => zero
+        | True => 
+            let new_mint_allowance = builtin sub mint_allowance amount in
+            let is_zero = builtin eq new_mint_allowance zero in
+            match is_zero with
+            | False => Some {Uint128} new_mint_allowance
+            | True => None {Uint128}
+            end
+        | False => None {Uint128}
         end;
-      minterAllowed[minter] := new_mint_allowance;
-      e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
+      minterAllowed[minter] := new_option_mint_allowance;
+      e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_option_mint_allowance : new_option_mint_allowance; sender : initiator};
       event e
     | False =>
       e = { _eventname : "decreaseMinterAllowance FailedNotMasterMinter"; minter : minter; amount : amount; sender : initiator};
@@ -304,24 +312,30 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
     event e
   | True  =>
     isPaused <- paused;
-    isMinter <- exists minterAllowed[initiator];
+    isMinter <- minterAllowed[initiator];
+    isMinterAllowed = 
+        match isMinter with
+        | Some allowance => True
+        | None => False
+        end;
     isBlacklistedMinter <- exists blacklisted[initiator];
     isBlacklistedRecipient <- exists blacklisted[to];
     or_res =
-        let isNotMinter = negb isMinter in
-         orb_4 isPaused isNotMinter isBlacklistedMinter isBlacklistedRecipient;
+        let isMinterNotAllowed = negb isMinterAllowed in
+         orb_4 isPaused isMinterNotAllowed isBlacklistedMinter isBlacklistedRecipient;
     match or_res with
     | False =>
       allowed_amount <- minterAllowed[initiator];
       match allowed_amount with
-      | Some a =>
+      | Some (Some a) =>
         within_limits = uint128_le value a;
         match within_limits with
         | True =>
           new_supply = builtin add value current_supply;
           new_to_bal = builtin add value to_bal;
           new_allowed_amount = builtin sub a value;
-          minterAllowed[initiator] := new_allowed_amount;
+          new_option_allowed_amount = Some {Uint128} new_allowed_amount;
+          minterAllowed[initiator] := new_option_allowed_amount;
           e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
           event e;
           msg = {_tag : "mintCallBack"; _recipient : _sender; _amount : Uint128 0; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
@@ -331,7 +345,7 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
           e = { _eventname : "mint FailedNotWithinLimits"; to : to; value : value; sender : initiator};
           event e
         end
-      | None =>
+      | _ =>
         e = { _eventname : "mint FailedNoAllowance"; to : to; value : value; sender : initiator};
         event e
       end
@@ -349,11 +363,16 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
     event e
   | True  =>
     isPaused <- paused;
-    isMinter <- exists minterAllowed[initiator];
+    isMinter <- minterAllowed[initiator];
+    isMinterAllowed = 
+        match isMinter with
+        | Some allowance => True
+        | None => False
+        end;
     isBlacklistedMinter <- exists blacklisted[initiator];
     or_res =
-    let isNotMinter = negb isMinter in
-      orb_3 isPaused isBlacklistedMinter isNotMinter;
+    let isMinterNotAllowed = negb isMinterAllowed in
+      orb_3 isPaused isBlacklistedMinter isMinterNotAllowed;
     match or_res with
     | False =>
       can_do = uint128_le value initiator_balance;
