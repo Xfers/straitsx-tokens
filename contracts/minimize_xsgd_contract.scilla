@@ -66,7 +66,7 @@ let eighteen = Uint32 18 in
 let decimals_at_least_6 = uint32_le six decimals in
 let decimals_no_more_than_18 = uint32_le decimals eighteen in
 andb decimals_at_least_6 decimals_no_more_than_18 in
-orb name_symbol_ok decimals_ok
+andb name_symbol_ok decimals_ok
 =>
 
 field owner : ByStr20 = init_owner
