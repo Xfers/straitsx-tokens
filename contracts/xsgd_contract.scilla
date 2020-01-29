@@ -338,8 +338,9 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
           minterAllowed[initiator] := new_option_allowed_amount;
           e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
           event e;
-          msg = {_tag : "mintCallBack"; _recipient : _sender; _amount : Uint128 0; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
-          msgs = one_msg msg;
+          msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
+          msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
+          msgs = two_msgs msg_to_proxy msg_to_recipient;
           send msgs
         | False =>
           e = { _eventname : "mint FailedNotWithinLimits"; to : to; value : value; sender : initiator};
@@ -380,8 +381,8 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
       | True =>
         new_burn_balance = builtin sub initiator_balance value;
         new_supply = builtin sub current_supply value;
-        msg = {_tag : "burnCallBack"; _recipient : _sender; _amount : Uint128 0; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
-        msgs = one_msg msg;
+        msg_to_proxy = {_tag : "burnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
+        msgs = one_msg msg_to_proxy;
         e = { _eventname : "Burnt"; burner : initiator; amount : value};
         event e;
         send msgs
@@ -413,8 +414,8 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr
     match or_res with
     | False =>
         new_supply = builtin sub current_supply addr_bal;
-        msg = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : Uint128 0; address : address; new_supply : new_supply};
-        msgs = one_msg msg;
+        msg_to_proxy = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
+        msgs = one_msg msg_to_proxy;
         e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
         event e;
         send msgs
@@ -447,9 +448,9 @@ transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
       allowed[initiator][spender] := new_allowance;
       e = {_eventname : "IncreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
       event e;
-      msg = {_tag : "IncreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
+      msg_to_proxy = {_tag : "IncreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
               sender : initiator; spender : spender; amount : value };
-      msgs = one_msg msg;
+      msgs = one_msg msg_to_proxy;
       send msgs
     | True =>
       e = { _eventname : "increaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
@@ -485,9 +486,9 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
       allowed[initiator][spender] := new_allowance;
       e = {_eventname : "DecreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
       event e;
-      msg = {_tag : "DecreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
+      msg_to_proxy = {_tag : "DecreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
               sender : initiator; spender : spender; amount : value };
-      msgs = one_msg msg;
+      msgs = one_msg msg_to_proxy;
       send msgs
     | True =>
       e = { _eventname : "decreaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
