@@ -315,8 +315,8 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
     isMinter <- minterAllowed[initiator];
     isMinterAllowed = 
         match isMinter with
-        | Some allowance => True
-        | None => False
+        | Some (Some allowance) => True
+        | _ => False
         end;
     isBlacklistedMinter <- exists blacklisted[initiator];
     isBlacklistedRecipient <- exists blacklisted[to];
@@ -367,8 +367,8 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
     isMinter <- minterAllowed[initiator];
     isMinterAllowed = 
         match isMinter with
-        | Some allowance => True
-        | None => False
+        | Some (Some allowance) => True
+        | _ => False
         end;
     isBlacklistedMinter <- exists blacklisted[initiator];
     or_res =
