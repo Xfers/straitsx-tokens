@@ -703,6 +703,14 @@ end
 transition TransferFromSuccessCallBack (sender : ByStr20, recipient : ByStr20, amount : Uint128)
 end
 
+(* Callback transition - no action required, but must be defined, since transferFroms from the wallet will fail otherwise. *)
+transition MintSuccessCallBack (recipient : ByStr20, amount : Uint128)
+end
+
+(* Callback transition - no action required, but must be defined, since transferFroms from the wallet will fail otherwise. *)
+transition LawEnforcementWipingBurnSuccessCallBack (address : ByStr20)
+end
+
 (* Acceptance transition - no action required, but must be defined, since transfers to the wallet will fail otherwise. *)
 transition RecipientAcceptTransferFrom (sender : ByStr20, recipient : ByStr20, amount : Uint128)
 end
