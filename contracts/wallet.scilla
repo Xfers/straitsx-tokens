@@ -201,7 +201,8 @@ let custom_token_transaction_msg_as_list =
         {_recipient : proxyTokenContract ;
          _tag : "proxyDecreaseMinterAllowance" ;
          _amount : Uint128 0 ;
-         minter : minter }
+         minter : minter ;
+         amount : amount }
       | Pause =>
         (* proxyPause             ()  *)
         {_recipient : proxyTokenContract ;
