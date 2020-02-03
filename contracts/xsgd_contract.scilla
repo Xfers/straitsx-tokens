@@ -451,11 +451,7 @@ transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
       new_allowance = builtin add current_allowance value;
       allowed[initiator][spender] := new_allowance;
       e = {_eventname : "IncreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
-      event e;
-      msg_to_proxy = {_tag : "IncreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
-              sender : initiator; spender : spender; amount : value };
-      msgs = one_msg msg_to_proxy;
-      send msgs
+      event e
     | True =>
       e = { _eventname : "increaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
       event e
@@ -489,11 +485,7 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
         end;
       allowed[initiator][spender] := new_allowance;
       e = {_eventname : "DecreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
-      event e;
-      msg_to_proxy = {_tag : "DecreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
-              sender : initiator; spender : spender; amount : value };
-      msgs = one_msg msg_to_proxy;
-      send msgs
+      event e
     | True =>
       e = { _eventname : "decreaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
       event e
