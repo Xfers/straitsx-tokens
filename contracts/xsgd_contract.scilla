@@ -286,7 +286,7 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
       new_option_mint_allowance =
         let amount_le_allowance = uint128_le amount mint_allowance in
         match amount_le_allowance with
-        | True => 
+        | True =>
             let new_mint_allowance = builtin sub mint_allowance amount in
             let is_zero = builtin eq new_mint_allowance zero in
             match is_zero with
@@ -313,7 +313,7 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
   | True  =>
     isPaused <- paused;
     isMinter <- minterAllowed[initiator];
-    isMinterAllowed = 
+    isMinterAllowed =
         match isMinter with
         | Some (Some allowance) => True
         | _ => False
@@ -340,8 +340,10 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
           event e;
           msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
           msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
+          msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
           msgs = two_msgs msg_to_proxy msg_to_recipient;
-          send msgs
+          msgs_final = Cons {Message} msg_to_sender msgs;
+          send msgs_final
         | False =>
           e = { _eventname : "mint FailedNotWithinLimits"; to : to; value : value; sender : initiator};
           event e
@@ -365,7 +367,7 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
   | True  =>
     isPaused <- paused;
     isMinter <- minterAllowed[initiator];
-    isMinterAllowed = 
+    isMinterAllowed =
         match isMinter with
         | Some (Some allowance) => True
         | _ => False
@@ -382,7 +384,8 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
         new_burn_balance = builtin sub initiator_balance value;
         new_supply = builtin sub current_supply value;
         msg_to_proxy = {_tag : "burnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
-        msgs = one_msg msg_to_proxy;
+        msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
+        msgs = two_msgs msg_to_proxy msg_to_sender;
         e = { _eventname : "Burnt"; burner : initiator; amount : value};
         event e;
         send msgs
@@ -415,7 +418,8 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr
     | False =>
         new_supply = builtin sub current_supply addr_bal;
         msg_to_proxy = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
-        msgs = one_msg msg_to_proxy;
+        msg_to_sender = {_tag : "LawEnforcementWipingBurnSuccessCallBack"; _recipient : initiator; _amount : zero; address : address};
+        msgs = two_msgs msg_to_proxy msg_to_sender;
         e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
         event e;
         send msgs
