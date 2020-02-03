@@ -341,8 +341,8 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
           msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
           msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
           msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
-          msgs = two_msgs msg_to_proxy msg_to_recipient;
-          msgs_final = Cons {Message} msg_to_sender msgs;
+          msgs = two_msgs msg_to_proxy msg_to_sender;
+          msgs_final = Cons {Message} msg_to_recipient msgs;
           send msgs_final
         | False =>
           e = { _eventname : "mint FailedNotWithinLimits"; to : to; value : value; sender : initiator};
@@ -526,8 +526,8 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
                 sender : initiator; recipient : to; amount : value};
           msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
                                 sender : initiator; recipient : to; amount : value};
-          msgs = two_msgs msg_to_proxy msg_to_recipient;
-          msgs_final = Cons {Message} msg_to_sender msgs;
+          msgs = two_msgs msg_to_proxy msg_to_sender;
+          msgs_final = Cons {Message} msg_to_recipient msgs;
           send msgs_final
         | False =>
           e = { _eventname : "transfer FailedInsufficientBalance"; to : to; value: value; sender : initiator};
@@ -572,8 +572,8 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
                   from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
           msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
                                 sender : from; recipient : to; amount : value};
-          msgs = two_msgs msg_to_proxy msg_to_recipient;
-          msgs_final = Cons {Message} msg_to_sender msgs;
+          msgs = two_msgs msg_to_proxy msg_to_sender;
+          msgs_final = Cons {Message} msg_to_recipient msgs;
           send msgs_final
         | False =>
           e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value: value; sender : initiator};
