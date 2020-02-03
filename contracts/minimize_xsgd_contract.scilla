@@ -341,8 +341,8 @@ event e;
 msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
 msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
 msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
-msgs = two_msgs msg_to_proxy msg_to_recipient;
-msgs_final = Cons {Message} msg_to_sender msgs;
+msgs = two_msgs msg_to_proxy msg_to_sender;
+msgs_final = Cons {Message} msg_to_recipient msgs;
 send msgs_final
 | False =>
 e = { _eventname : "mint FailedNotWithinLimits"; to : to; value : value; sender : initiator};
@@ -451,11 +451,7 @@ end;
 new_allowance = builtin add current_allowance value;
 allowed[initiator][spender] := new_allowance;
 e = {_eventname : "IncreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
-event e;
-msg_to_proxy = {_tag : "IncreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
-sender : initiator; spender : spender; amount : value };
-msgs = one_msg msg_to_proxy;
-send msgs
+event e
 | True =>
 e = { _eventname : "increaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
 event e
@@ -489,11 +485,7 @@ match value_le_allowance with
 end;
 allowed[initiator][spender] := new_allowance;
 e = {_eventname : "DecreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
-event e;
-msg_to_proxy = {_tag : "DecreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
-sender : initiator; spender : spender; amount : value };
-msgs = one_msg msg_to_proxy;
-send msgs
+event e
 | True =>
 e = { _eventname : "decreaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
 event e
@@ -526,8 +518,8 @@ msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amou
 sender : initiator; recipient : to; amount : value};
 msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
 sender : initiator; recipient : to; amount : value};
-msgs = two_msgs msg_to_proxy msg_to_recipient;
-msgs_final = Cons {Message} msg_to_sender msgs;
+msgs = two_msgs msg_to_proxy msg_to_sender;
+msgs_final = Cons {Message} msg_to_recipient msgs;
 send msgs_final
 | False =>
 e = { _eventname : "transfer FailedInsufficientBalance"; to : to; value: value; sender : initiator};
@@ -572,8 +564,8 @@ msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : z
 from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
 msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
 sender : from; recipient : to; amount : value};
-msgs = two_msgs msg_to_proxy msg_to_recipient;
-msgs_final = Cons {Message} msg_to_sender msgs;
+msgs = two_msgs msg_to_proxy msg_to_sender;
+msgs_final = Cons {Message} msg_to_recipient msgs;
 send msgs_final
 | False =>
 e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value: value; sender : initiator};
