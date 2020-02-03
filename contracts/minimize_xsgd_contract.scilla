@@ -39,12 +39,13 @@ fun (b : ByStr20) =>
 builtin eq a b
 let zero = Uint128 0
 let one  = Uint128 1
+let none_uint128 = None {Uint128}
 let true = True
 let false = False
 contract XSGDContract
 (
-name : String,
-symbol : String,
+name :    String,
+symbol :  String,
 decimals : Uint32,
 init_owner : ByStr20,
 proxy_address : ByStr20
@@ -76,7 +77,7 @@ field paused : Bool = True
 field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
-field minterAllowed : Map ByStr20 Uint128 = Emp ByStr20 Uint128
+field minterAllowed : Map ByStr20 (Option Uint128) = Emp ByStr20 (Option Uint128)
 transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
 callerIsProxy = builtin eq _sender proxy_address;
 match callerIsProxy with
@@ -251,11 +252,12 @@ match isMasterMinter with
 get_minter_allowance <- minterAllowed[minter];
 mint_allowance =
 match get_minter_allowance with
-| Some allowance => allowance
-| None => zero
+| Some (Some allowance) => allowance
+| _ => zero
 end;
 new_mint_allowance = builtin add mint_allowance amount;
-minterAllowed[minter] := new_mint_allowance;
+new_option_mint_allowance = Some {Uint128} new_mint_allowance;
+minterAllowed[minter] := new_option_mint_allowance;
 e = { _eventname : "IncreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
 event e
 | False =>
@@ -278,17 +280,23 @@ match isMasterMinter with
 get_minter_allowance <- minterAllowed[minter];
 mint_allowance =
 match get_minter_allowance with
-| Some allowance => allowance
-| None => zero
+| Some (Some allowance) => allowance
+| _ => zero
 end;
-new_mint_allowance =
+new_option_mint_allowance =
 let amount_le_allowance = uint128_le amount mint_allowance in
 match amount_le_allowance with
-| True => builtin sub mint_allowance amount
-| False => zero
+| True =>
+let new_mint_allowance = builtin sub mint_allowance amount in
+let is_zero = builtin eq new_mint_allowance zero in
+match is_zero with
+| False => Some {Uint128} new_mint_allowance
+| True => None {Uint128}
+end
+| False => None {Uint128}
 end;
-minterAllowed[minter] := new_mint_allowance;
-e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
+minterAllowed[minter] := new_option_mint_allowance;
+e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_option_mint_allowance : new_option_mint_allowance; sender : initiator};
 event e
 | False =>
 e = { _eventname : "decreaseMinterAllowance FailedNotMasterMinter"; minter : minter; amount : amount; sender : initiator};
@@ -304,34 +312,43 @@ e = { _eventname : "mint FailedNotProxy"; to : to; value : value; sender : initi
 event e
 | True  =>
 isPaused <- paused;
-isMinter <- exists minterAllowed[initiator];
+isMinter <- minterAllowed[initiator];
+isMinterAllowed =
+match isMinter with
+| Some (Some allowance) => True
+| _ => False
+end;
 isBlacklistedMinter <- exists blacklisted[initiator];
 isBlacklistedRecipient <- exists blacklisted[to];
 or_res =
-let isNotMinter = negb isMinter in
-orb_4 isPaused isNotMinter isBlacklistedMinter isBlacklistedRecipient;
+let isMinterNotAllowed = negb isMinterAllowed in
+orb_4 isPaused isMinterNotAllowed isBlacklistedMinter isBlacklistedRecipient;
 match or_res with
 | False =>
 allowed_amount <- minterAllowed[initiator];
 match allowed_amount with
-| Some a =>
+| Some (Some a) =>
 within_limits = uint128_le value a;
 match within_limits with
 | True =>
 new_supply = builtin add value current_supply;
 new_to_bal = builtin add value to_bal;
 new_allowed_amount = builtin sub a value;
-minterAllowed[initiator] := new_allowed_amount;
+new_option_allowed_amount = Some {Uint128} new_allowed_amount;
+minterAllowed[initiator] := new_option_allowed_amount;
 e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
 event e;
-msg = {_tag : "mintCallBack"; _recipient : _sender; _amount : Uint128 0; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
-msgs = one_msg msg;
-send msgs
+msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
+msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
+msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
+msgs = two_msgs msg_to_proxy msg_to_recipient;
+msgs_final = Cons {Message} msg_to_sender msgs;
+send msgs_final
 | False =>
 e = { _eventname : "mint FailedNotWithinLimits"; to : to; value : value; sender : initiator};
 event e
 end
-| None =>
+| _ =>
 e = { _eventname : "mint FailedNoAllowance"; to : to; value : value; sender : initiator};
 event e
 end
@@ -349,11 +366,16 @@ e = { _eventname : "burn FailedNotProxy"; value : value; sender : initiator};
 event e
 | True  =>
 isPaused <- paused;
-isMinter <- exists minterAllowed[initiator];
+isMinter <- minterAllowed[initiator];
+isMinterAllowed =
+match isMinter with
+| Some (Some allowance) => True
+| _ => False
+end;
 isBlacklistedMinter <- exists blacklisted[initiator];
 or_res =
-let isNotMinter = negb isMinter in
-orb_3 isPaused isBlacklistedMinter isNotMinter;
+let isMinterNotAllowed = negb isMinterAllowed in
+orb_3 isPaused isBlacklistedMinter isMinterNotAllowed;
 match or_res with
 | False =>
 can_do = uint128_le value initiator_balance;
@@ -361,8 +383,9 @@ match can_do with
 | True =>
 new_burn_balance = builtin sub initiator_balance value;
 new_supply = builtin sub current_supply value;
-msg = {_tag : "burnCallBack"; _recipient : _sender; _amount : Uint128 0; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
-msgs = one_msg msg;
+msg_to_proxy = {_tag : "burnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
+msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
+msgs = two_msgs msg_to_proxy msg_to_sender;
 e = { _eventname : "Burnt"; burner : initiator; amount : value};
 event e;
 send msgs
@@ -394,8 +417,9 @@ orb_3 isPaused isNotBlacklistedAddress isNotBlacklister;
 match or_res with
 | False =>
 new_supply = builtin sub current_supply addr_bal;
-msg = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : Uint128 0; address : address; new_supply : new_supply};
-msgs = one_msg msg;
+msg_to_proxy = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
+msg_to_sender = {_tag : "LawEnforcementWipingBurnSuccessCallBack"; _recipient : initiator; _amount : zero; address : address};
+msgs = two_msgs msg_to_proxy msg_to_sender;
 e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
 event e;
 send msgs
@@ -428,9 +452,9 @@ new_allowance = builtin add current_allowance value;
 allowed[initiator][spender] := new_allowance;
 e = {_eventname : "IncreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
 event e;
-msg = {_tag : "IncreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
+msg_to_proxy = {_tag : "IncreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
 sender : initiator; spender : spender; amount : value };
-msgs = one_msg msg;
+msgs = one_msg msg_to_proxy;
 send msgs
 | True =>
 e = { _eventname : "increaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
@@ -466,9 +490,9 @@ end;
 allowed[initiator][spender] := new_allowance;
 e = {_eventname : "DecreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
 event e;
-msg = {_tag : "DecreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
+msg_to_proxy = {_tag : "DecreaseAllowanceSuccessCallBack"; _recipient : initiator; _amount : zero;
 sender : initiator; spender : spender; amount : value };
-msgs = one_msg msg;
+msgs = one_msg msg_to_proxy;
 send msgs
 | True =>
 e = { _eventname : "decreaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
