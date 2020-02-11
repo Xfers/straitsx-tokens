@@ -26,9 +26,9 @@ The token contract represents a standard fungible token contract with minting an
 |`owner` | Current owner of the contract initialized to `init_owner`. Certain critical actions can only be performed by the `owner`, e.g., changing who plays certain roles in the contract. |
 |`pauser` | Account that is allowed to (un)pause the contract. It is initialized to `init_owner`.  `pauser` can (un) pause the contract. There is only `pauser` for the contract. |
 |`masterMinter` | The master minter to manage the minters for the contract.  `masterMinter` can add or remove minters and configure the number of tokens that a minter is allowed to mint. There is only one `masterMinter` for the contract. |
-| `minter` | An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
-| `blacklister` | An account that can freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister`. |
-|`approvedSpender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `approvedSpender`.  |
+|`minter` | An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
+|`blacklister` | An account that can freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister`. |
+|`spender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `spender`.  |
 |`initiator`| The user who calls the proxy contract that in turns call the token contract. After deployment, the address of the token contract will be made known to the user and the code will be visible directly from the block explorer. |
 
 ### Immutable Parameters
@@ -52,13 +52,10 @@ The table below presents the mutable fields of the contract and their initial va
 |`owner`| `ByStr20` | `init_owner` | Current `owner` of the contract. |
 |`pauser`| `ByStr20` | `init_owner` | Current `pauser` in the contract. |
 |`masterMinter`| `ByStr20` | `init_owner` | Current `masterMinter` in the contract.|
-|`blacklister`| `ByStr20` | `init_owner` | Current `blacklister` in the contract.|
 |`paused`| `Bool` | `True` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
+|`blacklister`| `ByStr20` | `init_owner` | Current `blacklister` in the contract.|
 |`blacklisted`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Records the addresses that are blacklisted. An address that is present in the map is blacklisted irrespective of the value it is mapped to. |
-|`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
 |`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `approvedSpender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. |
-|`totalSupply`| `Uint128`| `0` | The total number of tokens that is in the supply. |
-|`minters`| `Map ByStr20 Uint128`| `Emp ByStr20 Uint128` | Maintains the current `minter`s. An address that is present in the map is a `minter` irrespective of the value it is mapped to.|
 |`minterAllowed`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the allowed number of tokens that a `minter` can mint. |
 
 ### Transitions
@@ -67,7 +64,7 @@ Note that each of the transitions in the token contract takes `initiator` as a p
 
 All the transitions in the contract can be categorized into three categories:
 - _housekeeping transitions_ meant to facilitate basic admin related tasks.
-- _pause_ transitions to pause and pause the contract.
+- _pause transitions_ to pause and pause the contract.
 - _minting-related transitions_ that allows mining and burning of tokens.
 - _token transfer transitions_ allows to transfer tokens from one user to another.
 
@@ -84,7 +81,8 @@ Each of these category of transitions are presented in further details below:
 |`unBlacklist`|`address : ByStr20, initiator : ByStr20`| Remove a given address from the blacklist.  <br> :warning: **Note:** `initiator` must be the current `blacklister` in the contract.| :heavy_check_mark: |
 |`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`.  <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract.| :heavy_check_mark: |
 |`updateMasterMinter`| `newMasterMinter : ByStr20, initiator : ByStr20` | Replace the current `masterMinter` with the `newMasterMinter`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
-|`configureMinter`| `minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20` | Add a new `minter` or update the minting quota for an existing minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
+|`increaseMinterAllowance`| `minter : ByStr20, amount : Unit128, initiator : ByStr20` |  | :heavy_check_mark: |
+|`decreaseMinterAllowance`| `minter : ByStr20, amount : Unit128, initiator : ByStr20` |  | :heavy_check_mark: |
 |`removeMinter`| `minter : ByStr20, initiator : ByStr20` | Remove a given minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
 
 #### Pause Transitions
@@ -98,25 +96,24 @@ Each of these category of transitions are presented in further details below:
 
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
-|`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Minting is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. , 2) Minting can only be done when the contract is not paused. | <center>:x:</center> |
-|`burn`| `value : Uint128, initiator : ByStr20` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Burning is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
+|`mint`| `to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Minting is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. , 2) Minting can only be done when the contract is not paused. | <center>:x:</center> |
+|`burn`| `value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Burning is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
 |`lawEnforcementWipingBurn`| `address : ByStr20, initiator : ByStr20` | Burn entire balance of tokens from `address`.  <br>  :warning: **Note:**   1) Only the blacklister can invoke this transition, i.e., `initiator` must be the `blacklister`. 2) Burning can only be done when the contract is not paused. 3) Only accounts that have been blacklisted by the blacklister may have their funds wiped.| <center>:x:</center>  |
-
 
 #### Token Transfer Transitions
 
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
-|`approve`| `spender : ByStr20, value : Uint128, initiator : ByStr20` | Approve a `spender` to spend on behalf of a token holder (`initiator`) upto the `value` amount. <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
-|`transfer`| `to : ByStr20, value : Uint128, initiator : ByStr20` | Transfer `value` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator` and the `recipient` should not be blacklisted.|<center>:x:</center>  |
-|`transferFrom`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20` | Transfer `value` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator`, the `from` address and the `recipient` should not be blacklisted.|<center>:x:</center>  |
+|`increaseAllowance`| `spender : ByStr20, value : Uint128, initiator : ByStr20` | Increase `value` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
+|`decreaseAllowance`| `spender : ByStr20, value : Uint128, initiator : ByStr20` | Decrease `value` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
+|`transfer`| `to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128` | Transfer `value` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator` and the `recipient` should not be blacklisted.|<center>:x:</center>  |
+|`transferFrom`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128` | Transfer `value` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator`, the `from` address and the `recipient` should not be blacklisted.|<center>:x:</center>  |
 
 ## Proxy Contract
 
 Proxy contract is a relay contract that redirects calls to it to the token contract.
 
 ### Proxy contract Roles and Privileges
-
 
 | Name | Description & Privileges |
 |--|--|
@@ -133,7 +130,6 @@ The table below list the parameters that are defined at the contrat deployment t
 |`init_implementation`| `ByStr20` | The address of the token contract. |
 |`init_admin`| `ByStr20` | The address of the admin. |
 
-
 ### Mutable Fields
 
 The table below presents the mutable fields of the contract and their initial values.
@@ -142,12 +138,15 @@ The table below presents the mutable fields of the contract and their initial va
 |--|--|--|--|
 |`implementation`| `ByStr20` | `init_implementation` | Address of the current implementation of the token contract. |
 |`admin`| `ByStr20` | `init_owner` | Current `admin` in the contract. |
+|`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
+|`totalSupply`| `Uint128`| `0` | The total number of tokens that is in the supply. |
 
 ### Transitions
 
 All the transitions in the contract can be categorized into two categories:
 - _housekeeping transitions_ meant to facilitate basic admin related tasks.
-- _relay_ transitions to redirect calls to the token contract.
+- _relay transitions_ to redirect calls to the token contract.
+- _callback transitions_ are called by the token contract for updating fields in proxy contract.
 
 #### Housekeeping Transitions
 
@@ -155,7 +154,6 @@ All the transitions in the contract can be categorized into two categories:
 |--|--|--|
 |`upgradeTo`| `newImplementation : ByStr20` |  Change the current implementation address of the token contract. <br> :warning: **Note:** Only the `admin` can invoke this transition|
 |`changeAdmin`| `newAdmin : ByStr20` |  Change the current `admin` of the contract. <br> :warning: **Note:** Only the `admin` can invoke this transition|
-
 
 #### Relay Transitions
 
@@ -170,12 +168,23 @@ Note that these transitions are just meant to redirect calls to the correspondin
 |`proxyBlacklist(address : ByStr20)` | `blacklist(address : ByStr20, initiator : ByStr20)` |
 |`proxyUnBlacklist(address : ByStr20)` | `unBlacklist(address : ByStr20, initiator : ByStr20)` |
 |`proxyUpdateBlacklister(newBlacklister : ByStr20)` | `updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)` |
-|`proxyConfigureMinter(minter : ByStr20, minterAllowedAmount : Uint128)` | `configureMinter(minter : ByStr20, minterAllowedAmount : Uint128, initiator : ByStr20)` |
-|`proxyRemoveMinter(minter : ByStr20)` | `removeMinter(minter : ByStr20, initiator : ByStr20)` |
+|`proxyMint(to: ByStr20, value : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, current_supply : Unit128)` |
+|`proxyIncreaseAllowance(spender : ByStr20, value : Uint128)` | `increaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
+|`proxyDecreaseAllowance(spender : ByStr20, value : Uint128)` | `decreaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
+|`proxyTransferFrom(from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, from_bal : Unit128)` |
+|`proxyTransfer(to : ByStr20, value : Uint128)` | `transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, init_bal : Unit128)` |
+|`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20, initiator_balance : Unit128, current_supply : Unit128)` |
+|`proxyLawEnforcementWipingBurn(address : ByStr20)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Unit128, current_supply : Unit128)` |
+|`proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `increaseMinterAllowance(minter : ByStr20, amount : Unit128, initiator : ByStr20)` |
+|`proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `decreaseMinterAllowance(minter : ByStr20, amount : Unit128, initiator : ByStr20)` |
 |`proxyUpdateMasterMinter(newMasterMinter : ByStr20)` | `updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)` |
-|`proxyMint(to: ByStr20, value : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20)` |
-|`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20)` |
-|`proxyLawEnforcementWipingBurn(address : ByStr20)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20)` |
-|`proxyApprove(spender : ByStr20, value : Uint128)` | `approve(spender : ByStr20, value : Uint128, initiator : ByStr20)` |
-|`proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20)` |
 
+#### Callback Transitions
+
+| Callback transition in the proxy contract  | Source transition in the token contract |
+|--|--|
+|`mintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, current_supply : Unit128)` |
+|`transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `transferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, from_bal : Unit128)` |
+|`transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)` | `transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, init_bal : Unit128)` |
+|`burnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)` | `burn(value : Uint128, initiator : ByStr20, initiator_balance : Unit128, current_supply : Unit128)` |
+|`lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Unit128, current_supply : Unit128)` |
