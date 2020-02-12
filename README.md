@@ -11,12 +11,15 @@ https://www.xfers.com/
 The XSGD contract has been written by the StraitsX team to fit both the specific needs of the XSGD token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.
 
 The XSGD contract consists of two communicating contracts:
-
-a [token contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/xsgd_contract.scilla)
-
-a [proxy contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/proxy.scilla)
+- [token contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/xsgd_contract.scilla)
+- [proxy contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/proxy.scilla)
 
 The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. This allows upgrading the contract, as the original proxy can point to a newly deployed token contract.
+
+And one multi-signature contract:
+- [multi-signature contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/wallet.scilla)
+
+The multi-signature contract is a digital signature scheme which allows a group of users(owners) to submit, sign and execute transactions in proxy contract.
 
 ### Token contract Roles and Privileges
 
@@ -81,8 +84,8 @@ Each of these category of transitions are presented in further details below:
 |`unBlacklist`|`address : ByStr20, initiator : ByStr20`| Remove a given address from the blacklist.  <br> :warning: **Note:** `initiator` must be the current `blacklister` in the contract.| :heavy_check_mark: |
 |`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`.  <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract.| :heavy_check_mark: |
 |`updateMasterMinter`| `newMasterMinter : ByStr20, initiator : ByStr20` | Replace the current `masterMinter` with the `newMasterMinter`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
-|`increaseMinterAllowance`| `minter : ByStr20, amount : Unit128, initiator : ByStr20` |  | :heavy_check_mark: |
-|`decreaseMinterAllowance`| `minter : ByStr20, amount : Unit128, initiator : ByStr20` |  | :heavy_check_mark: |
+|`increaseMinterAllowance`| `minter : ByStr20, amount : Uint128, initiator : ByStr20` |  | :heavy_check_mark: |
+|`decreaseMinterAllowance`| `minter : ByStr20, amount : Uint128, initiator : ByStr20` |  | :heavy_check_mark: |
 |`removeMinter`| `minter : ByStr20, initiator : ByStr20` | Remove a given minter. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
 
 #### Pause Transitions
@@ -139,11 +142,11 @@ The table below presents the mutable fields of the contract and their initial va
 |`implementation`| `ByStr20` | `init_implementation` | Address of the current implementation of the token contract. |
 |`admin`| `ByStr20` | `init_owner` | Current `admin` in the contract. |
 |`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
-|`totalSupply`| `Uint128`| `0` | The total number of tokens that is in the supply. |
+|`totalSupply`| `Uint128` | `0` | The total number of tokens that is in the supply. |
 
 ### Transitions
 
-All the transitions in the contract can be categorized into two categories:
+All the transitions in the contract can be categorized into three categories:
 - _housekeeping transitions_ meant to facilitate basic admin related tasks.
 - _relay transitions_ to redirect calls to the token contract.
 - _callback transitions_ are called by the token contract for updating fields in proxy contract.
@@ -168,23 +171,125 @@ Note that these transitions are just meant to redirect calls to the correspondin
 |`proxyBlacklist(address : ByStr20)` | `blacklist(address : ByStr20, initiator : ByStr20)` |
 |`proxyUnBlacklist(address : ByStr20)` | `unBlacklist(address : ByStr20, initiator : ByStr20)` |
 |`proxyUpdateBlacklister(newBlacklister : ByStr20)` | `updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)` |
-|`proxyMint(to: ByStr20, value : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, current_supply : Unit128)` |
+|`proxyMint(to: ByStr20, value : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
 |`proxyIncreaseAllowance(spender : ByStr20, value : Uint128)` | `increaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
 |`proxyDecreaseAllowance(spender : ByStr20, value : Uint128)` | `decreaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
-|`proxyTransferFrom(from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, from_bal : Unit128)` |
-|`proxyTransfer(to : ByStr20, value : Uint128)` | `transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, init_bal : Unit128)` |
-|`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20, initiator_balance : Unit128, current_supply : Unit128)` |
-|`proxyLawEnforcementWipingBurn(address : ByStr20)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Unit128, current_supply : Unit128)` |
-|`proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `increaseMinterAllowance(minter : ByStr20, amount : Unit128, initiator : ByStr20)` |
-|`proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `decreaseMinterAllowance(minter : ByStr20, amount : Unit128, initiator : ByStr20)` |
+|`proxyTransferFrom(from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
+|`proxyTransfer(to : ByStr20, value : Uint128)` | `transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
+|`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
+|`proxyLawEnforcementWipingBurn(address : ByStr20)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
+|`proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)` |
+|`proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)` |
 |`proxyUpdateMasterMinter(newMasterMinter : ByStr20)` | `updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)` |
 
 #### Callback Transitions
 
 | Callback transition in the proxy contract  | Source transition in the token contract |
 |--|--|
-|`mintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, current_supply : Unit128)` |
-|`transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `transferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, from_bal : Unit128)` |
-|`transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)` | `transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Unit128, init_bal : Unit128)` |
-|`burnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)` | `burn(value : Uint128, initiator : ByStr20, initiator_balance : Unit128, current_supply : Unit128)` |
-|`lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Unit128, current_supply : Unit128)` |
+|`mintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
+|`transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `transferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
+|`transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)` | `transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
+|`burnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)` | `burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
+|`lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
+
+## Multi-signature Contract
+
+This contract holds funds that can be paid out to arbitrary users, provided that enough people in the collection of owners sign off on the payout.
+
+The transaction must be added to the contract before signatures can be collected. Once enough signatures are collected, the recipient can ask for the transaction to be executed and the money paid out.
+
+If an owner changes his mind about a transaction, the signature can be revoked until the transaction is executed.
+
+This wallet does not allow adding or removing owners, or changing the number of required signatures. To do any of those things, perform the following steps:
+1. Deploy a new wallet with `owners` and `required_signatures` set to the new values. `MAKE SURE THAT THE NEW WALLET HAS BEEN SUCCESFULLY DEPLOYED WITH THE CORRECT PARAMETERS BEFORE CONTINUING!`
+2. Invoke the SubmitTransaction transition on the old wallet with the following parameters:
+   - `recipient` : The `address` of the new wallet
+   - `amount` : The `_balance` of the old wallet
+   - `tag` : `AddFunds`
+3. Have (a sufficient number of) the owners of the old contract invoke the `SignTransaction` transition on the old wallet. The parameter `transactionId` should be set to the `Id` of the transaction created in step 2.
+4. Have one of the owners of the old contract invoke the `ExecuteTransaction` transition on the old contract. This will cause the entire balance of the old contract to be transferred to the new wallet. Note that no un-executed transactions will be transferred to the new wallet along with the funds.
+
+WARNING:
+
+If a sufficient number of owners lose their private keys, or for any other reason are unable or unwilling to sign for new transactions, the funds in the wallet will be locked forever. It is therefore a good idea to set required_signatures to a value strictly less than the number of owners, so that the remaining owners can retrieve the funds should such a scenario occur.
+
+If an owner loses his private key, the remaining owners should move the funds to a new wallet (using the workflow described above) to  ensure that funds are not locked if another owner loses his private key. The owner who originally lost his private key can generate a new key, and the corresponding address be added to the new wallet, so that the same set of persons own the new wallet.
+
+### Multi-signature contract Roles and Privileges
+
+| Name | Description & Privileges |
+|--|--|
+|`owners` | The users who own this contract. |
+|`initiator`| The user who calls the multi-signature contract. |
+
+### Immutable Parameters
+
+The table below lists the parameters that are defined at the contract deployment time and hence cannot be changed later on.
+
+| Name | Type | Description |
+|--|--|--|
+|`owners_list`| `List ByStr20` | List of init owners. |
+|`required_signatures`| `Uint32` | Minimum amount of signatures to execute a transaction. |
+
+### Mutable Fields
+
+The table below presents the mutable fields of the contract and their initial values.
+
+| Name | Type | Initial Value |Description |
+|--|--|--|--|
+|`owners`| `Map ByStr20 Bool` | `mk_owners_map owners_list` | Map of owners. |
+|`transactionCount`| `Uint32` | `0` | The count of transactions have been executed by this contract. |
+|`signatures`| `Map Uint32 (Map ByStr20 Bool)` | `Emp Uint32 (Map ByStr20 Bool)` | Collected signatures for transactions by transaction ID. |
+|`signature_counts`| `Map Uint32 Uint32` | `Emp Uint32 Uint32` | Running count of collected signatures for transactions. |
+|`transactions`| `Map Uint32 Transaction` | `Emp Uint32 Transaction` | Transactions have been submitted but not exected yet. |
+
+### Transitions
+
+All the transitions in the contract can be categorized into three categories:
+- _submit transitions_ create transactions for future signoff.
+- _action transitions_ let owners sign, revoke or execute submitted transactions.
+- _callback transitions_ are called by the proxy contract. No action required, but must be defined, since to the wallet will fail otherwise.
+
+#### Submit Transitions
+
+| Name | Params | Description |
+|--|--|--|
+|`SubmitNativeTransaction`| `recipient : ByStr20, amount : Uint128, tag : String` | Submit a transaction of native tokens for future signoff |
+|`SubmitCustomTransferOwnershipTransaction`| `proxyTokenContract : ByStr20, newOwner : ByStr20` | Submit a new `TransferOwnership` transaction for future signoff |
+|`SubmitCustomUpdatePauserTransaction`| `proxyTokenContract : ByStr20, newPauser : ByStr20` | Submit a new `UpdatePauser` transaction for future signoff |
+|`SubmitCustomBlacklistTransaction`| `proxyTokenContract : ByStr20, address : ByStr20` | Submit a new `Blacklist` transaction for future signoff |
+|`SubmitCustomUnBlacklistTransaction`| `proxyTokenContract : ByStr20, address : ByStr20` | Submit a new `UnBlacklist` transaction for future signoff |
+|`SubmitCustomUpdateBlacklisterTransaction`| `proxyTokenContract : ByStr20, newBlacklister : ByStr20` | Submit a new `UpdateBlacklister` transaction for future signoff |
+|`SubmitCustomLawEnforcementWipingBurnTransaction`| `proxyTokenContract : ByStr20, address : ByStr20` | Submit a new `LawEnforcementWipingBurn` transaction for future signoff |
+|`SubmitCustomBurnTransaction`| `proxyTokenContract : ByStr20, value : Uint128` | Submit a new `Burn` transaction for future signoff |
+|`SubmitCustomMintTransaction`| `proxyTokenContract : ByStr20, to : ByStr20, value : Uint128` | Submit a new `Mint` transaction for future signoff |
+|`SubmitCustomTransferTransaction`| `proxyTokenContract : ByStr20, to : ByStr20, value : Uint128` | Submit a new `Transfer` transaction for future signoff |
+|`SubmitCustomTransferFromTransaction`| `proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, value : Uint128` | Submit a new `TransferFrom` transaction for future signoff |
+|`SubmitCustomUpdateMasterMinterTransaction`| `proxyTokenContract : ByStr20, newMasterMinter : ByStr20` | Submit a new `UpdateMasterMinter` transaction for future signoff |
+|`SubmitCustomIncreaseMinterAllowanceTransaction`| `proxyTokenContract : ByStr20, minter : ByStr20, amount : Uint128` | Submit a new `IncreaseMinterAllowance` transaction for future signoff |
+|`SubmitCustomDecreaseMinterAllowanceTransaction`| `roxyTokenContract : ByStr20, minter : ByStr20, amount : Uint128` | Submit a new `DecreaseMinterAllowance` transaction for future signoff |
+|`SubmitCustomPauseTransaction`| `proxyTokenContract : ByStr20` | Submit a new `Pause` transaction for future signoff |
+|`SubmitCustomUnPauseTransaction`| `proxyTokenContract : ByStr20` | Submit a new `UnPause` transaction for future signoff |
+|`SubmitCustomProxyUpgradeToTransaction`| `proxyTokenContract : ByStr20, newImplementation : ByStr20` | Submit a new `UpgradeTo` transaction for future signoff |
+|`SubmitCustomProxyChangeAdminTransaction`| `proxyTokenContract : ByStr20, newAdmin : ByStr20` | Submit a new `ChangeAdmin` transaction for future signoff |
+
+#### Action Transitions
+
+| Name | Params | Description |
+|--|--|--|
+|`SignTransaction`| `transactionId : Uint32` | Sign off on an existing transaction. |
+|`RevokeSignature`| `transactionId : Uint32` | Revoke signature of existing transaction, if it has not yet been executed. |
+|`ExecuteTransaction`| `transactionId : Uint32` | Execute signed-off transaction. |
+
+#### Callback Transitions
+
+| Name | Params |
+|--|--|
+|`TransferSuccessCallBack`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
+|`RecipientAcceptTransfer`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
+|`TransferFromSuccessCallBack`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
+|`MintSuccessCallBack`| `recipient : ByStr20, amount : Uint128` |
+|`LawEnforcementWipingBurnSuccessCallBack`| `address : ByStr20` |
+|`BurnSuccessCallBack`| `sender : ByStr20, amount : Uint128` |
+|`RecipientAcceptTransferFrom`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
+|`RecipientAcceptMint`| `recipient : ByStr20, amount : Uint128` |
