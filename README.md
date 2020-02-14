@@ -234,7 +234,7 @@ The table below lists the parameters that are defined at the contract deployment
 
 The table below presents the mutable fields of the contract and their initial values.
 
-| Name | Type | Initial Value |Description |
+| Name | Type | Initial Value | Description |
 |--|--|--|--|
 |`owners`| `Map ByStr20 Bool` | `mk_owners_map owners_list` | Map of owners. |
 |`transactionCount`| `Uint32` | `0` | The count of transactions have been executed by this contract. |
@@ -248,6 +248,7 @@ All the transitions in the contract can be categorized into three categories:
 - _submit transitions_ create transactions for future signoff.
 - _action transitions_ let owners sign, revoke or execute submitted transactions.
 - _callback transitions_ are called by the proxy contract. No action required, but must be defined, since to the wallet will fail otherwise.
+- `AddFunds transition` are use for adding native funds(ZIL) to the wallet.
 
 #### Submit Transitions
 
@@ -282,13 +283,24 @@ All the transitions in the contract can be categorized into three categories:
 
 #### Callback Transitions
 
+All the callback transitions can be categorized into two categories:
+- _acceptance callback transitions_ will be called when this multi-signature contact is the `recipient` of the transaction.
+- _initiator callback transitions_ will be called when this multi-signature contact is the `initiator` of the transaction.
+
+**Acceptance Callback Transitions**
+
+| Name | Params |
+|--|--|
+|`RecipientAcceptTransfer`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
+|`RecipientAcceptTransferFrom`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
+|`RecipientAcceptMint`| `recipient : ByStr20, amount : Uint128` |
+
+**Initiator Callback Transitions**
+
 | Name | Params |
 |--|--|
 |`TransferSuccessCallBack`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
-|`RecipientAcceptTransfer`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
 |`TransferFromSuccessCallBack`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
 |`MintSuccessCallBack`| `recipient : ByStr20, amount : Uint128` |
 |`LawEnforcementWipingBurnSuccessCallBack`| `address : ByStr20` |
 |`BurnSuccessCallBack`| `sender : ByStr20, amount : Uint128` |
-|`RecipientAcceptTransferFrom`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
-|`RecipientAcceptMint`| `recipient : ByStr20, amount : Uint128` |
