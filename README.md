@@ -27,11 +27,11 @@ The multi-signature contract is a digital signature scheme which allows a group 
 |--|--|
 |`init_owner`| The initial owner of the contract which is usually the creator of the contract. `init_owner` is the initial value of several other roles. |
 |`owner`| Current owner of the contract initialized to `init_owner`. Certain critical actions can only be performed by the `owner`, e.g., changing who plays certain roles in the contract. |
-|`pauser`| Account that is allowed to (un)pause the contract. It is initialized to `init_owner`. `pauser` can (un) pause the contract. There is only `pauser` for the contract. |
+|`pauser`| Account that is allowed to (un)pause the contract. It is initialized to `init_owner`. `pauser` can (un)pause the contract. There is only `pauser` for the contract. |
 |`masterMinter`| The master minter to manage the minters for the contract.  `masterMinter` can add or remove minters and configure the number of tokens that a minter is allowed to mint. There is only one `masterMinter` for the contract. |
-|`minter`| An account that is allowed to mint and burn new tokens. The contract defines several minters. Each `minter` has a quota for minting new tokens. |
+|`minter`| An account that is allowed to mint and burn new tokens. The contract defines several minters and the number of tokens allowed to mint by minter in `minterAllowed` field. Call `increaseMinterAllowance` transition for creating a new `minter` by increasing the number of tokens allowed to mint. |
 |`blacklister`| An account that can freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister`. |
-|`spender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. These addresses will be called `spender`.  |
+|`spender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. The contract defines each token holder and the number of tokens that `spender` account allowed to spend on behalf of the token holder in `allowed` field. |
 |`initiator`| The user who calls the proxy contract that in turns call the token contract. After deployment, the address of the token contract will be made known to the user and the code will be visible directly from the block explorer. |
 
 ### Immutable Parameters
@@ -58,8 +58,8 @@ The table below presents the mutable fields of the contract and their initial va
 |`paused`| `Bool` | `True` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
 |`blacklister`| `ByStr20` | `init_owner` | Current `blacklister` in the contract.|
 |`blacklisted`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Records the addresses that are blacklisted. An address that is present in the map is blacklisted irrespective of the value it is mapped to. |
-|`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `Spender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. |
-|`minterAllowed`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the allowed number of tokens that a `minter` can mint. |
+|`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `Spender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. (token allowed to spend = allowed[holder address][spender address]) |
+|`minterAllowed`| `Map ByStr20 (Option Uint128)` | `Emp ByStr20 (Option Uint128)` | Keeps track of the allowed number of tokens that a `minter` can mint (tokens allowed to mint = minterAllowed[minter address]). <br> `Option t` can present as the `Some` type `t` or the `None` type ([See detail](https://scilla.readthedocs.io/en/latest/scilla-in-depth.html#option)). |
 
 ### Transitions
 
@@ -67,7 +67,7 @@ Note that each of the transitions in the token contract takes `initiator` as a p
 
 All the transitions in the contract can be categorized into three categories:
 - _housekeeping transitions_ meant to facilitate basic admin related tasks.
-- _pause transitions_ to pause and pause the contract.
+- _pause transitions_ meant to pause and unpause the contract.
 - _minting-related transitions_ that allows mining and burning of tokens.
 - _token transfer transitions_ allows to transfer tokens from one user to another.
 
@@ -85,7 +85,7 @@ Each of these category of transitions are presented in further details below:
 |`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
 |`updateMasterMinter`| `newMasterMinter : ByStr20, initiator : ByStr20` | Replace the current `masterMinter` with the `newMasterMinter`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
 |`increaseMinterAllowance`| `minter : ByStr20, amount : Uint128, initiator : ByStr20` | Increase the number of tokens that a `minter` is allowed to mint. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
-|`decreaseMinterAllowance`| `minter : ByStr20, amount : Uint128, initiator : ByStr20` | Decrease the number of tokens that a `minter` is allowed to mint. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
+|`decreaseMinterAllowance`| `minter : ByStr20, amount : Uint128, initiator : ByStr20` | Decrease the number of tokens that a `minter` is allowed to mint. <br> When the number is reaching underflow for the `Uint128` or `zero`, it will become `None (Option) instead` meant to remove `minter` identity or they are allowed to continue to `burn`. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
 
 #### Pause Transitions
 
