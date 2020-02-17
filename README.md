@@ -183,6 +183,10 @@ Note that these transitions are just meant to redirect calls to the correspondin
 
 #### Callback Transitions
 
+Since it may be necessary to change the contract in the future, need to set `balance` and `totalSupply` in the proxy contract.
+
+Because then `callback transitions` need to be definesd to update `balance` or `totalSupply` that return by transitions in `token contract`.
+
 | Callback transition in the proxy contract  | Source transition in the token contract |
 |--|--|
 |`mintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
@@ -248,7 +252,7 @@ All the transitions in the contract can be categorized into three categories:
 - _submit transitions_ create transactions for future signoff.
 - _action transitions_ let owners sign, revoke or execute submitted transactions.
 - _callback transitions_ are called by the proxy contract. No action required, but must be defined, since to the wallet will fail otherwise.
-- `AddFunds transition` are use for adding native funds(ZIL) to the wallet.
+- The `_balance` field keeps the amount of funds held by the contract and can be freely read within the implementation. `AddFunds transition` are used for adding native funds(ZIL) to the wallet from incoming messages by using `accept` keyword.
 
 #### Submit Transitions
 
@@ -285,7 +289,9 @@ All the transitions in the contract can be categorized into three categories:
 
 All the callback transitions can be categorized into two categories:
 - _acceptance callback transitions_ will be called when this multi-signature contact is the `recipient` of the transaction.
+:warning: This contract is not ready to receive ZRC2 or other unrecognized tokens.
 - _initiator callback transitions_ will be called when this multi-signature contact is the `initiator` of the transaction.
+These `callback transitions` is necessary for building DApps on top of the stablecoins even if these are not used in the `multi-signature contract` and implemented with an empty body.
 
 **Acceptance Callback Transitions**
 
