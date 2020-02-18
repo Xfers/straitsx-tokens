@@ -27,7 +27,7 @@ The multi-signature contract is a digital signature scheme which allows a group 
 |--|--|
 |`init_owner`| The initial owner of the contract which is usually the creator of the contract. `init_owner` is the initial value of several other roles. |
 |`owner`| Current owner of the contract initialized to `init_owner`. Certain critical actions can only be performed by the `owner`, e.g., changing who plays certain roles in the contract. |
-|`pauser`| Account that is allowed to (un)pause the contract. It is initialized to `init_owner`. `pauser` can (un)pause the contract. There is only `pauser` for the contract. |
+|`pauser`| Account that is allowed to (un)pause the contract. It is initialized to `init_owner`. `pauser` can (un)pause the contract. There is only one `pauser` for the contract. |
 |`masterMinter`| The master minter to manage the minters for the contract.  `masterMinter` can add or remove minters and configure the number of tokens that a minter is allowed to mint. There is only one `masterMinter` for the contract. |
 |`minter`| An account that is allowed to mint and burn new tokens. The contract defines several minters and the number of tokens allowed to mint by minter in `minterAllowed` field. Call `increaseMinterAllowance` transition for creating a new `minter` by increasing the number of tokens allowed to mint. |
 |`blacklister`| An account that can freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister`. |
@@ -85,7 +85,7 @@ Each of these category of transitions are presented in further details below:
 |`updateBlacklister`|`newBlacklister : ByStr20, initiator : ByStr20`| Replace the current `blacklister` with the `newBlacklister`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
 |`updateMasterMinter`| `newMasterMinter : ByStr20, initiator : ByStr20` | Replace the current `masterMinter` with the `newMasterMinter`. <br> :warning: **Note:**  `initiator` must be the current `owner` in the contract. | :heavy_check_mark: |
 |`increaseMinterAllowance`| `minter : ByStr20, amount : Uint128, initiator : ByStr20` | Increase the number of tokens that a `minter` is allowed to mint. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
-|`decreaseMinterAllowance`| `minter : ByStr20, amount : Uint128, initiator : ByStr20` | Decrease the number of tokens that a `minter` is allowed to mint. <br> When the number is reaching underflow for the `Uint128` or `zero`, it will become `None (Option) instead` meant to remove `minter` identity or they are allowed to continue to `burn`. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
+|`decreaseMinterAllowance`| `minter : ByStr20, amount : Uint128, initiator : ByStr20` | Decrease the number of tokens that a `minter` is allowed to mint. <br> When the number is reaching underflow for the `Uint128` or `zero`, it will become `None (Option) instead` meant to remove `minter` identity. After the `minter`'s identity is removed they'll no longer be allowed to continue burning. <br> :warning: **Note:**  `initiator` must be the current `masterMinter` in the contract. | :heavy_check_mark: |
 
 #### Pause Transitions
 
@@ -183,9 +183,9 @@ Note that these transitions are just meant to redirect calls to the correspondin
 
 #### Callback Transitions
 
-Since it may be necessary to change the contract in the future, need to set `balance` and `totalSupply` in the proxy contract.
+Since it may be necessary to upgrade the contract in the future, need to set `balance` and `totalSupply` in the proxy contract.
 
-Because then `callback transitions` need to be definesd to update `balance` or `totalSupply` that return by transitions in `token contract`.
+Because of that `callback transitions` need to be defined to update `balance` or `totalSupply` that return by transitions in `token contract`.
 
 | Callback transition in the proxy contract  | Source transition in the token contract |
 |--|--|
@@ -289,7 +289,7 @@ All the transitions in the contract can be categorized into three categories:
 
 All the callback transitions can be categorized into two categories:
 - _acceptance callback transitions_ will be called when this multi-signature contact is the `recipient` of the transaction.
-:warning: This contract is not ready to receive ZRC2 or other unrecognized tokens.
+:warning: This contract will not be able to receive ZRC2 or other tokens, unless the callback transition has been explicitly implemented in contract.
 - _initiator callback transitions_ will be called when this multi-signature contact is the `initiator` of the transaction.
 These `callback transitions` is necessary for building DApps on top of the stablecoins even if these are not used in the `multi-signature contract` and implemented with an empty body.
 
