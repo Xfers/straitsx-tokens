@@ -21,6 +21,8 @@ And one multi-signature contract:
 
 The multi-signature contract is a digital signature scheme which allows a group of users(owners) to submit, sign and execute transactions in proxy contract.
 
+All contracts here also have a minimized version in `/compressed` folder because there is a maximum code size limit of 20,480 bytes in Zilliqa.
+
 ### Token contract Roles and Privileges
 
 | Name | Description & Privileges |
