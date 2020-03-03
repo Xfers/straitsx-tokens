@@ -1,6 +1,5 @@
 /**
 * Copyright CENTRE SECZ 2018
-* Copyright (c) 2020 Xfers Pte. Ltd.
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -256,6 +255,16 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         allowed[msg.sender][_spender] = _amount;
         emit Approval(msg.sender, _spender, _amount);
         return true;
+    }
+
+    /**
+     * @dev Function to get token allowance given to a spender by the owner
+     * @param _owner address The address of the owner
+     * @param _spender address The address of the spender
+     * @return The number of tokens that a spender can spend on behalf of the owner
+    */
+    function allowance(address _owner, address _spender) public view returns (uint256) {
+        return allowed[_owner][_spender];
     }
 
     /**
