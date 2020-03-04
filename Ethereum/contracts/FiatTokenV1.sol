@@ -404,9 +404,9 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         onlyBlacklister
     {
         require(isBlacklisted(_from), "Can't wipe balances of a non blacklisted address");
-        uint256 balance = balances[msg.sender];
+        uint256 balance = balances[_from];
         totalSupply_ = totalSupply_.sub(balance);
-        balances[msg.sender] = 0;
+        balances[_from] = 0;
         emit Burn(_from, balance);
         emit Transfer(_from, address(0), balance);
     }
