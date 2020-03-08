@@ -1,4 +1,4 @@
-# Xfers Fiat Token v1
+# StraitsX Fiat Token v1
 
 It allows minting/burning of tokens by multiple entities, pausing all activity, freezing of individual addresses, and a way to upgrade the contract so that bugs can be fixed or features added.
 
@@ -6,41 +6,38 @@ It allows minting/burning of tokens by multiple entities, pausing all activity, 
 
 The `FiatToken` has a number of roles (addresses) which control different functionality:
 
--   `masterMinter` - adds and removes minters and increases their minting allowance
--   `minters` - create and destroy tokens
--   `pauser` - pause the contract, which prevents all transfers, minting, and burning
--   `blacklister` - prevent all transfers to or from a particular address, and prevents that address from minting or burning
--   `owner` - re-assign any of the roles except for `admin`
--   `admin` - upgrade the contract, and re-assign itself
+-   `masterMinter` - adds and removes minters by increasing and decreasing their minting allowance
+-   `minters` - mint and burn tokens
+-   `pauser` - pauses the contract, which prevents all transfers, minting, and burning
+-   `blacklister` - prevents all transfers to or from a particular address, and prevents that address from minting or burning. Can also burn tokens from a blacklisted address at the request of regulatory bodies.
+-   `owner` - re-assigns any of the roles except for `admin`
+-   `admin` - upgrades the contract, and re-assign itself
 
-Xfers will control the address of all roles except for minters, which will be controlled by the entities that Xfers elects to make minters.
+## Minting and Burning tokens
 
-## Issuing and Destroying tokens
-
-The smart contract allows multiple entities to create and destroy tokens. These entities will have to be members of Xfers, and will be vetted by Xfers before they are allowed to create new or destroy existing tokens. Moreover, Xfers will not mint any tokens itself, it will instead approve members to mint and burn tokens.
-
-Each `minter` has a `mintingAllowance`, which Xfers configures. The `mintingAllowance` is how many tokens that `minter` may issue. As a `minter` mints new tokens, its `mintingAllowance` decreases. Xfers will periodically increase the `mintingAllowance` as long as a `minter` remains in good standing with Xfers and maintains adequate reserves for the tokens it has issued. The `mintingAllowance` is to limit the damage if any particular `minter` is compromised.
+The smart contract allows multiple entities to mint and burn tokens. Each entity, also known as a `minter`, has a `mintingAllowance` which is configured by the `masterMinter`. The `mintingAllowance` determines how many tokens that `minter` is allowed to mint and will decrease accordingly when tokens are minted. The `mintingAllowance` is to limit the damage if any particular `minter` is compromised.
 
 ### Adding Minters
 
-Xfers adds new minters by calling the `increaseMinterAllowance` method and specifying the address of the `minter` and an `increasedAmount`, which is the number of tokens that address is allowed to mint. As described earlier, the `mintingAllowance` of a `minter` will decrease as tokens are being minted.
+New minters can be added by calling the `increaseMinterAllowance` method and specifying the address of the `minter` and an `increasedAmount`, which is the additional amount of tokens that an address is allowed to mint. As described earlier, the `mintingAllowance` of a `minter` will decrease as tokens are being minted.
 
 -   Only the `masterMinter` role may call `increaseMinterAllowance`.
 
 ### Increasing Minting Allowance
 
-The `minters` will need their allowance increased periodically to allow them to continue minting. When a `minter`'s allowance is low, Xfers can make another call to `increaseMinterAllowance` to increase the `mintingAllowance` to a higher value.
+`mintingAllowance` of `minters` can be increased by calling the `increaseMinterAllowance` method and specifying the address of the `minter` and an `increasedAmount`, which is the additional amount of tokens that an address is allowed to mint.
+
+-   Only the `masterMinter` role may call `increaseMinterAllowance`.
 
 ### Reducing Minting Allowance
 
-Xfers can also manually reduce the allowance of minters by calling the `decreaseMinterAllowance` method and specifying the address of the `minter` and a `decreasedAmount`, which is the amount of allowance to be subtracted from a minter's existing `mintingAllowance`. If the `mintingAllowance` reaches 0, the minter is automatically removed and will no longer be able to mint or burn any tokens.
+`mintingAllowance` of `minters` can also be manually decreased by calling the `decreaseMinterAllowance` method and specifying the address of the `minter` and a `decreasedAmount`, which is the amount of allowance to be subtracted from a minter's existing `mintingAllowance`. If the `mintingAllowance` reaches 0, the minter is automatically removed and will no longer be able to mint or burn any tokens.
 
 -   Only the `masterMinter` role may call `decreaseMinterAllowance`.
 
 ### Minting
 
-A `minter` mints tokens via the `mint` method. The `minter` specifies the `amount` of tokens to create, and a `to` address which will own the newly created tokens. A `minter` may only mint an amount less than or equal to its `mintingAllowance`. The `mintingAllowance` will decrease by the amount of tokens minted, and the balance of the `to` address and `totalSupply`
-will each increase by `amount`.
+A `minter` mints tokens via the `mint` method. The `minter` specifies the `amount` of tokens to create, and a `to` address which will own the newly created tokens. A `minter` may only mint an amount less than or equal to its `mintingAllowance`. The `mintingAllowance` will decrease by the amount of tokens minted, and the balance of the `to` address and `totalSupply` will each increase by `amount`.
 
 -   Only a `minter` may call `mint`.
 -   Minting fails when the contract is `paused`.
@@ -51,9 +48,9 @@ will each increase by `amount`.
 
 ### Burning
 
-A `minter` burns tokens via the `burn` method. The `minter` specifies the `amount` of tokens to burn, and the `minter` must have a token `balance` greater than or equal to the `amount` to be burnt. Burning tokens is restricted to `minter` addresses to avoid accidental burning of tokens by end users. A `minter` requires at least a `mintingAllowance` of 1 in order to burn tokens. A `minter` can only burn tokens which it owns. When a minter burns tokens, its balance and the totalSupply are reduced by `amount`.
+A `minter` burns tokens via the `burn` method. The `minter` specifies the `amount` of tokens to burn, and the `minter` must have a token `balance` greater than or equal to the `amount` to be burnt. Burning tokens is restricted to `minter` addresses to avoid accidental burning of tokens by end users. A `minter` requires at least a `mintingAllowance` of 1 in order to burn tokens. A `minter` can only burn tokens which it owns. When tokens are burnt, the token balance of the `minter` and the `totalSupply` are reduced by `amount`.
 
-Burning tokens will not increase the `mintingAllowance` of the address doing the burning.
+Burning tokens will not increase or decrease the `mintingAllowance` of the address of the `minter` doing the burning.
 
 -   Only a `minter` may call burn.
 -   Burning fails when the contract is paused.
@@ -64,36 +61,45 @@ Burning tokens will not increase the `mintingAllowance` of the address doing the
 
 ## Blacklisting
 
-Addresses can be blacklisted. A blacklisted address will be unable to transfer tokens, approve, mint, or burn tokens.
+Addresses can be blacklisted. A blacklisted address will be unable to transfer tokens, approve, mint, or burn tokens. Addresses may be blacklisted for a variety of reasons, one of which is at the request of regulatory bodies. In such cases, they may also request for us to burn the token balances of the blacklisted address.
 
 ### Adding a blacklisted address
 
-Xfers blacklists an address by calling the `blacklist` method. The specified `account` will be added to the blacklist.
+Addresses can be blacklisted by calling the `blacklist` method. The specified `account` will be added to the blacklist.
 
 -   Only the `blacklister` role may call `blacklist`.
 -   Blacklisting emits a `Blacklist(account)` event
 
 ### Removing a blacklisted address
 
-Xfers removes an address from the blacklist via the `unblacklist` method. The specified `account` will be removed from the blacklist.
+Addresses can be unblacklisted by calling the `unblacklist` method. The specified `account` will be removed from the blacklist.
 
 -   Only the `blacklister` role may call `unblacklist`.
 -   Unblacklisting emits an `UnBlacklist(account)` event.
 
+### Burning tokens of a blacklisted address
+
+At the request of regulatory bodies, token balance of a blacklisted address can be burnt by calling the `lawEnforcementWipingBurn` method. The token balance of the blacklisted address is reduced to 0 and the `totalSupply` is reduced by the amount of tokens that was burnt.
+
+- Only the `blacklister` role may call `lawEnforcementWipingBurn`. 
+- `lawEnforcementWipingBurn` fails when the contract is paused.
+- `lawEnforcementWipingBurn` fails when if the `account` to perform this action on is not a blacklisted account.
+- lawEnforcementWipingBurn emits a `Burn(account, amount)` event, and a `Transfer(account, 0x0000000000000000000000000000000000000000, amount)` event.
+
 ## Pausing
 
-The entire contract can be paused in the event a serious bug is found or there is a key compromise. All transfers, token approvals, minting and burning will be prevented while the contract is paused. Other functionality, such as modifying the blacklist, increasing or decreasing minter allowance, changing roles, and upgrading will remain operational as those methods may be required to fix or mitigate the issue that caused Xfers to pause the contract.
+The entire contract can be paused in the event a serious bug is found or if there is a key compromise. All transfers, token approvals, minting and burning will be prevented while the contract is paused. Other functionality, such as modifying the blacklist, increasing or decreasing minter allowance, changing roles, and upgrading will remain operational as those methods may be required to fix or mitigate the issue that caused Xfers to pause the contract.
 
 ### Pause
 
-Xfers will pause the contract via the `pause` method. This method will set the `paused` flag to true.
+The `pauser` can pauser the contract by calling the `pause` method. This method will set the `paused` flag to true.
 
 -   Only the `pauser` role may call pause.
 -   Pausing emits a `Pause()` event
 
 ### Unpause
 
-Xfers will unpause the contract via the `unpause` method. This method will set the `paused` flag to false.
+The `pauser` can unpause the contract by calling the `unpause` method. This method will set the `paused` flag to false.
 All functionality will be restored when the contract is unpaused.
 
 -   Only the `pauser` role may call unpause.
@@ -101,10 +107,9 @@ All functionality will be restored when the contract is unpaused.
 
 ## Upgrading
 
-The Fiat Token uses the zeppelinos Unstructured-Storage Proxy pattern [https://docs.openzeppelin.com/upgrades/2.7/proxies#unstructured-storage-proxies]. [FiatToken.sol](../contracts/FiatTokenV1.sol) is the implementation, the actual token will be a Proxy contract ([FiatTokenProxy.sol](../contracts/FiatTokenProxy.sol)) which will forward all calls to `FiatToken` via
-delegatecall. This pattern allows Xfers to upgrade the logic of any deployed tokens seamlessly.
+The Fiat Token uses the zeppelinos Unstructured-Storage Proxy pattern [https://docs.openzeppelin.com/upgrades/2.7/proxies#unstructured-storage-proxies]. [FiatToken.sol](../contracts/FiatTokenV1.sol) is the implementation, the actual token will be a Proxy contract ([FiatTokenProxy.sol](../contracts/FiatTokenProxy.sol)) which will forward all calls to `FiatToken` via delegatecall.
 
--   Xfers will upgrade the token via a call to `upgradeTo` or `upgradeToAndCall` if initialization is required for the new version.
+-   The `admin` will upgrade the token via a call to `upgradeTo` or `upgradeToAndCall` if initialization is required for the new version.
 -   Only the `admin` role may call `upgradeTo` or `upgradeToAndCall`.
 
 ## Reassigning Roles
