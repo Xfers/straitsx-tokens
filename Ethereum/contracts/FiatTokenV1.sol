@@ -136,7 +136,7 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         totalSupply_ = totalSupply_.add(_amount);
         balances[_to] = balances[_to].add(_amount);
         minterAllowed[msg.sender] = mintingAllowedAmount.sub(_amount);
-        if(minterAllowance(msg.sender) == 0) {
+        if (minterAllowance(msg.sender) == 0) {
             minters[msg.sender] = false;
             emit MinterRemoved(msg.sender);
         }
@@ -196,7 +196,7 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         notBlacklisted(_spender)
         returns (bool)
     {
-        _approve(_spender, _amount);
+        return _approve(_spender, _amount);
     }
 
     /**
@@ -218,7 +218,7 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         uint256 updatedAllowance = allowed[msg.sender][_spender].add(
             _addedValue
         );
-        _approve(_spender, updatedAllowance);
+        return _approve(_spender, updatedAllowance);
     }
 
     /**
@@ -240,11 +240,7 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         uint256 updatedAllowance = allowed[msg.sender][_spender].sub(
             _subtractedValue
         );
-        require(
-            updatedAllowance >= 0,
-            "token allowance after decrease is < 0"
-        );
-        _approve(_spender, updatedAllowance);
+        return _approve(_spender, updatedAllowance);
     }
 
     /**
@@ -252,7 +248,10 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
      * @param _spender address The Address of the spender
      * @param _amount uint256 The amount of tokens that the spender is approved to spend
     */
-    function _approve(address _spender, uint256 _amount) internal returns (bool){
+    function _approve(address _spender, uint256 _amount)
+        internal
+        returns (bool)
+    {
         allowed[msg.sender][_spender] = _amount;
         emit Approval(msg.sender, _spender, _amount);
         return true;
@@ -264,7 +263,11 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
      * @param _spender address The address of the spender
      * @return The number of tokens that a spender can spend on behalf of the owner
     */
-    function allowance(address _owner, address _spender) public view returns (uint256) {
+    function allowance(address _owner, address _spender)
+        public
+        view
+        returns (uint256)
+    {
         return allowed[_owner][_spender];
     }
 
@@ -334,7 +337,9 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         onlyMasterMinter
     {
         require(_minter != address(0), "minter can't be 0x0");
-        uint256 updatedAllowance = minterAllowance(_minter).add(_increasedAmount);
+        uint256 updatedAllowance = minterAllowance(_minter).add(
+            _increasedAmount
+        );
         minterAllowed[_minter] = updatedAllowance;
         minters[_minter] = true;
         emit MinterConfigured(_minter, updatedAllowance);
@@ -353,14 +358,11 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         require(_minter != address(0), "minter can't be 0x0");
         require(minters[_minter], "not a minter");
 
-        uint256 updatedAllowance = minterAllowance(_minter).sub(_decreasedAmount);
-        require(
-            updatedAllowance >= 0,
-            "minter allowance after decrease is < 0"
+        uint256 updatedAllowance = minterAllowance(_minter).sub(
+            _decreasedAmount
         );
-
         minterAllowed[_minter] = updatedAllowance;
-        if(minterAllowance(_minter) > 0) {
+        if (minterAllowance(_minter) > 0) {
             emit MinterConfigured(_minter, updatedAllowance);
         } else {
             minters[_minter] = false;
@@ -404,7 +406,10 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         whenNotPaused
         onlyBlacklister
     {
-        require(isBlacklisted(_from), "Can't wipe balances of a non blacklisted address");
+        require(
+            isBlacklisted(_from),
+            "Can't wipe balances of a non blacklisted address"
+        );
         uint256 balance = balances[_from];
         totalSupply_ = totalSupply_.sub(balance);
         balances[_from] = 0;
@@ -417,14 +422,8 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
      * Validates that the caller is the owner
      */
     function updateMasterMinter(address _newMasterMinter) public onlyOwner {
-        require(
-            _newMasterMinter != address(0),
-            "master minter can't be 0x0"
-        );
-        require(
-            _newMasterMinter != masterMinter,
-            "master minter is the same"
-        );
+        require(_newMasterMinter != address(0), "master minter can't be 0x0");
+        require(_newMasterMinter != masterMinter, "master minter is the same");
         masterMinter = _newMasterMinter;
         emit MasterMinterChanged(masterMinter);
     }
@@ -451,6 +450,6 @@ contract FiatTokenV1 is Ownable, Pausable, Blacklistable {
         require(_tokenAddress != address(0), "token can't be 0x0");
         ERC20Recovery token = ERC20Recovery(_tokenAddress);
         uint256 balance = token.balanceOf(this);
-        token.transfer(owner(), balance);
+        require(token.transfer(owner(), balance), "reclaim token failed");
     }
 }

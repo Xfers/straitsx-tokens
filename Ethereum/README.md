@@ -10,7 +10,14 @@ Fiat tokens on the [StraitsX Project](https://www.xfers.com/sg/straitsx-sg/).
 # Setup
 
 ## Prerequisites
-Ensure you are using node version 8.x. 
+Ensure you are using node version 8.x.
+NOTE: node 8.x is not available via Homebrew. Instead install nvm and use it to install node 8.x (Instructions found [here](https://github.com/nvm-sh/nvm#install--update-script)).
+
+install nvm:
+`curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.3/install.sh | bash`
+
+install node 8.x (in this example, node 8.11.1):
+`nvm install 8.11.1`
 
 ## Installation
 install truffle:
@@ -87,3 +94,7 @@ Tokens can be minted or burned on demand. The contract supports having multiple 
 ### Ownable
 
 The contract has an Owner, who can change the `owner`, `pauser`, `blacklister`, or `masterMinter` addresses. The `owner` can not change the `proxyOwner` address.
+
+# Trust Model
+
+There are many privileged roles in with the ability to make critical modifications to the smart contract like the `owner`, `masterMinter` and `blackLister`. As a regulated entity, our actions are held to high standards - read more [here](https://eservices.mas.gov.sg/fid/institution/detail/226546-XFERS-PTE-LTD). Moreover, we have also put in place multiple measures to ensure that these roles are secured, such as restricted access, no single point of failure, regular third party attestations and even contingency plans to handle the unlikely event of a compromise of any of these privileged roles.
