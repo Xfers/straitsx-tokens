@@ -155,6 +155,9 @@ transition proxyDecreaseAllowance (spender : ByStr20, value : Uint128)
 end
 
 transition proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)
+  is_self = builtin eq from to;
+  match is_self with
+  | False =>
     current_impl <- implementation;
     get_to_bal <- balances[to];
     to_bal =
@@ -172,6 +175,8 @@ transition proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)
            from : from; to : to; value : value; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
     msgs = one_msg msg;
     send msgs
+  | True => throw
+  end
 end
 
 transition transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)
@@ -187,6 +192,9 @@ transition transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uin
 end
 
 transition proxyTransfer (to : ByStr20, value : Uint128)
+  is_self = builtin eq _sender to;
+  match is_self with
+  | False =>
     current_impl <- implementation;
     get_to_bal <- balances[to];
     to_bal =
@@ -204,6 +212,8 @@ transition proxyTransfer (to : ByStr20, value : Uint128)
            value : value; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
     msgs = one_msg msg;
     send msgs
+  | True => throw
+  end
 end
 
 transition transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)
