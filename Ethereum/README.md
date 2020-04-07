@@ -4,8 +4,8 @@ Fiat tokens on the [StraitsX Project](https://www.xfers.com/sg/stablecoin/).
 
 # Potential signature pitfalls
 
-– Order cannot be enforced on the signed transactions.
-– Transactions could potentially be invalidated by sending a previously signed transaction by using the same nonce, if one chooses to do that they can only be sure once it is executed and risk other errors, it is recommended for one to be very sure before executing a transaction.
+* Order cannot be enforced on the signed transactions.
+* Transactions could potentially be invalidated by sending a previously signed transaction by using the same nonce, if one chooses to do that they can only be sure once it is executed and risk other errors, it is recommended for one to be very sure before executing a transaction.
 
 # Setup
 
