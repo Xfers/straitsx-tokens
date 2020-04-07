@@ -1,6 +1,6 @@
 # StraitsX-tokens
 
-Fiat tokens on the [StraitsX Project](https://www.xfers.com/sg/straitsx-sg/).
+Fiat tokens on the [StraitsX Project](https://www.xfers.com/sg/stablecoin/).
 
 # Potential signature pitfalls
 
