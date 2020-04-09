@@ -101,9 +101,9 @@ type TokenTransaction =
 | Transfer of ByStr20 Uint128
 (* TransferFrom      (from : ByStr20, to : ByStr20, amount : Uint128)  *)
 | TransferFrom of ByStr20 ByStr20 Uint128
-(* Burn      (value : Uint128)  *)
+(* Burn      (amount : Uint128)  *)
 | Burn of Uint128
-(* Mint      (to : ByStr20, value : Uint128)  *)
+(* Mint      (to : ByStr20, amount : Uint128)  *)
 | Mint of ByStr20 Uint128
 
 (* Type of (outstanding) transactions *)
@@ -208,34 +208,34 @@ let custom_token_transaction_msg_as_list =
         {_recipient : proxyTokenContract ;
          _tag : "Pause" ;
          _amount : Uint128 0 }
-      | Burn value =>
-        (* Burn             (value : Uint128)  *)
+      | Burn amount =>
+        (* Burn             (amount : Uint128)  *)
         {_recipient : proxyTokenContract ;
          _tag : "Burn" ;
          _amount : Uint128 0 ;
-         amount : value }
-      | Mint to value =>
-        (* Mint             (to : ByStr20, value : Uint128)  *)
+         amount : amount }
+      | Mint recipient amount =>
+        (* Mint             (to : ByStr20, amount : Uint128)  *)
         {_recipient : proxyTokenContract ;
          _tag : "Mint" ;
          _amount : Uint128 0 ;
-         recipient : to ;
-         amount : value }
-      | Transfer to value =>
+         recipient : recipient ;
+         amount : amount }
+      | Transfer to amount =>
         (* Transfer      (to : ByStr20, amount : Uint128)  *)
         {_recipient : proxyTokenContract ;
          _tag : "Transfer" ;
          _amount : Uint128 0 ;
          to : to ;
-         amount : value }
-      | TransferFrom from to value =>
+         amount : amount }
+      | TransferFrom from to amount =>
         (* TransferFrom      (from : ByStr20, to : ByStr20, amount : Uint128)  *)
         {_recipient : proxyTokenContract ;
          _tag : "TransferFrom" ;
          _amount : Uint128 0 ;
          from : from ;
          to : to ;
-         amount : value }
+         amount : amount }
       | UnPause =>
         (* Unpause           ()  *)
         {_recipient : proxyTokenContract ;
@@ -480,26 +480,26 @@ transition SubmitCustomLawEnforcementWipingBurnTransaction (proxyTokenContract :
 end
 
 (* Submit a new Burn transaction for future signoff *)
-transition SubmitCustomBurnTransaction (proxyTokenContract : ByStr20, value : Uint128)
-  transaction = Burn value;
+transition SubmitCustomBurnTransaction (proxyTokenContract : ByStr20, amount : Uint128)
+  transaction = Burn amount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
 (* Submit a new Mint transaction for future signoff *)
-transition SubmitCustomMintTransaction (proxyTokenContract : ByStr20, to : ByStr20, value : Uint128)
-  transaction = Mint to value;
+transition SubmitCustomMintTransaction (proxyTokenContract : ByStr20, to : ByStr20, amount : Uint128)
+  transaction = Mint to amount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
 (* Submit a new Transfer transaction for future signoff *)
-transition SubmitCustomTransferTransaction (proxyTokenContract : ByStr20, to : ByStr20, value : Uint128)
-  transaction = Transfer to value;
+transition SubmitCustomTransferTransaction (proxyTokenContract : ByStr20, to : ByStr20, amount : Uint128)
+  transaction = Transfer to amount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
 (* Submit a new TransferFrom transaction for future signoff *)
-transition SubmitCustomTransferFromTransaction (proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, value : Uint128)
-  transaction = TransferFrom from to value;
+transition SubmitCustomTransferFromTransaction (proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, amount : Uint128)
+  transaction = TransferFrom from to amount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
