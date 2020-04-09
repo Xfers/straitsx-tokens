@@ -376,7 +376,11 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
           new_supply = builtin add value current_supply;
           new_to_bal = builtin add value to_bal;
           new_allowed_amount = builtin sub a value;
-          new_option_allowed_amount = Some {Uint128} new_allowed_amount;
+          new_option_allowed_amount = let equal_zero = builtin eq zero new_allowed_amount in
+            match equal_zero with
+            | False => Some {Uint128} new_allowed_amount
+            | True => None {Uint128}
+            end;
           minterAllowed[initiator] := new_option_allowed_amount;
           e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
           event e;
