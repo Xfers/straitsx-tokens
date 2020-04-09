@@ -22,6 +22,12 @@ let orb_4 =
     let t1 = orb a b in
     let t2 = orb t1 c in
     orb t2 d
+let orb_5 =
+  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) => fun (e : Bool) =>
+    let t1 = orb a b in
+    let t2 = orb t1 c in
+    let t3 = orb t2 d in
+    orb t3 e
 let one_msg =
     fun (msg : Message) =>
         let nil_msg = Nil {Message} in
@@ -535,40 +541,36 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
       err = CodeNotProxy;
       ThrowError err
     | True  =>
+      isPaused <- paused;
+      isBlacklistedInitiator  <- exists blacklisted[initiator];
+      isBlacklistedRecipient  <- exists blacklisted[to];
       isSelf = builtin eq to initiator;
-      match isSelf with
+      or_res = orb_4 isPaused isBlacklistedInitiator isBlacklistedRecipient isSelf;
+      match or_res with
       | False =>
-      | True =>
-        isPaused <- paused;
-        isBlacklistedInitiator  <- exists blacklisted[initiator];
-        isBlacklistedRecipient  <- exists blacklisted[to];
-        or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedRecipient;
-        match or_res with
-        | False =>
-          can_do = uint128_le value init_bal;
-          match can_do with
-          | True =>
-            new_init_bal = builtin sub init_bal value;
-            new_to_bal = builtin add to_bal value;
-            e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
-            event e;
-            msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
-                  to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
-            msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
-                  sender : initiator; recipient : to; amount : value};
-            msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
-                                  sender : initiator; recipient : to; amount : value};
-            msgs = two_msgs msg_to_proxy msg_to_sender;
-            msgs_final = Cons {Message} msg_to_recipient msgs;
-            send msgs_final
-          | False =>
-            err = CodeInsufficientFunds;
-            ThrowError err
-          end
+        can_do = uint128_le value init_bal;
+        match can_do with
         | True =>
-          err = CodeNotAuthorized;
+          new_init_bal = builtin sub init_bal value;
+          new_to_bal = builtin add to_bal value;
+          e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
+          event e;
+          msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
+                to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
+          msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
+                sender : initiator; recipient : to; amount : value};
+          msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
+                                sender : initiator; recipient : to; amount : value};
+          msgs = two_msgs msg_to_proxy msg_to_sender;
+          msgs_final = Cons {Message} msg_to_recipient msgs;
+          send msgs_final
+        | False =>
+          err = CodeInsufficientFunds;
           ThrowError err
         end
+      | True =>
+        err = CodeNotAuthorized;
+        ThrowError err
       end
    end
 end
@@ -583,7 +585,8 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
     isBlacklistedInitiator <- exists blacklisted[initiator];
     isBlacklistedRecipient <- exists blacklisted[to];
     isBlacklistedFrom <- exists blacklisted[from];
-    or_res = orb_4 isPaused isBlacklistedInitiator isBlacklistedRecipient isBlacklistedFrom;
+    isSelf = builtin eq from to;
+    or_res = orb_5 isPaused isBlacklistedInitiator isBlacklistedRecipient isBlacklistedFrom isSelf;
     match or_res with
     | False =>
       sender_allowed_from <- allowed[from][initiator];
