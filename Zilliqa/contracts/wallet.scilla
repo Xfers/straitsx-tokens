@@ -535,13 +535,13 @@ end
 
 (* Submit a new UpgradeTo transaction for future signoff *)
 transition SubmitCustomProxyUpgradeToTransaction (proxyTokenContract : ByStr20, newImplementation : ByStr20)
-  transaction = ProxyUpgradeTo newImplementation;
+  transaction = UpgradeTo newImplementation;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
 (* Submit a new ChangeAdmin transaction for future signoff *)
 transition SubmitCustomProxyChangeAdminTransaction (proxyTokenContract : ByStr20, newAdmin : ByStr20)
-  transaction = ProxyChangeAdmin newAdmin;
+  transaction = ChangeAdmin newAdmin;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
