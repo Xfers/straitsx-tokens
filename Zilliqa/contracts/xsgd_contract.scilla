@@ -564,7 +564,7 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
           msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
                 sender : initiator; recipient : to; amount : value};
           msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
-                                sender : initiator; recipient : to; amount : value};
+                sender : initiator; recipient : to; amount : value};
           msgs = two_msgs msg_to_proxy msg_to_sender;
           msgs_final = Cons {Message} msg_to_recipient msgs;
           send msgs_final
@@ -607,11 +607,11 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
           e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
           event e;
           msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
-                  sender : from; recipient : to; amount : value };
+                  initiator : initiator; sender : from; recipient : to; amount : value };
           msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
                   from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
           msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
-                                sender : from; recipient : to; amount : value};
+                  initiator : initiator; sender : from; recipient : to; amount : value};
           msgs = two_msgs msg_to_proxy msg_to_sender;
           msgs_final = Cons {Message} msg_to_recipient msgs;
           send msgs_final
