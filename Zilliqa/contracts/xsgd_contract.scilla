@@ -496,7 +496,7 @@ transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
         end;
       new_allowance = builtin add current_allowance value;
       allowed[initiator][spender] := new_allowance;
-      e = {_eventname : "IncreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
+      e = {_eventname : "IncreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
       event e
     | True =>
       err = CodeNotAuthorized;
@@ -530,7 +530,7 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
         | False => zero
         end;
       allowed[initiator][spender] := new_allowance;
-      e = {_eventname : "DecreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
+      e = {_eventname : "DecreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
       event e
     | True =>
       err = CodeNotAuthorized;
@@ -604,7 +604,7 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
           new_to_bal = builtin add to_bal value;
           new_allowed = builtin sub allowance value;
           allowed[from][initiator] := new_allowed;
-          e = {_eventname : "TransferFromSuccess"; recipient : to; sender : from; initiator : initiator; amount : value};
+          e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
           event e;
           msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
                   sender : from; recipient : to; amount : value };
