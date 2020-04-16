@@ -29,7 +29,7 @@ field admin : ByStr20 = init_admin
 field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field totalSupply : Uint128 = zero
 
-transition upgradeTo(newImplementation : ByStr20)
+transition UpgradeTo(newImplementation : ByStr20)
     currentAdmin <- admin;
     isAdmin = builtin eq currentAdmin _sender;
     match isAdmin with
@@ -43,7 +43,7 @@ transition upgradeTo(newImplementation : ByStr20)
     end
 end
 
-transition changeAdmin(newAdmin : ByStr20)
+transition ChangeAdmin(newAdmin : ByStr20)
     currentAdmin <- admin;
     isAdmin = builtin eq currentAdmin _sender;
     match isAdmin with
@@ -57,7 +57,7 @@ transition changeAdmin(newAdmin : ByStr20)
     end
 end
 
-transition proxyTransferOwnership(newOwner : ByStr20)
+transition TransferOwnership(newOwner : ByStr20)
     current_impl <- implementation;
     msg = {_tag : "transferOwnership"; _recipient : current_impl; _amount : zero;
            newOwner : newOwner; initiator : _sender};
@@ -65,21 +65,21 @@ transition proxyTransferOwnership(newOwner : ByStr20)
     send msgs
 end
 
-transition proxyPause()
+transition Pause()
     current_impl <- implementation;
     msg = {_tag : "pause"; _recipient : current_impl; _amount : zero; initiator : _sender};
     msgs = one_msg msg;
     send msgs
 end
 
-transition proxyUnPause()
+transition UnPause()
     current_impl <- implementation;
     msg = {_tag : "unpause"; _recipient : current_impl; _amount : zero; initiator : _sender};
     msgs = one_msg msg;
     send msgs
 end
 
-transition proxyUpdatePauser(newPauser : ByStr20)
+transition UpdatePauser(newPauser : ByStr20)
     current_impl <- implementation;
     msg = {_tag : "updatePauser"; _recipient : current_impl; _amount : zero;
            newPauser : newPauser; initiator : _sender};
@@ -87,7 +87,7 @@ transition proxyUpdatePauser(newPauser : ByStr20)
     send msgs
 end
 
-transition proxyBlacklist(address : ByStr20)
+transition Blacklist(address : ByStr20)
     current_impl <- implementation;
     msg = {_tag : "blacklist"; _recipient : current_impl; _amount : zero;
            address : address; initiator : _sender};
@@ -95,7 +95,7 @@ transition proxyBlacklist(address : ByStr20)
     send msgs
 end
 
-transition proxyUnBlacklist(address : ByStr20)
+transition UnBlacklist(address : ByStr20)
     current_impl <- implementation;
     msg = {_tag : "unBlacklist"; _recipient : current_impl; _amount : zero;
            address : address; initiator : _sender};
@@ -103,7 +103,7 @@ transition proxyUnBlacklist(address : ByStr20)
     send msgs
 end
 
-transition proxyUpdateBlacklister(newBlacklister : ByStr20)
+transition UpdateBlacklister(newBlacklister : ByStr20)
     current_impl <- implementation;
     msg = {_tag : "updateBlacklister"; _recipient : current_impl; _amount : zero;
            newBlacklister : newBlacklister; initiator : _sender};
@@ -111,17 +111,17 @@ transition proxyUpdateBlacklister(newBlacklister : ByStr20)
     send msgs
 end
 
-transition proxyMint(to: ByStr20, value : Uint128)
+transition Mint(recipient: ByStr20, amount : Uint128)
     current_impl <- implementation;
     current_supply <- totalSupply;
-    get_to_bal <- balances[to];
+    get_to_bal <- balances[recipient];
     to_bal =
         match get_to_bal with
         | Some bal => bal
         | None => zero
         end;
-    msg = {_tag : "mint"; _recipient : current_impl; _amount : zero; to : to;
-           value : value; initiator : _sender; to_bal : to_bal; current_supply : current_supply};
+    msg = {_tag : "mint"; _recipient : current_impl; _amount : zero; to : recipient;
+           value : amount; initiator : _sender; to_bal : to_bal; current_supply : current_supply};
     msgs = one_msg msg;
     send msgs
 end
@@ -138,23 +138,23 @@ transition mintCallBack(to: ByStr20, new_to_bal: Uint128, new_supply : Uint128)
     end
 end
 
-transition proxyIncreaseAllowance (spender : ByStr20, value : Uint128)
+transition IncreaseAllowance (spender : ByStr20, amount : Uint128)
     current_impl <- implementation;
     msg = {_tag : "increaseAllowance"; _recipient : current_impl; _amount : zero;
-           spender : spender; value : value; initiator : _sender};
+           spender : spender; value : amount; initiator : _sender};
     msgs = one_msg msg;
     send msgs
 end
 
-transition proxyDecreaseAllowance (spender : ByStr20, value : Uint128)
+transition DecreaseAllowance (spender : ByStr20, amount : Uint128)
     current_impl <- implementation;
     msg = {_tag : "decreaseAllowance"; _recipient : current_impl; _amount : zero;
-           spender : spender; value : value; initiator : _sender};
+           spender : spender; value : amount; initiator : _sender};
     msgs = one_msg msg;
     send msgs
 end
 
-transition proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)
+transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128)
     current_impl <- implementation;
     get_to_bal <- balances[to];
     to_bal =
@@ -169,7 +169,7 @@ transition proxyTransferFrom (from : ByStr20, to : ByStr20, value : Uint128)
         | None => zero
         end;
     msg = {_tag : "transferFrom"; _recipient : current_impl; _amount : zero;
-           from : from; to : to; value : value; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
+           from : from; to : to; value : amount; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
     msgs = one_msg msg;
     send msgs
 end
@@ -186,7 +186,7 @@ transition transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uin
     end
 end
 
-transition proxyTransfer (to : ByStr20, value : Uint128)
+transition Transfer (to : ByStr20, amount : Uint128)
     current_impl <- implementation;
     get_to_bal <- balances[to];
     to_bal =
@@ -201,7 +201,7 @@ transition proxyTransfer (to : ByStr20, value : Uint128)
         | None => zero
         end;
     msg = {_tag : "transfer"; _recipient : current_impl; _amount : zero; to : to;
-           value : value; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
+           value : amount; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
     msgs = one_msg msg;
     send msgs
 end
@@ -218,7 +218,7 @@ transition transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint
     end
 end
 
-transition proxyBurn(value : Uint128)
+transition Burn(amount : Uint128)
     current_impl <- implementation;
     current_supply <- totalSupply;
     get_burn_bal <- balances[_sender];
@@ -227,7 +227,7 @@ transition proxyBurn(value : Uint128)
         | Some bal => bal
         | None => zero
         end;
-    msg = {_tag : "burn"; _recipient : current_impl; _amount : zero; value : value; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
+    msg = {_tag : "burn"; _recipient : current_impl; _amount : zero; value : amount; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
     msgs = one_msg msg;
     send msgs
 end
@@ -244,7 +244,7 @@ transition burnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_sup
     end
 end
 
-transition proxyLawEnforcementWipingBurn(address : ByStr20)
+transition LawEnforcementWipingBurn(address : ByStr20)
     current_impl <- implementation;
     current_supply <- totalSupply;
     get_addr_bal <- balances[address];
@@ -270,7 +270,7 @@ transition lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint
     end
 end
 
-transition proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128)
+transition IncreaseMinterAllowance(minter : ByStr20, amount : Uint128)
     current_impl <- implementation;
     msg = {_tag : "increaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
            amount : amount; initiator : _sender};
@@ -278,7 +278,7 @@ transition proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128)
     send msgs
 end
 
-transition proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128)
+transition DecreaseMinterAllowance(minter : ByStr20, amount : Uint128)
     current_impl <- implementation;
     msg = {_tag : "decreaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
            amount : amount; initiator : _sender};
@@ -286,7 +286,7 @@ transition proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128)
     send msgs
 end
 
-transition proxyUpdateMasterMinter(newMasterMinter : ByStr20)
+transition UpdateMasterMinter(newMasterMinter : ByStr20)
     current_impl <- implementation;
     msg = {_tag : "updateMasterMinter"; _recipient : current_impl; _amount : zero; newMasterMinter : newMasterMinter;
            initiator : _sender};

@@ -71,39 +71,39 @@ let transaction_inc = one
 (* Specified at https://github.com/Xfers/XSGD-scilla *)
 (* All calls are made to the proxy contract *)
 type TokenTransaction =
-(* proxyTransferOwnership (newOwner : ByStr20) *)
+(* TransferOwnership (newOwner : ByStr20) *)
 | TransferOwnership of ByStr20
-(* proxyUpdatePauser      (newPauser : ByStr20)  *)
+(* UpdatePauser      (newPauser : ByStr20)  *)
 | UpdatePauser of ByStr20
-(* proxyBlacklist         (address : ByStr20)  *)
+(* Blacklist         (address : ByStr20)  *)
 | Blacklist of ByStr20
-(* proxyUnBlacklist       (address : ByStr20)  *)
+(* UnBlacklist       (address : ByStr20)  *)
 | UnBlacklist of ByStr20
-(* proxyUpdateBlacklister (newBlacklister : ByStr20)  *)
+(* UpdateBlacklister (newBlacklister : ByStr20)  *)
 | UpdateBlacklister of ByStr20
-(* proxyLawEnforcementWipingBurn (address : ByStr20) *)
+(* LawEnforcementWipingBurn (address : ByStr20) *)
 | LawEnforcementWipingBurn of ByStr20
-(* proxyUpdateMasterMinter(newMasterMinter : ByStr20)  *)
+(* UpdateMasterMinter(newMasterMinter : ByStr20)  *)
 | UpdateMasterMinter of ByStr20
-(* proxyIncreaseMinterAllowance (minter : ByStr20, amount : Uint128) *)
+(* IncreaseMinterAllowance (minter : ByStr20, amount : Uint128) *)
 | IncreaseMinterAllowance of ByStr20 Uint128
-(* proxyDecreaseMinterAllowance (minter : ByStr20, amount : Uint128) *)
+(* DecreaseMinterAllowance (minter : ByStr20, amount : Uint128) *)
 | DecreaseMinterAllowance of ByStr20 Uint128
-(* proxyPause             ()  *)
+(* Pause             ()  *)
 | Pause
-(* proxyUnpause           ()  *)
+(* Unpause           ()  *)
 | UnPause
 (* UpgradeTo         (newImplementation : ByStr20)  *)
-| ProxyUpgradeTo of ByStr20
-(* changeAdmin       (newAdmin : ByStr20)  *)
-| ProxyChangeAdmin of ByStr20
-(* transfer          (to : ByStr20, value : Uint128)  *)
+| UpgradeTo of ByStr20
+(* ChangeAdmin       (newAdmin : ByStr20)  *)
+| ChangeAdmin of ByStr20
+(* Transfer          (to : ByStr20, amount : Uint128)  *)
 | Transfer of ByStr20 Uint128
-(* transferFrom      (from : ByStr20, to : ByStr20, value : Uint128)  *)
+(* TransferFrom      (from : ByStr20, to : ByStr20, amount : Uint128)  *)
 | TransferFrom of ByStr20 ByStr20 Uint128
-(* Burn      (value : Uint128)  *)
+(* Burn      (amount : Uint128)  *)
 | Burn of Uint128
-(* Mint      (to : ByStr20, value : Uint128)  *)
+(* Mint      (to : ByStr20, amount : Uint128)  *)
 | Mint of ByStr20 Uint128
 
 (* Type of (outstanding) transactions *)
@@ -148,109 +148,109 @@ let custom_token_transaction_msg_as_list =
     let msg =
       match tokenTransaction with
       | TransferOwnership newOwner =>
-        (* proxyTransferOwnership (newOwner : ByStr20) *)
+        (* TransferOwnership (newOwner : ByStr20) *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyTransferOwnership" ;
+         _tag : "TransferOwnership" ;
          _amount : Uint128 0 ;
          newOwner : newOwner }
       | UpdatePauser newPauser =>
-        (* proxyUpdatePauser      (newPauser : ByStr20)  *)
+        (* UpdatePauser      (newPauser : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyUpdatePauser" ;
+         _tag : "UpdatePauser" ;
          _amount : Uint128 0 ;
          newPauser : newPauser }
       | Blacklist address =>
-        (* proxyBlacklist         (address : ByStr20)  *)
+        (* Blacklist         (address : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyBlacklist" ;
+         _tag : "Blacklist" ;
          _amount : Uint128 0 ;
          address : address }
       | UnBlacklist address =>
-        (* proxyUnBlacklist       (address : ByStr20)  *)
+        (* UnBlacklist       (address : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyUnBlacklist" ;
+         _tag : "UnBlacklist" ;
          _amount : Uint128 0 ;
          address : address }
       | UpdateBlacklister newBlacklister =>
-        (* proxyUpdateBlacklister (newBlacklister : ByStr20)  *)
+        (* UpdateBlacklister (newBlacklister : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyUpdateBlacklister" ;
+         _tag : "UpdateBlacklister" ;
          _amount : Uint128 0 ;
          newBlacklister : newBlacklister }
       | LawEnforcementWipingBurn address =>
-        (* proxyLawEnforcementWipingBurn (address : ByStr20)  *)
+        (* LawEnforcementWipingBurn (address : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyLawEnforcementWipingBurn" ;
+         _tag : "LawEnforcementWipingBurn" ;
          _amount : Uint128 0 ;
          address : address }
       | UpdateMasterMinter newMasterMinter =>
-        (* proxyUpdateMasterMinter(newMasterMinter : ByStr20)  *)
+        (* UpdateMasterMinter(newMasterMinter : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyUpdateMasterMinter" ;
+         _tag : "UpdateMasterMinter" ;
          _amount : Uint128 0 ;
          newMasterMinter : newMasterMinter }
       | IncreaseMinterAllowance minter amount =>
-        (* proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128) *)
+        (* IncreaseMinterAllowance(minter : ByStr20, amount : Uint128) *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyIncreaseMinterAllowance" ;
+         _tag : "IncreaseMinterAllowance" ;
          _amount : Uint128 0 ;
          minter : minter ;
          amount : amount }
       | DecreaseMinterAllowance minter amount =>
-        (* proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128) *)
+        (* DecreaseMinterAllowance(minter : ByStr20, amount : Uint128) *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyDecreaseMinterAllowance" ;
+         _tag : "DecreaseMinterAllowance" ;
          _amount : Uint128 0 ;
          minter : minter ;
          amount : amount }
       | Pause =>
         (* proxyPause             ()  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyPause" ;
+         _tag : "Pause" ;
          _amount : Uint128 0 }
-      | Burn value =>
-        (* Burn             (value : Uint128)  *)
+      | Burn amount =>
+        (* Burn             (amount : Uint128)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyBurn" ;
+         _tag : "Burn" ;
          _amount : Uint128 0 ;
-         value : value }
-      | Mint to value =>
-        (* Mint             (to : ByStr20, value : Uint128)  *)
+         amount : amount }
+      | Mint recipient amount =>
+        (* Mint             (to : ByStr20, amount : Uint128)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyMint" ;
+         _tag : "Mint" ;
+         _amount : Uint128 0 ;
+         recipient : recipient ;
+         amount : amount }
+      | Transfer to amount =>
+        (* Transfer      (to : ByStr20, amount : Uint128)  *)
+        {_recipient : proxyTokenContract ;
+         _tag : "Transfer" ;
          _amount : Uint128 0 ;
          to : to ;
-         value : value }
-      | Transfer to value =>
-        (* Transfer      (to : ByStr20, value : Uint128)  *)
+         amount : amount }
+      | TransferFrom from to amount =>
+        (* TransferFrom      (from : ByStr20, to : ByStr20, amount : Uint128)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyTransfer" ;
-         _amount : Uint128 0 ;
-         to : to ;
-         value : value }
-      | TransferFrom from to value =>
-        (* TransferFrom      (from : ByStr20, to : ByStr20, value : Uint128)  *)
-        {_recipient : proxyTokenContract ;
-         _tag : "proxyTransferFrom" ;
+         _tag : "TransferFrom" ;
          _amount : Uint128 0 ;
          from : from ;
          to : to ;
-         value : value }
+         amount : amount }
       | UnPause =>
-        (* proxyUnpause           ()  *)
+        (* Unpause           ()  *)
         {_recipient : proxyTokenContract ;
-         _tag : "proxyUnPause" ;
+         _tag : "UnPause" ;
          _amount : Uint128 0 }
-      | ProxyUpgradeTo newImplementation =>
+      | UpgradeTo newImplementation =>
         (* UpgradeTo         (newImplementation : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "upgradeTo" ;
+         _tag : "UpgradeTo" ;
          _amount : Uint128 0 ;
          newImplementation : newImplementation }
-      | ProxyChangeAdmin newAdmin =>
-        (* changeAdmin       (newAdmin : ByStr20)  *)
+      | ChangeAdmin newAdmin =>
+        (* ChangeAdmin       (newAdmin : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "changeAdmin" ;
+         _tag : "ChangeAdmin" ;
          _amount : Uint128 0 ;
          newAdmin : newAdmin }
       end
@@ -480,26 +480,26 @@ transition SubmitCustomLawEnforcementWipingBurnTransaction (proxyTokenContract :
 end
 
 (* Submit a new Burn transaction for future signoff *)
-transition SubmitCustomBurnTransaction (proxyTokenContract : ByStr20, value : Uint128)
-  transaction = Burn value;
+transition SubmitCustomBurnTransaction (proxyTokenContract : ByStr20, amount : Uint128)
+  transaction = Burn amount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
 (* Submit a new Mint transaction for future signoff *)
-transition SubmitCustomMintTransaction (proxyTokenContract : ByStr20, to : ByStr20, value : Uint128)
-  transaction = Mint to value;
+transition SubmitCustomMintTransaction (proxyTokenContract : ByStr20, to : ByStr20, amount : Uint128)
+  transaction = Mint to amount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
 (* Submit a new Transfer transaction for future signoff *)
-transition SubmitCustomTransferTransaction (proxyTokenContract : ByStr20, to : ByStr20, value : Uint128)
-  transaction = Transfer to value;
+transition SubmitCustomTransferTransaction (proxyTokenContract : ByStr20, to : ByStr20, amount : Uint128)
+  transaction = Transfer to amount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
 (* Submit a new TransferFrom transaction for future signoff *)
-transition SubmitCustomTransferFromTransaction (proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, value : Uint128)
-  transaction = TransferFrom from to value;
+transition SubmitCustomTransferFromTransaction (proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, amount : Uint128)
+  transaction = TransferFrom from to amount;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
@@ -535,13 +535,13 @@ end
 
 (* Submit a new UpgradeTo transaction for future signoff *)
 transition SubmitCustomProxyUpgradeToTransaction (proxyTokenContract : ByStr20, newImplementation : ByStr20)
-  transaction = ProxyUpgradeTo newImplementation;
+  transaction = UpgradeTo newImplementation;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
 (* Submit a new ChangeAdmin transaction for future signoff *)
 transition SubmitCustomProxyChangeAdminTransaction (proxyTokenContract : ByStr20, newAdmin : ByStr20)
-  transaction = ProxyChangeAdmin newAdmin;
+  transaction = ChangeAdmin newAdmin;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 

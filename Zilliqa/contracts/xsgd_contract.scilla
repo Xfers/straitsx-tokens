@@ -13,17 +13,21 @@ let min_int =
   | False =>
     b
   end
-
 let orb_3 =
   fun (a : Bool) => fun (b : Bool) => fun (c : Bool) =>
     let t = orb a b in
     orb c t
-
 let orb_4 =
   fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) =>
     let t1 = orb a b in
     let t2 = orb t1 c in
     orb t2 d
+let orb_5 =
+  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) => fun (e : Bool) =>
+    let t1 = orb a b in
+    let t2 = orb t1 c in
+    let t3 = orb t2 d in
+    orb t3 e
 let one_msg =
     fun (msg : Message) =>
         let nil_msg = Nil {Message} in
@@ -42,6 +46,38 @@ let one  = Uint128 1
 let none_uint128 = None {Uint128}
 let true = True
 let false = False
+(* Error events *)
+type Error =
+  | CodeNotProxy
+  | CodeNotOwner
+  | CodeNotPauser
+  | CodeNotBlacklister
+  | CodeNotMasterMinter
+  | CodeInsufficientMintAllowance
+  | CodeNoMintAllowance
+  | CodeNotAuthorized
+  | CodeNotFound
+  | CodeInsufficientFunds
+  | CodeInsufficientAllowance
+let make_error_event =
+  fun (result : Error) =>
+    let result_code = 
+      match result with
+      | CodeNotProxy                  => Int32 -1
+      | CodeNotOwner                  => Int32 -2
+      | CodeNotPauser                 => Int32 -3
+      | CodeNotBlacklister            => Int32 -4
+      | CodeNotMasterMinter           => Int32 -5
+      | CodeInsufficientMintAllowance => Int32 -6
+      | CodeNoMintAllowance           => Int32 -7
+      | CodeNotAuthorized             => Int32 -8
+      | CodeNotFound                  => Int32 -9
+      | CodeInsufficientFunds         => Int32 -10
+      | CodeInsufficientAllowance     => Int32 -11
+      end
+    in
+    { _eventname : "Error"; code : result_code }
+
 contract XSGDContract
 (
   name :    String,
@@ -78,12 +114,18 @@ field blacklister : ByStr20 = init_owner
 field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
 field minterAllowed : Map ByStr20 (Option Uint128) = Emp ByStr20 (Option Uint128)
+
+procedure ThrowError(err : Error)
+  e = make_error_event err;
+  event e;
+  throw
+end
 transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "transferOwnership FailedNotProxy"; newOwner : newOwner; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     current_owner <- owner;
     isowner = builtin eq initiator current_owner;
@@ -93,8 +135,8 @@ transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
       e = {_eventname : "OwnershipTransferred"; from : initiator; to : newOwner};
 	    event e
     | False =>
-      e = { _eventname : "transferOwnership FailedNotOwner"; newOwner : newOwner; sender : initiator};
-      event e
+      err = CodeNotOwner;
+      ThrowError err
     end
   end
 end
@@ -102,8 +144,8 @@ transition pause(initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "pause FailedNotProxy"; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     current_pauser <- pauser;
     ispauser = builtin eq current_pauser initiator;
@@ -113,8 +155,8 @@ transition pause(initiator : ByStr20)
       e = { _eventname : "Paused"; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "pause FailedNotPauser"; sender : initiator};
-      event e
+      err = CodeNotPauser;
+      ThrowError err
     end
   end
 end
@@ -122,8 +164,8 @@ transition unpause(initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "unpause FailedNotProxy"; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     current_pauser <- pauser;
     ispauser = builtin eq current_pauser initiator;
@@ -133,8 +175,8 @@ transition unpause(initiator : ByStr20)
       e = {_eventname : "Unpaused"; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "unpause FailedNotPauser"; sender : initiator};
-      event e
+      err = CodeNotPauser;
+      ThrowError err
     end
   end
 end
@@ -142,8 +184,8 @@ transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "updatePauser FailedNotProxy"; newPauser : newPauser; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     current_owner <- owner;
     isowner = builtin eq initiator current_owner;
@@ -153,8 +195,8 @@ transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
       e = {_eventname : "PauserUpdated"; pauser : newPauser; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "updatePauser FailedNotOwner"; newPauser : newPauser; sender : initiator};
-      event e
+      err = CodeNotOwner;
+      ThrowError err
     end
   end
 end
@@ -162,8 +204,8 @@ transition blacklist(address : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "blacklist FailedNotProxy"; address : address; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     current_blacklister <- blacklister;
     isBlacklister = builtin eq current_blacklister initiator;
@@ -173,8 +215,8 @@ transition blacklist(address : ByStr20, initiator : ByStr20)
       e = {_eventname : "Blacklisted"; address : address; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "blacklist FailedNotBlacklister"; address : address; sender : initiator};
-      event e
+      err = CodeNotBlacklister;
+      ThrowError err
     end
   end
 end
@@ -182,8 +224,8 @@ transition unBlacklist(address : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "unBlacklist FailedNotProxy"; address : address; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     current_blacklister <- blacklister;
     isBlacklister = builtin eq current_blacklister initiator;
@@ -193,8 +235,8 @@ transition unBlacklist(address : ByStr20, initiator : ByStr20)
       e = {_eventname : "UnBlacklisted"; address : address; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "unBlacklist FailedNotBlacklister"; address : address; sender : initiator};
-      event e
+      err = CodeNotBlacklister;
+      ThrowError err
     end
   end
 end
@@ -202,8 +244,8 @@ transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "updateBlacklister FailedNotProxy"; newBlacklister : newBlacklister; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True =>
     current_owner <- owner;
     isowner = builtin eq initiator current_owner;
@@ -213,8 +255,8 @@ transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
       e = {_eventname : "BlacklisterUpdated"; blacklister : newBlacklister; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "updateBlacklister FailedNotOwner"; newBlacklister : newBlacklister; sender : initiator};
-      event e
+      err = CodeNotOwner;
+      ThrowError err
     end
   end
 end
@@ -222,8 +264,8 @@ transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "updateMasterMinter FailedNotProxy"; newMasterMinter : newMasterMinter; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     current_owner <- owner;
     isowner = builtin eq initiator current_owner;
@@ -233,8 +275,8 @@ transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
       e = {_eventname : "MasterMinterUpdated"; masterMinter : newMasterMinter; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "updateMasterMinter FailedNotOwner"; newMasterMinter : newMasterMinter; sender : initiator};
-      event e
+      err = CodeNotOwner;
+      ThrowError err
     end
   end
 end
@@ -242,8 +284,8 @@ transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "increaseMinterAllowance FailedNotProxy"; minter : minter; amount : amount; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
@@ -261,8 +303,8 @@ transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
       e = { _eventname : "IncreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "increaseMinterAllowance FailedNotMasterMinter"; minter : minter; amount : amount; sender : initiator};
-      event e
+      err = CodeNotMasterMinter;
+      ThrowError err
     end
   end
 end
@@ -270,8 +312,8 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "decreaseMinterAllowance FailedNotProxy"; minter : minter; amount : amount; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
@@ -299,8 +341,8 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
       e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_option_mint_allowance : new_option_mint_allowance; sender : initiator};
       event e
     | False =>
-      e = { _eventname : "decreaseMinterAllowance FailedNotMasterMinter"; minter : minter; amount : amount; sender : initiator};
-      event e
+      err = CodeNotMasterMinter;
+      ThrowError err
     end
   end
 end
@@ -308,8 +350,8 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "mint FailedNotProxy"; to : to; value : value; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     isPaused <- paused;
     isMinter <- minterAllowed[initiator];
@@ -334,7 +376,11 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
           new_supply = builtin add value current_supply;
           new_to_bal = builtin add value to_bal;
           new_allowed_amount = builtin sub a value;
-          new_option_allowed_amount = Some {Uint128} new_allowed_amount;
+          new_option_allowed_amount = let equal_zero = builtin eq zero new_allowed_amount in
+            match equal_zero with
+            | False => Some {Uint128} new_allowed_amount
+            | True => None {Uint128}
+            end;
           minterAllowed[initiator] := new_option_allowed_amount;
           e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
           event e;
@@ -345,16 +391,16 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
           msgs_final = Cons {Message} msg_to_recipient msgs;
           send msgs_final
         | False =>
-          e = { _eventname : "mint FailedNotWithinLimits"; to : to; value : value; sender : initiator};
-          event e
+          err = CodeInsufficientMintAllowance;
+          ThrowError err
         end
       | _ =>
-        e = { _eventname : "mint FailedNoAllowance"; to : to; value : value; sender : initiator};
-        event e
+        err = CodeNoMintAllowance;
+        ThrowError err
       end
     | True =>
-      e = { _eventname : "mint FailedPausedOrNotMinterOrBlacklisted"; to : to; value : value; sender : initiator};
-      event e
+      err = CodeNotAuthorized;
+      ThrowError err
     end
   end
 end
@@ -362,8 +408,8 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "burn FailedNotProxy"; value : value; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     isPaused <- paused;
     isMinter <- minterAllowed[initiator];
@@ -390,12 +436,12 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
         event e;
         send msgs
       | False =>
-        e = { _eventname : "burn FailedInsufficientBalance"; value : value; sender : initiator};
-        event e
+        err = CodeInsufficientFunds;
+        ThrowError err
       end
     | True =>
-      e = { _eventname : "burn FailedPausedOrNotMinterOrBlacklisted"; value : value; sender : initiator};
-      event e
+      err = CodeNotAuthorized;
+      ThrowError err
     end
   end
 end
@@ -403,8 +449,8 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "lawEnforcementWipingBurn FailedNotProxy"; address : address; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     isPaused <- paused;
     isBlacklistedAddress <- exists blacklisted[address];
@@ -420,12 +466,12 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr
         msg_to_proxy = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
         msg_to_sender = {_tag : "LawEnforcementWipingBurnSuccessCallBack"; _recipient : initiator; _amount : zero; address : address};
         msgs = two_msgs msg_to_proxy msg_to_sender;
-        e = { _eventname : "lawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
+        e = { _eventname : "LawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
         event e;
         send msgs
     | True =>
-      e = { _eventname : "lawEnforcementWipingBurn FailedPausedOrNotBlacklistedOrNotBlacklister"; address : address; sender : initiator};
-      event e
+      err = CodeNotAuthorized;
+      ThrowError err
     end
   end
 end
@@ -433,8 +479,8 @@ transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "increaseAllowance FailedNotProxy"; spender : spender; value : value; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     isPaused <- paused;
     isBlacklistedInitiator <- exists blacklisted[initiator];
@@ -450,11 +496,11 @@ transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
         end;
       new_allowance = builtin add current_allowance value;
       allowed[initiator][spender] := new_allowance;
-      e = {_eventname : "IncreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
+      e = {_eventname : "IncreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
       event e
     | True =>
-      e = { _eventname : "increaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
-      event e
+      err = CodeNotAuthorized;
+      ThrowError err
     end
   end
 end
@@ -462,8 +508,8 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "decreaseAllowance FailedNotProxy"; spender : spender; value : value; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     isPaused <- paused;
     isBlacklistedInitiator <- exists blacklisted[initiator];
@@ -484,11 +530,11 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
         | False => zero
         end;
       allowed[initiator][spender] := new_allowance;
-      e = {_eventname : "DecreasedAllowance"; sender : initiator; spender : spender; new_allowance : new_allowance};
+      e = {_eventname : "DecreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
       event e
     | True =>
-      e = { _eventname : "decreaseAllowance FailedPausedOrBlacklisted"; spender : spender; value: value; sender : initiator};
-      event e
+      err = CodeNotAuthorized;
+      ThrowError err
     end
   end
 end
@@ -496,13 +542,14 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
     callerIsProxy = builtin eq _sender proxy_address;
     match callerIsProxy with
     | False =>
-      e = { _eventname : "transfer FailedNotProxy"; to : to; value : value; sender : initiator};
-      event e
+      err = CodeNotProxy;
+      ThrowError err
     | True  =>
       isPaused <- paused;
       isBlacklistedInitiator  <- exists blacklisted[initiator];
       isBlacklistedRecipient  <- exists blacklisted[to];
-      or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedRecipient;
+      isSelf = builtin eq to initiator;
+      or_res = orb_4 isPaused isBlacklistedInitiator isBlacklistedRecipient isSelf;
       match or_res with
       | False =>
         can_do = uint128_le value init_bal;
@@ -517,17 +564,17 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
           msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
                 sender : initiator; recipient : to; amount : value};
           msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
-                                sender : initiator; recipient : to; amount : value};
+                sender : initiator; recipient : to; amount : value};
           msgs = two_msgs msg_to_proxy msg_to_sender;
           msgs_final = Cons {Message} msg_to_recipient msgs;
           send msgs_final
         | False =>
-          e = { _eventname : "transfer FailedInsufficientBalance"; to : to; value: value; sender : initiator};
-          event e
-          end
+          err = CodeInsufficientFunds;
+          ThrowError err
+        end
       | True =>
-        e = { _eventname : "transfer FailedPausedOrBlacklisted"; to : to; value: value; sender : initiator};
-        event e
+        err = CodeNotAuthorized;
+        ThrowError err
       end
    end
 end
@@ -535,14 +582,15 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
   callerIsProxy = builtin eq _sender proxy_address;
   match callerIsProxy with
   | False =>
-    e = { _eventname : "transferFrom FailedNotProxy"; from : from; to : to; value : value; sender : initiator};
-    event e
+    err = CodeNotProxy;
+    ThrowError err
   | True  =>
     isPaused <- paused;
     isBlacklistedInitiator <- exists blacklisted[initiator];
     isBlacklistedRecipient <- exists blacklisted[to];
     isBlacklistedFrom <- exists blacklisted[from];
-    or_res = orb_4 isPaused isBlacklistedInitiator isBlacklistedRecipient isBlacklistedFrom;
+    isSelf = builtin eq from to;
+    or_res = orb_5 isPaused isBlacklistedInitiator isBlacklistedRecipient isBlacklistedFrom isSelf;
     match or_res with
     | False =>
       sender_allowed_from <- allowed[from][initiator];
@@ -556,28 +604,28 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
           new_to_bal = builtin add to_bal value;
           new_allowed = builtin sub allowance value;
           allowed[from][initiator] := new_allowed;
-          e = {_eventname : "TransferFromSuccess"; recipient : to; sender : from; initiator : initiator; amount : value};
+          e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
           event e;
           msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
-                  sender : from; recipient : to; amount : value };
+                  initiator : initiator; sender : from; recipient : to; amount : value };
           msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
                   from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
           msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
-                                sender : from; recipient : to; amount : value};
+                  initiator : initiator; sender : from; recipient : to; amount : value};
           msgs = two_msgs msg_to_proxy msg_to_sender;
           msgs_final = Cons {Message} msg_to_recipient msgs;
           send msgs_final
         | False =>
-          e = { _eventname : "transferFrom FailedInsufficientBalance"; to : to; from : from; value: value; sender : initiator};
-          event e
+          err = CodeInsufficientFunds;
+          ThrowError err
         end
       | None =>
-        e = { _eventname : "transferFrom FailedInsufficientAllowance"; to : to; from : from; value: value; sender : initiator};
-        event e
+        err = CodeInsufficientAllowance;
+        ThrowError err
 	    end
     | True =>
-      e = { _eventname : "transferFrom FailedPausedOrBlacklisted"; to : to; from : from; value: value; sender : initiator};
-      event e
+      err = CodeNotAuthorized;
+      ThrowError err
     end
   end
 end
