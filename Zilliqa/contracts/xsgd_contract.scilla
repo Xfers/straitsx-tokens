@@ -437,39 +437,26 @@ end
 
 transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
   isProxy _sender;
-  isPaused <- paused;
-  isMinter <- minterAllowed[initiator];
-  isMinterAllowed =
-      match isMinter with
-      | Some (Some allowance) => True
-      | _ => False
-      end;
-  isBlacklistedMinter <- exists blacklisted[initiator];
-  or_res =
-  let isMinterNotAllowed = negb isMinterAllowed in
-    orb_3 isPaused isBlacklistedMinter isMinterNotAllowed;
-  match or_res with
-  | False =>
-    can_do = uint128_le value initiator_balance;
-    match can_do with
-    | True =>
-      new_burn_balance = builtin sub initiator_balance value;
-      new_supply = builtin sub current_supply value;
-      msg_to_proxy = {_tag : "burnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
-      msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
-      msgs = two_msgs msg_to_proxy msg_to_sender;
-      e = { _eventname : "Burnt"; burner : initiator; amount : value};
-      event e;
-      send msgs
-    | False =>
-      err = CodeInsufficientFunds;
-      ThrowError err
-    end
+  isNotPaused;
+  isMinter initiator;
+  isNotBlacklisted initiator;
+  can_do = uint128_le value initiator_balance;
+  match can_do with
   | True =>
-    err = CodeNotAuthorized;
+    new_burn_balance = builtin sub initiator_balance value;
+    new_supply = builtin sub current_supply value;
+    msg_to_proxy = {_tag : "burnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
+    msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
+    msgs = two_msgs msg_to_proxy msg_to_sender;
+    e = { _eventname : "Burnt"; burner : initiator; amount : value};
+    event e;
+    send msgs
+  | False =>
+    err = CodeInsufficientFunds;
     ThrowError err
   end
 end
+
 transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)
   isProxy _sender;
   isPaused <- paused;
