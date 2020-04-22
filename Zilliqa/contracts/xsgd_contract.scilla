@@ -311,24 +311,14 @@ end
 
 transition blacklist(address : ByStr20, initiator : ByStr20)
   isProxy _sender;
-  current_blacklister <- blacklister;
-  isBlacklister = builtin eq current_blacklister initiator;
-  isNull = builtin eq null_address address;
-  isBlacklisted <- exists blacklisted[address];
-  and_res =
-  let notNull = negb isNull in
-  let notBlacklisted = negb isBlacklisted in
-    andb_3 isBlacklister notNull notBlacklisted;
-  match and_res with
-  | True =>
-    blacklisted[address] := one;
-    e = {_eventname : "Blacklisted"; address : address; sender : initiator};
-    event e
-  | False =>
-    err = CodeNotBlacklister;
-    ThrowError err
-  end
+  isBlacklister initiator;
+  isNotNull address;
+  isNotBlacklisted address;
+  blacklisted[address] := one;
+  e = {_eventname : "Blacklisted"; address : address; sender : initiator};
+  event e
 end
+
 transition unBlacklist(address : ByStr20, initiator : ByStr20)
   isProxy _sender;
   current_blacklister <- blacklister;
