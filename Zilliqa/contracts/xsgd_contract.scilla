@@ -273,27 +273,18 @@ transition unpause(initiator : ByStr20)
   e = {_eventname : "Unpaused"; sender : initiator};
   event e
 end
+
 transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
   isProxy _sender;
-  current_owner <- owner;
+  isOwner initiator;
+  isNotNull newPauser;
   current_pauser <- pauser;
-  isOwner = builtin eq initiator current_owner;
-  isNull = builtin eq null_address newPauser;
-  isSelf = builtin eq current_pauser newPauser;
-  and_res =
-  let notNull = negb isNull in
-  let notSelf = negb isSelf in
-    andb_3 isOwner notNull notSelf;
-  match and_res with
-  | True  =>
-    pauser := newPauser;
-    e = {_eventname : "PauserUpdated"; pauser : newPauser; sender : initiator};
-    event e
-  | False =>
-    err = CodeNotOwner;
-    ThrowError err
-  end
+  isNotSelf current_pauser newPauser;
+  pauser := newPauser;
+  e = {_eventname : "PauserUpdated"; pauser : newPauser; sender : initiator};
+  event e
 end
+
 transition blacklist(address : ByStr20, initiator : ByStr20)
   isProxy _sender;
   current_blacklister <- blacklister;
