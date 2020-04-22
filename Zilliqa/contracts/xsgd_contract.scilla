@@ -154,8 +154,8 @@ end
 transition pause(initiator : ByStr20)
   isProxy _sender;
   current_pauser <- pauser;
-  ispauser = builtin eq current_pauser initiator;
-  match ispauser with
+  isPauser = builtin eq current_pauser initiator;
+  match isPauser with
   | True  =>
     paused := true;
     e = { _eventname : "Paused"; sender : initiator};
@@ -168,8 +168,8 @@ end
 transition unpause(initiator : ByStr20)
   isProxy _sender;
   current_pauser <- pauser;
-  ispauser = builtin eq current_pauser initiator;
-  match ispauser with
+  isPauser = builtin eq current_pauser initiator;
+  match isPauser with
   | True  =>
     paused := false;
     e = {_eventname : "Unpaused"; sender : initiator};
