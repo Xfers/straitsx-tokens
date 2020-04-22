@@ -77,7 +77,9 @@ type Error =
   | CodeInsufficientFunds
   | CodeInsufficientAllowance
   | CodeIsPaused
+  | CodeNotPaused
   | CodeIsBlacklisted
+  | CodeNotBlacklisted
 let make_error_event =
   fun (result : Error) =>
     let result_code = 
@@ -97,7 +99,9 @@ let make_error_event =
       | CodeInsufficientFunds         => Int32 -13
       | CodeInsufficientAllowance     => Int32 -14
       | CodeIsPaused                  => Int32 -15
+      | CodeNotPaused                 => Int32 -16
       | CodeIsBlacklisted             => Int32 -16
+      | CodeNotBlacklisted            => Int32 -16
       end
     in
     { _eventname : "Error"; code : result_code }
@@ -146,7 +150,7 @@ procedure ThrowError(err : Error)
 end
 
 procedure isProxy(address: ByStr20)
-  is_proxy = builtin eq address proxy_address;
+  is_proxy = builtin eq proxy_address address;
   match is_proxy with
   | True =>
   | False =>
@@ -181,6 +185,16 @@ procedure isPaused()
   is_paused <- paused;
   match is_paused with
   | True =>
+  | False =>
+    err = CodeNotPaused;
+    ThrowError err
+  end
+end
+
+procedure isNotPaused()
+  is_paused <- paused;
+  match is_paused with
+  | True =>
     err = CodeIsPaused;
     ThrowError err
   | False =>
@@ -199,6 +213,16 @@ procedure isBlacklister(address: ByStr20)
 end
 
 procedure isBlacklisted(address: ByStr20)
+  is_blacklisted <- exists blacklisted[address];
+  match is_blacklisted with
+  | True =>
+  | False =>
+    err = CodeNotBlacklisted;
+    ThrowError err
+  end
+end
+
+procedure isNotBlacklisted(address: ByStr20)
   is_blacklisted <- exists blacklisted[address];
   match is_blacklisted with
   | True =>
