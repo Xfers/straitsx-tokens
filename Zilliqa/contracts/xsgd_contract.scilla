@@ -13,38 +13,6 @@ let min_int =
   | False =>
     b
   end
-let andb_3 =
-  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) =>
-    let t = andb a b in
-    andb c t
-let andb_4 =
-  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) =>
-    let t = andb_3 a b c in
-    andb d t
-let andb_5 =
-  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) => fun (e : Bool) =>
-    let t = andb_4 a b c d in
-    andb e t
-let andb_6 =
-  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) => fun (e : Bool) => fun (f : Bool) =>
-    let t = andb_5 a b c d e in
-    andb f t  
-let orb_3 =
-  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) =>
-    let t = orb a b in
-    orb c t
-let orb_4 =
-  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) =>
-    let t = orb_3 a b c in
-    orb t d
-let orb_5 =
-  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) => fun (e : Bool) =>
-    let t = orb_4 a b c d in
-    orb t e
-let orb_6 =
-  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) => fun (e : Bool) => fun (f : Bool) =>
-    let t = orb_5 a b c d e in
-    orb t f
 let one_msg =
     fun (msg : Message) =>
         let nil_msg = Nil {Message} in
