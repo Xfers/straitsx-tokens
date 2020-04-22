@@ -83,6 +83,8 @@ contract XSGDContract
   proxy_address : ByStr20
 )
 with
+  (* Constraint expressions *)
+  (* Must return true or the contract will fail to deploy *)
   let string_is_not_empty =
     fun (s : String) =>
       let zero = Uint32 0 in
@@ -111,6 +113,7 @@ field blacklisted : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field allowed : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
 field minterAllowed : Map ByStr20 (Option Uint128) = Emp ByStr20 (Option Uint128)
 
+(* Internal functions, used like Solidity modifiers *)
 procedure ThrowError(err : Error)
   e = make_error_event err;
   event e;
@@ -118,9 +121,12 @@ procedure ThrowError(err : Error)
 end
 
 procedure isProxy(address: ByStr20)
+  (* Checks if caller is proxy *)
   is_proxy = builtin eq proxy_address address;
   match is_proxy with
+  (* if True, continue *)
   | True =>
+  (* if False, throw error *)
   | False =>
     err = CodeNotProxy;
     ThrowError err
@@ -242,87 +248,114 @@ procedure isNotSelf(a: ByStr20, b: ByStr20)
 end
 
 transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
+  (* Conditional checks *)
   isProxy _sender;
   isOwner initiator;
   isNotNull newOwner;
+  
+  (* Update state and emits event *)
   owner := newOwner;
   e = {_eventname : "OwnershipTransferred"; from : initiator; to : newOwner};
   event e
 end
 
 transition pause(initiator : ByStr20)
+  (* Conditional checks *)
   isProxy _sender;
   isPauser initiator;
+  
+  (* Update state and emits event *)
   paused := true;
   e = { _eventname : "Paused"; sender : initiator};
   event e
 end
 
 transition unpause(initiator : ByStr20)
+  (* Conditional checks *)
   isProxy _sender;
   isPauser initiator;
+  
+  (* Update state and emits event *)
   paused := false;
   e = {_eventname : "Unpaused"; sender : initiator};
   event e
 end
 
 transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isOwner initiator;
   isNotNull newPauser;
   current_pauser <- pauser;
   isNotSelf current_pauser newPauser;
+  
+  (* Update state and emits event *)
   pauser := newPauser;
   e = {_eventname : "PauserUpdated"; pauser : newPauser; sender : initiator};
   event e
 end
 
 transition blacklist(address : ByStr20, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isBlacklister initiator;
   isNotNull address;
   isNotBlacklisted address;
+
+  (* Update state and emits event *)
   blacklisted[address] := one;
   e = {_eventname : "Blacklisted"; address : address; sender : initiator};
   event e
 end
 
 transition unBlacklist(address : ByStr20, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isBlacklister initiator;
   isNotNull address;
   isBlacklisted address;
+
+  (* Update state and emits event *)
   delete blacklisted[address];
   e = {_eventname : "UnBlacklisted"; address : address; sender : initiator};
   event e
 end
 
 transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isOwner initiator;
   isNotNull newBlacklister;
   current_blacklister <- blacklister;
   isNotSelf current_blacklister newBlacklister;
+
+  (* Update state and emits event *)
   blacklister:= newBlacklister;
   e = {_eventname : "BlacklisterUpdated"; blacklister : newBlacklister; sender : initiator};
   event e
 end
 
 transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isOwner initiator;
   isNotNull newMasterMinter;
   current_masterMinter <- masterMinter;
   isNotSelf current_masterMinter newMasterMinter;
+
+  (* Update state and emits event *)
   masterMinter := newMasterMinter;
   e = {_eventname : "MasterMinterUpdated"; masterMinter : newMasterMinter; sender : initiator};
   event e
 end
 
 transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isMasterMinter initiator;
   isNotNull minter;
+  
+  (* Retrieves initial allowance of minter, calculates new total after adding amount to it *)
   get_minter_allowance <- minterAllowed[minter];
   mint_allowance =
     match get_minter_allowance with
@@ -331,15 +364,20 @@ transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
     end;
   new_mint_allowance = builtin add mint_allowance amount;
   new_option_mint_allowance = Some {Uint128} new_mint_allowance;
+  
+  (* Update state and emits event *)
   minterAllowed[minter] := new_option_mint_allowance;
   e = { _eventname : "IncreasedMinterAllowance"; minter : minter; new_mint_allowance : new_mint_allowance; sender : initiator};
   event e
 end
 
 transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isMasterMinter initiator;
   isNotNull minter;
+  
+  (* Retrieves initial allowance of minter, calculates new total after subtracting amount from it *)
   get_minter_allowance <- minterAllowed[minter];
   mint_allowance =
     match get_minter_allowance with
@@ -347,6 +385,8 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
     | _ => zero
     end;
   new_option_mint_allowance =
+    
+    (* If amount to be subtracted > minter allowance, set minter allowance to None {Uint128} *)
     let amount_le_allowance = uint128_le amount mint_allowance in
     match amount_le_allowance with
     | True =>
@@ -358,18 +398,23 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
         end
     | False => None {Uint128}
     end;
+    
+  (* Update state and emits event *)
   minterAllowed[minter] := new_option_mint_allowance;
   e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_option_mint_allowance : new_option_mint_allowance; sender : initiator};
   event e
 end
 
 transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)
+  (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
   isMinter initiator;
   isNotBlacklisted initiator;
   isNotBlacklisted to;
   isNotNull to;
+  
+  (* Retrieves allowance of minter and checks if value to mint is <= allowance  *)
   allowed_amount <- minterAllowed[initiator];
   match allowed_amount with
   | Some (Some a) =>
@@ -377,6 +422,8 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
     within_limits = uint128_le value a;
     and_res = andb greater_than_zero within_limits;
     match and_res with
+      
+    (* Both conditions passed so calculate increased supply and increased token balance of to *)
     | True =>
       new_supply = builtin add value current_supply;
       new_to_bal = builtin add value to_bal;
@@ -387,8 +434,12 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
         | True => None {Uint128}
         end;
       minterAllowed[initiator] := new_option_allowed_amount;
+
+      (* Emits event *)
       e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
       event e;
+      
+      (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
       msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
       msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
       msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
@@ -406,20 +457,29 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
 end
 
 transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
+  (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
   isMinter initiator;
   isNotBlacklisted initiator;
+  
+  (* Checks if the amount that the minter is trying to burn is <= token balance of minter *)
   greater_than_zero = uint128_gt value zero;
   can_do = uint128_le value initiator_balance;
   and_res = andb greater_than_zero can_do;
   match and_res with
+    
+    (* Both conditions passed so calculate reduced supply and reduced token balance of minter *)
   | True =>
     new_burn_balance = builtin sub initiator_balance value;
     new_supply = builtin sub current_supply value;
+    
+    (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
     msg_to_proxy = {_tag : "burnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
     msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
     msgs = two_msgs msg_to_proxy msg_to_sender;
+    
+    (* Emits event *)
     e = { _eventname : "Burnt"; burner : initiator; amount : value};
     event e;
     send msgs
@@ -430,24 +490,32 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
 end
 
 transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)
+  (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
   isBlacklisted address;
   isBlacklister initiator;
+  
+  (* Calculates reduced supply after burn, creates and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
   new_supply = builtin sub current_supply addr_bal;
   msg_to_proxy = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
   msg_to_sender = {_tag : "LawEnforcementWipingBurnSuccessCallBack"; _recipient : initiator; _amount : zero; address : address};
   msgs = two_msgs msg_to_proxy msg_to_sender;
+  
+  (* Emits event *)
   e = { _eventname : "LawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
   event e;
   send msgs
 end
 
 transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
   isNotBlacklisted initiator;
   isNotBlacklisted spender;
+  
+  (* Retrieves initial allowance of spender, calculates new total after adding value to it *)
   get_current_allowance <- allowed[initiator][spender];
   current_allowance =
     match get_current_allowance with
@@ -455,16 +523,21 @@ transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
     | None => zero
     end;
   new_allowance = builtin add current_allowance value;
+  
+  (* Update state and emits event *)
   allowed[initiator][spender] := new_allowance;
   e = {_eventname : "IncreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
   event e
 end
 
 transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
+  (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
   isNotBlacklisted initiator;
   isNotBlacklisted spender;
+  
+  (* Retrieves initial allowance of spender, calculates new total after subtracting value from it *)
   get_current_allowance <- allowed[initiator][spender];
   current_allowance =
     match get_current_allowance with
@@ -472,30 +545,43 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
     | None => zero
     end;
   new_allowance =
+    
+    (* If amount > allowance, set allowance to 0 otherwise decrease accordingly *)
     let value_le_allowance = uint128_le value current_allowance in
     match value_le_allowance with
     | True => builtin sub current_allowance value
     | False => zero
     end;
+    
+  (* Update state and emits event *)
   allowed[initiator][spender] := new_allowance;
   e = {_eventname : "DecreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
   event e
 end
 
 transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)
+  (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
   isNotBlacklisted initiator;
   isNotBlacklisted to;
   isNotSelf initiator to;
   isNotNull to;
+  
+  (* Checks if amount to transfer <= token balance of user *)
   can_do = uint128_le value init_bal;
   match can_do with
   | True =>
+    
+    (* Calculates updated balances of initiator and to *)
     new_init_bal = builtin sub init_bal value;
     new_to_bal = builtin add to_bal value;
+    
+    (* Emits event *)
     e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
     event e;
+    
+    (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
     msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
           to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
     msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
@@ -512,6 +598,7 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
 end
 
 transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
+  (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
   isNotBlacklisted initiator;
@@ -519,6 +606,8 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
   isNotBlacklisted from;
   isNotSelf from to;
   isNotNull to;
+  
+  (* Checks if amount to transfer <= allowance of spender *)
   sender_allowed_from <- allowed[from][initiator];
   match sender_allowed_from with
   | Some allowance =>
@@ -526,12 +615,18 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
     can_do = uint128_le value t;
     match can_do with
     | True =>
+      
+      (* Calculates updated balances of to and from *)
       new_from_bal = builtin sub from_bal value;
       new_to_bal = builtin add to_bal value;
       new_allowed = builtin sub allowance value;
       allowed[from][initiator] := new_allowed;
+      
+      (* Emits event *)
       e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
       event e;
+      
+      (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
       msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
               initiator : initiator; sender : from; recipient : to; amount : value };
       msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
