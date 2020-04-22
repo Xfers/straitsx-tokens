@@ -459,28 +459,18 @@ end
 
 transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)
   isProxy _sender;
-  isPaused <- paused;
-  isBlacklistedAddress <- exists blacklisted[address];
-  current_blacklister <- blacklister;
-  isBlacklister = builtin eq current_blacklister initiator;
-  or_res =
-  let isNotBlacklistedAddress = negb isBlacklistedAddress in
-  let isNotBlacklister = negb isBlacklister in
-    orb_3 isPaused isNotBlacklistedAddress isNotBlacklister;
-  match or_res with
-  | False =>
-      new_supply = builtin sub current_supply addr_bal;
-      msg_to_proxy = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
-      msg_to_sender = {_tag : "LawEnforcementWipingBurnSuccessCallBack"; _recipient : initiator; _amount : zero; address : address};
-      msgs = two_msgs msg_to_proxy msg_to_sender;
-      e = { _eventname : "LawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
-      event e;
-      send msgs
-  | True =>
-    err = CodeNotAuthorized;
-    ThrowError err
-  end
+  isNotPaused;
+  isBlacklisted address;
+  isBlacklister initiator;
+  new_supply = builtin sub current_supply addr_bal;
+  msg_to_proxy = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
+  msg_to_sender = {_tag : "LawEnforcementWipingBurnSuccessCallBack"; _recipient : initiator; _amount : zero; address : address};
+  msgs = two_msgs msg_to_proxy msg_to_sender;
+  e = { _eventname : "LawEnforcementWipingBurnt"; blacklister : initiator; address : address; amount : addr_bal};
+  event e;
+  send msgs
 end
+
 transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
   isProxy _sender;
   isPaused <- paused;
