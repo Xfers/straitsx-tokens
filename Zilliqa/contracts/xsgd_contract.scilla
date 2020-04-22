@@ -13,21 +13,26 @@ let min_int =
   | False =>
     b
   end
+let andb_3 =
+  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) =>
+    let t = andb a b in
+    andb c t
 let orb_3 =
   fun (a : Bool) => fun (b : Bool) => fun (c : Bool) =>
     let t = orb a b in
     orb c t
 let orb_4 =
   fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) =>
-    let t1 = orb a b in
-    let t2 = orb t1 c in
-    orb t2 d
+    let t1 = orb_3 a b c in
+    orb t1 d
 let orb_5 =
   fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) => fun (e : Bool) =>
-    let t1 = orb a b in
-    let t2 = orb t1 c in
-    let t3 = orb t2 d in
-    orb t3 e
+    let t1 = orb_4 a b c d in
+    orb t1 e
+let orb_6 =
+  fun (a : Bool) => fun (b : Bool) => fun (c : Bool) => fun (d : Bool) => fun (e : Bool) => fun (f : Bool) =>
+    let t1 = orb_5 a b c d e in
+    orb t1 f
 let one_msg =
     fun (msg : Message) =>
         let nil_msg = Nil {Message} in
@@ -37,15 +42,12 @@ let two_msgs =
   fun (msg2 : Message) =>
     let msgs_tmp = one_msg msg2 in
     Cons {Message} msg1 msgs_tmp
-let f_eq =
-  fun (a : ByStr20) =>
-  fun (b : ByStr20) =>
-    builtin eq a b
 let zero = Uint128 0
 let one  = Uint128 1
 let none_uint128 = None {Uint128}
 let true = True
 let false = False
+let null_address = 0x0000000000000000000000000000000000000000
 (* Error events *)
 type Error =
   | CodeNotProxy
@@ -128,8 +130,12 @@ transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
     ThrowError err
   | True  =>
     current_owner <- owner;
-    isowner = builtin eq initiator current_owner;
-    match isowner with
+    isOwner = builtin eq initiator current_owner;
+    isNull = builtin eq null_address newOwner;
+    and_res =
+    let notNull = negb isNull in
+      andb isOwner notNull;
+    match and_res with
     | True =>
       owner := newOwner;
       e = {_eventname : "OwnershipTransferred"; from : initiator; to : newOwner};
@@ -188,8 +194,15 @@ transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
     ThrowError err
   | True  =>
     current_owner <- owner;
-    isowner = builtin eq initiator current_owner;
-    match isowner with
+    current_pauser <- pauser;
+    isOwner = builtin eq initiator current_owner;
+    isNull = builtin eq null_address newPauser;
+    isSelf = builtin eq current_pauser newPauser;
+    and_res =
+    let notNull = negb isNull in
+    let notSelf = negb isSelf in
+      andb_3 isOwner notNull notSelf;
+    match and_res with
     | True  =>
       pauser := newPauser;
       e = {_eventname : "PauserUpdated"; pauser : newPauser; sender : initiator};
@@ -209,7 +222,11 @@ transition blacklist(address : ByStr20, initiator : ByStr20)
   | True  =>
     current_blacklister <- blacklister;
     isBlacklister = builtin eq current_blacklister initiator;
-    match isBlacklister with
+    isNull = builtin eq null_address address;
+    and_res =
+    let notNull = negb isNull in
+      andb isBlacklister notNull;
+    match and_res with
     | True =>
       blacklisted[address] := one;
       e = {_eventname : "Blacklisted"; address : address; sender : initiator};
@@ -229,7 +246,11 @@ transition unBlacklist(address : ByStr20, initiator : ByStr20)
   | True  =>
     current_blacklister <- blacklister;
     isBlacklister = builtin eq current_blacklister initiator;
-    match isBlacklister with
+    isNull = builtin eq null_address address;
+    and_res =
+    let notNull = negb isNull in
+      andb isBlacklister notNull;
+    match and_res with
     | True =>
       delete blacklisted[address];
       e = {_eventname : "UnBlacklisted"; address : address; sender : initiator};
@@ -248,8 +269,15 @@ transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
     ThrowError err
   | True =>
     current_owner <- owner;
-    isowner = builtin eq initiator current_owner;
-    match isowner with
+    current_blacklister <- blacklister;
+    isOwner = builtin eq initiator current_owner;
+    isNull = builtin eq null_address newBlacklister;
+    isSelf = builtin eq current_blacklister newBlacklister;
+    and_res =
+      let notNull = negb isNull in
+      let notSelf = negb isSelf in
+      andb_3 isOwner notNull notSelf;
+    match and_res with
     | True =>
       blacklister:= newBlacklister;
       e = {_eventname : "BlacklisterUpdated"; blacklister : newBlacklister; sender : initiator};
@@ -268,8 +296,15 @@ transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
     ThrowError err
   | True  =>
     current_owner <- owner;
-    isowner = builtin eq initiator current_owner;
-    match isowner with
+    current_masterMinter <- masterMinter;
+    isOwner = builtin eq initiator current_owner;
+    isNull = builtin eq null_address newMasterMinter;
+    isSelf = builtin eq current_masterMinter newMasterMinter;
+    and_res =
+      let notNull = negb isNull in
+      let notSelf = negb isSelf in
+      andb_3 isOwner notNull notSelf;
+    match and_res with
     | True =>
       masterMinter := newMasterMinter;
       e = {_eventname : "MasterMinterUpdated"; masterMinter : newMasterMinter; sender : initiator};
@@ -289,7 +324,11 @@ transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   | True  =>
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
-    match isMasterMinter with
+    isNull = builtin eq null_address minter;
+    and_res =
+    let notNull = negb isNull in
+      andb isMasterMinter notNull;
+    match and_res with
     | True =>
       get_minter_allowance <- minterAllowed[minter];
       mint_allowance =
@@ -317,7 +356,11 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   | True  =>
     currentMasterMinter <- masterMinter;
     isMasterMinter = builtin eq initiator currentMasterMinter;
-    match isMasterMinter with
+    isNull = builtin eq null_address minter;
+    and_res =
+    let notNull = negb isNull in
+      andb isMasterMinter notNull;
+    match and_res with
     | True =>
       get_minter_allowance <- minterAllowed[minter];
       mint_allowance =
@@ -362,9 +405,10 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
         end;
     isBlacklistedMinter <- exists blacklisted[initiator];
     isBlacklistedRecipient <- exists blacklisted[to];
+    isNull = builtin eq null_address to;
     or_res =
-        let isMinterNotAllowed = negb isMinterAllowed in
-         orb_4 isPaused isMinterNotAllowed isBlacklistedMinter isBlacklistedRecipient;
+    let isMinterNotAllowed = negb isMinterAllowed in
+      orb_5 isPaused isMinterNotAllowed isBlacklistedMinter isBlacklistedRecipient isNull;
     match or_res with
     | False =>
       allowed_amount <- minterAllowed[initiator];
@@ -548,8 +592,9 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
       isPaused <- paused;
       isBlacklistedInitiator  <- exists blacklisted[initiator];
       isBlacklistedRecipient  <- exists blacklisted[to];
-      isSelf = builtin eq to initiator;
-      or_res = orb_4 isPaused isBlacklistedInitiator isBlacklistedRecipient isSelf;
+      isSelf = builtin eq initiator to;
+      isNull = builtin eq null_address to;
+      or_res = orb_5 isPaused isBlacklistedInitiator isBlacklistedRecipient isSelf isNull;
       match or_res with
       | False =>
         can_do = uint128_le value init_bal;
@@ -590,7 +635,8 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
     isBlacklistedRecipient <- exists blacklisted[to];
     isBlacklistedFrom <- exists blacklisted[from];
     isSelf = builtin eq from to;
-    or_res = orb_5 isPaused isBlacklistedInitiator isBlacklistedRecipient isBlacklistedFrom isSelf;
+    isNull = builtin eq null_address to;
+    or_res = orb_6 isPaused isBlacklistedInitiator isBlacklistedRecipient isBlacklistedFrom isSelf isNull;
     match or_res with
     | False =>
       sender_allowed_from <- allowed[from][initiator];
