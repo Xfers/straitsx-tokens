@@ -321,23 +321,14 @@ end
 
 transition unBlacklist(address : ByStr20, initiator : ByStr20)
   isProxy _sender;
-  current_blacklister <- blacklister;
-  isBlacklister = builtin eq current_blacklister initiator;
-  isNull = builtin eq null_address address;
-  isBlacklisted <- exists blacklisted[address];
-  and_res =
-  let notNull = negb isNull in
-    andb_3 isBlacklister notNull isBlacklisted;
-  match and_res with
-  | True =>
-    delete blacklisted[address];
-    e = {_eventname : "UnBlacklisted"; address : address; sender : initiator};
-    event e
-  | False =>
-    err = CodeNotBlacklister;
-    ThrowError err
-  end
+  isBlacklister initiator;
+  isNotNull address;
+  isBlacklisted address;
+  delete blacklisted[address];
+  e = {_eventname : "UnBlacklisted"; address : address; sender : initiator};
+  event e
 end
+
 transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
   isProxy _sender;
   current_owner <- owner;
