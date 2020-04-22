@@ -67,12 +67,17 @@ type Error =
   | CodeNotPauser
   | CodeNotBlacklister
   | CodeNotMasterMinter
+  | CodeNotMinter
+  | CodeIsNull
+  | CodeIsSelf
   | CodeInsufficientMintAllowance
   | CodeNoMintAllowance
   | CodeNotAuthorized
   | CodeNotFound
   | CodeInsufficientFunds
   | CodeInsufficientAllowance
+  | CodeIsPaused
+  | CodeIsBlacklisted
 let make_error_event =
   fun (result : Error) =>
     let result_code = 
@@ -82,12 +87,17 @@ let make_error_event =
       | CodeNotPauser                 => Int32 -3
       | CodeNotBlacklister            => Int32 -4
       | CodeNotMasterMinter           => Int32 -5
-      | CodeInsufficientMintAllowance => Int32 -6
-      | CodeNoMintAllowance           => Int32 -7
-      | CodeNotAuthorized             => Int32 -8
-      | CodeNotFound                  => Int32 -9
-      | CodeInsufficientFunds         => Int32 -10
-      | CodeInsufficientAllowance     => Int32 -11
+      | CodeNotMinter                 => Int32 -6
+      | CodeIsNull                    => Int32 -7
+      | CodeIsSelf                    => Int32 -8
+      | CodeInsufficientMintAllowance => Int32 -9
+      | CodeNoMintAllowance           => Int32 -10
+      | CodeNotAuthorized             => Int32 -11
+      | CodeNotFound                  => Int32 -12
+      | CodeInsufficientFunds         => Int32 -13
+      | CodeInsufficientAllowance     => Int32 -14
+      | CodeIsPaused                  => Int32 -15
+      | CodeIsBlacklisted             => Int32 -16
       end
     in
     { _eventname : "Error"; code : result_code }
@@ -136,12 +146,106 @@ procedure ThrowError(err : Error)
 end
 
 procedure isProxy(address: ByStr20)
-  callerIsProxy = builtin eq address proxy_address;
-  match callerIsProxy with
+  is_proxy = builtin eq address proxy_address;
+  match is_proxy with
   | False =>
     err = CodeNotProxy;
     ThrowError err
   | True =>
+  end
+end
+
+procedure IsOwner(address: ByStr20)
+  current_owner <- owner;
+  is_owner = builtin eq address current_owner;
+  match is_owner with
+  | False =>
+    err = CodeNotOwner;
+    ThrowError err
+  | True =>
+  end
+end
+
+procedure isPauser(address: ByStr20)
+  current_pauser <- pauser;
+  is_pauser = builtin eq current_pauser address;
+  match is_pauser with
+  | False =>
+    err = CodeNotPauser;
+    ThrowError err
+  | True  =>
+  end
+end
+
+procedure isPaused()
+  is_paused <- paused;
+  match is_paused with
+  | True =>
+    err = CodeIsPaused;
+    ThrowError err
+  | False =>
+  end
+end
+
+procedure isBlacklister(address: ByStr20)
+  current_blacklister <- blacklister;
+  is_blacklister = builtin eq current_blacklister address;
+  match is_blacklister with
+  | False =>
+    err = CodeNotBlacklister;
+    ThrowError err
+  | True  =>
+  end
+end
+
+procedure isBlacklisted(address: ByStr20)
+  is_blacklisted <- exists blacklisted[address];
+  match is_blacklisted with
+  | True =>
+    err = CodeIsBlacklisted;
+    ThrowError err
+  | False =>
+  end
+end
+
+procedure isMasterMinter(address: ByStr20)
+  current_masterMinter <- masterMinter;
+  is_masterMinter = builtin eq current_masterMinter address;
+  match is_masterMinter with
+  | False =>
+    err = CodeNotMasterMinter;
+    ThrowError err
+  | True  =>
+  end
+end
+
+procedure isMinter(address: ByStr20)
+  is_minter <- minterAllowed[address];
+  match is_minter with
+  | Some (Some allowance)  =>
+  | _ =>
+    err = CodeNotMinter;
+    ThrowError err
+  end
+end
+
+procedure isNotNull(address: ByStr20)
+  is_null = builtin eq address null_address;
+  match is_null with
+  | True =>
+    err = CodeIsNull;
+    ThrowError err
+  | False =>
+  end
+end
+
+procedure isNotSelf(a: ByStr20, b: ByStr20)
+  is_not_self = builtin eq a b;
+  match is_not_self with
+  | True =>
+    err = CodeIsSelf;
+    ThrowError err
+  | False =>
   end
 end
 
