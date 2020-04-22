@@ -342,25 +342,15 @@ end
 
 transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
   isProxy _sender;
-  current_owner <- owner;
+  isOwner initiator;
+  isNotNull newMasterMinter;
   current_masterMinter <- masterMinter;
-  isOwner = builtin eq initiator current_owner;
-  isNull = builtin eq null_address newMasterMinter;
-  isSelf = builtin eq current_masterMinter newMasterMinter;
-  and_res =
-    let notNull = negb isNull in
-    let notSelf = negb isSelf in
-    andb_3 isOwner notNull notSelf;
-  match and_res with
-  | True =>
-    masterMinter := newMasterMinter;
-    e = {_eventname : "MasterMinterUpdated"; masterMinter : newMasterMinter; sender : initiator};
-    event e
-  | False =>
-    err = CodeNotOwner;
-    ThrowError err
-  end
+  isNotSelf current_masterMinter newMasterMinter;
+  masterMinter := newMasterMinter;
+  e = {_eventname : "MasterMinterUpdated"; masterMinter : newMasterMinter; sender : initiator};
+  event e
 end
+
 transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
   isProxy _sender;
   currentMasterMinter <- masterMinter;
