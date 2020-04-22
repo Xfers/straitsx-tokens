@@ -512,27 +512,60 @@ end
 
 transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)
   isProxy _sender;
-  isPaused <- paused;
-  isBlacklistedInitiator  <- exists blacklisted[initiator];
-  isBlacklistedRecipient  <- exists blacklisted[to];
-  isSelf = builtin eq initiator to;
-  isNull = builtin eq null_address to;
-  or_res = orb_5 isPaused isBlacklistedInitiator isBlacklistedRecipient isSelf isNull;
-  match or_res with
+  isNotPaused;
+  isNotBlacklisted initiator;
+  isNotBlacklisted to;
+  isNotSelf initiator to;
+  isNotNull to;
+  can_do = uint128_le value init_bal;
+  match can_do with
+  | True =>
+    new_init_bal = builtin sub init_bal value;
+    new_to_bal = builtin add to_bal value;
+    e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
+    event e;
+    msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
+          to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
+    msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
+          sender : initiator; recipient : to; amount : value};
+    msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
+          sender : initiator; recipient : to; amount : value};
+    msgs = two_msgs msg_to_proxy msg_to_sender;
+    msgs_final = Cons {Message} msg_to_recipient msgs;
+    send msgs_final
   | False =>
-    can_do = uint128_le value init_bal;
+    err = CodeInsufficientFunds;
+    ThrowError err
+  end
+end
+
+transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
+  isProxy _sender;
+  isNotPaused;
+  isNotBlacklisted initiator;
+  isNotBlacklisted to;
+  isNotBlacklisted from;
+  isNotSelf from to;
+  isNotNull to;
+  sender_allowed_from <- allowed[from][initiator];
+  match sender_allowed_from with
+  | Some allowance =>
+    t = min_int from_bal allowance;
+    can_do = uint128_le value t;
     match can_do with
     | True =>
-      new_init_bal = builtin sub init_bal value;
+      new_from_bal = builtin sub from_bal value;
       new_to_bal = builtin add to_bal value;
-      e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
+      new_allowed = builtin sub allowance value;
+      allowed[from][initiator] := new_allowed;
+      e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
       event e;
-      msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
-            to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
-      msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
-            sender : initiator; recipient : to; amount : value};
-      msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
-            sender : initiator; recipient : to; amount : value};
+      msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
+              initiator : initiator; sender : from; recipient : to; amount : value };
+      msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
+              from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
+      msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
+              initiator : initiator; sender : from; recipient : to; amount : value};
       msgs = two_msgs msg_to_proxy msg_to_sender;
       msgs_final = Cons {Message} msg_to_recipient msgs;
       send msgs_final
@@ -540,54 +573,8 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
       err = CodeInsufficientFunds;
       ThrowError err
     end
-  | True =>
-    err = CodeNotAuthorized;
-    ThrowError err
-  end
-end
-transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
-  isProxy _sender;
-  isPaused <- paused;
-  isBlacklistedInitiator <- exists blacklisted[initiator];
-  isBlacklistedRecipient <- exists blacklisted[to];
-  isBlacklistedFrom <- exists blacklisted[from];
-  isSelf = builtin eq from to;
-  isNull = builtin eq null_address to;
-  or_res = orb_6 isPaused isBlacklistedInitiator isBlacklistedRecipient isBlacklistedFrom isSelf isNull;
-  match or_res with
-  | False =>
-    sender_allowed_from <- allowed[from][initiator];
-    match sender_allowed_from with
-    | Some allowance =>
-      t = min_int from_bal allowance;
-      can_do = uint128_le value t;
-      match can_do with
-      | True =>
-        new_from_bal = builtin sub from_bal value;
-        new_to_bal = builtin add to_bal value;
-        new_allowed = builtin sub allowance value;
-        allowed[from][initiator] := new_allowed;
-        e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
-        event e;
-        msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
-                initiator : initiator; sender : from; recipient : to; amount : value };
-        msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
-                from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
-        msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
-                initiator : initiator; sender : from; recipient : to; amount : value};
-        msgs = two_msgs msg_to_proxy msg_to_sender;
-        msgs_final = Cons {Message} msg_to_recipient msgs;
-        send msgs_final
-      | False =>
-        err = CodeInsufficientFunds;
-        ThrowError err
-      end
-    | None =>
-      err = CodeInsufficientAllowance;
-      ThrowError err
-    end
-  | True =>
-    err = CodeNotAuthorized;
+  | None =>
+    err = CodeInsufficientAllowance;
     ThrowError err
   end
 end
