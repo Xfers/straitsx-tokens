@@ -405,8 +405,10 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
   allowed_amount <- minterAllowed[initiator];
   match allowed_amount with
   | Some (Some a) =>
+    greater_than_zero = uint128_gt value zero;
     within_limits = uint128_le value a;
-    match within_limits with
+    and_res = andb greater_than_zero within_limits;
+    match and_res with
     | True =>
       new_supply = builtin add value current_supply;
       new_to_bal = builtin add value to_bal;
@@ -440,8 +442,10 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
   isNotPaused;
   isMinter initiator;
   isNotBlacklisted initiator;
+  greater_than_zero = uint128_gt value zero;
   can_do = uint128_le value initiator_balance;
-  match can_do with
+  and_res = andb greater_than_zero can_do;
+  match and_res with
   | True =>
     new_burn_balance = builtin sub initiator_balance value;
     new_supply = builtin sub current_supply value;
