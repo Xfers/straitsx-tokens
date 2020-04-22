@@ -473,55 +473,43 @@ end
 
 transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
   isProxy _sender;
-  isPaused <- paused;
-  isBlacklistedInitiator <- exists blacklisted[initiator];
-  isBlacklistedSpender   <- exists blacklisted[spender];
-  or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedSpender;
-  match or_res with
-  | False =>
-    get_current_allowance <- allowed[initiator][spender];
-    current_allowance =
-      match get_current_allowance with
-      | Some allowance => allowance
-      | None => zero
-      end;
-    new_allowance = builtin add current_allowance value;
-    allowed[initiator][spender] := new_allowance;
-    e = {_eventname : "IncreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
-    event e
-  | True =>
-    err = CodeNotAuthorized;
-    ThrowError err
-  end
+  isNotPaused;
+  isNotBlacklisted initiator;
+  isNotBlacklisted spender;
+  get_current_allowance <- allowed[initiator][spender];
+  current_allowance =
+    match get_current_allowance with
+    | Some allowance => allowance
+    | None => zero
+    end;
+  new_allowance = builtin add current_allowance value;
+  allowed[initiator][spender] := new_allowance;
+  e = {_eventname : "IncreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
+  event e
 end
+
 transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
   isProxy _sender;
-  isPaused <- paused;
-  isBlacklistedInitiator <- exists blacklisted[initiator];
-  isBlacklistedSpender   <- exists blacklisted[spender];
-  or_res = orb_3 isPaused isBlacklistedInitiator isBlacklistedSpender;
-  match or_res with
-  | False =>
-    get_current_allowance <- allowed[initiator][spender];
-    current_allowance =
-      match get_current_allowance with
-      | Some allowance => allowance
-      | None => zero
-      end;
-    new_allowance =
-      let value_le_allowance = uint128_le value current_allowance in
-      match value_le_allowance with
-      | True => builtin sub current_allowance value
-      | False => zero
-      end;
-    allowed[initiator][spender] := new_allowance;
-    e = {_eventname : "DecreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
-    event e
-  | True =>
-    err = CodeNotAuthorized;
-    ThrowError err
-  end
+  isNotPaused;
+  isNotBlacklisted initiator;
+  isNotBlacklisted spender;
+  get_current_allowance <- allowed[initiator][spender];
+  current_allowance =
+    match get_current_allowance with
+    | Some allowance => allowance
+    | None => zero
+    end;
+  new_allowance =
+    let value_le_allowance = uint128_le value current_allowance in
+    match value_le_allowance with
+    | True => builtin sub current_allowance value
+    | False => zero
+    end;
+  allowed[initiator][spender] := new_allowance;
+  e = {_eventname : "DecreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
+  event e
 end
+
 transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)
   isProxy _sender;
   isPaused <- paused;
