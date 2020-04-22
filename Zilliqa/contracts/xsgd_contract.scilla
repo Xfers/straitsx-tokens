@@ -268,17 +268,10 @@ end
 
 transition unpause(initiator : ByStr20)
   isProxy _sender;
-  current_pauser <- pauser;
-  isPauser = builtin eq current_pauser initiator;
-  match isPauser with
-  | True  =>
-    paused := false;
-    e = {_eventname : "Unpaused"; sender : initiator};
-    event e
-  | False =>
-    err = CodeNotPauser;
-    ThrowError err
-  end
+  isPauser initiator;
+  paused := false;
+  e = {_eventname : "Unpaused"; sender : initiator};
+  event e
 end
 transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
   isProxy _sender;
