@@ -157,7 +157,7 @@ end
 
 procedure isOwner(address: ByStr20)
   current_owner <- owner;
-  is_owner = builtin eq address current_owner;
+  is_owner = builtin eq current_owner address;
   match is_owner with
   | True =>
   | False =>
@@ -260,18 +260,12 @@ end
 
 transition pause(initiator : ByStr20)
   isProxy _sender;
-  current_pauser <- pauser;
-  isPauser = builtin eq current_pauser initiator;
-  match isPauser with
-  | True  =>
-    paused := true;
-    e = { _eventname : "Paused"; sender : initiator};
-    event e
-  | False =>
-    err = CodeNotPauser;
-    ThrowError err
-  end
+  isPauser initiator;
+  paused := true;
+  e = { _eventname : "Paused"; sender : initiator};
+  event e
 end
+
 transition unpause(initiator : ByStr20)
   isProxy _sender;
   current_pauser <- pauser;
