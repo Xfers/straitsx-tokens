@@ -397,57 +397,44 @@ end
 
 transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)
   isProxy _sender;
-  isPaused <- paused;
-  isMinter <- minterAllowed[initiator];
-  isMinterAllowed =
-      match isMinter with
-      | Some (Some allowance) => True
-      | _ => False
-      end;
-  isBlacklistedMinter <- exists blacklisted[initiator];
-  isBlacklistedRecipient <- exists blacklisted[to];
-  isNull = builtin eq null_address to;
-  or_res =
-  let isMinterNotAllowed = negb isMinterAllowed in
-    orb_5 isPaused isMinterNotAllowed isBlacklistedMinter isBlacklistedRecipient isNull;
-  match or_res with
-  | False =>
-    allowed_amount <- minterAllowed[initiator];
-    match allowed_amount with
-    | Some (Some a) =>
-      within_limits = uint128_le value a;
-      match within_limits with
-      | True =>
-        new_supply = builtin add value current_supply;
-        new_to_bal = builtin add value to_bal;
-        new_allowed_amount = builtin sub a value;
-        new_option_allowed_amount = let equal_zero = builtin eq zero new_allowed_amount in
-          match equal_zero with
-          | False => Some {Uint128} new_allowed_amount
-          | True => None {Uint128}
-          end;
-        minterAllowed[initiator] := new_option_allowed_amount;
-        e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
-        event e;
-        msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
-        msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
-        msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
-        msgs = two_msgs msg_to_proxy msg_to_sender;
-        msgs_final = Cons {Message} msg_to_recipient msgs;
-        send msgs_final
-      | False =>
-        err = CodeInsufficientMintAllowance;
-        ThrowError err
-      end
-    | _ =>
-      err = CodeNoMintAllowance;
+  isNotPaused;
+  isMinter initiator;
+  isNotBlacklisted initiator;
+  isNotBlacklisted to;
+  isNotNull to;
+  allowed_amount <- minterAllowed[initiator];
+  match allowed_amount with
+  | Some (Some a) =>
+    within_limits = uint128_le value a;
+    match within_limits with
+    | True =>
+      new_supply = builtin add value current_supply;
+      new_to_bal = builtin add value to_bal;
+      new_allowed_amount = builtin sub a value;
+      new_option_allowed_amount = let equal_zero = builtin eq zero new_allowed_amount in
+        match equal_zero with
+        | False => Some {Uint128} new_allowed_amount
+        | True => None {Uint128}
+        end;
+      minterAllowed[initiator] := new_option_allowed_amount;
+      e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
+      event e;
+      msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
+      msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
+      msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
+      msgs = two_msgs msg_to_proxy msg_to_sender;
+      msgs_final = Cons {Message} msg_to_recipient msgs;
+      send msgs_final
+    | False =>
+      err = CodeInsufficientMintAllowance;
       ThrowError err
     end
-  | True =>
-    err = CodeNotAuthorized;
+  | _ =>
+    err = CodeNoMintAllowance;
     ThrowError err
   end
 end
+
 transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
   isProxy _sender;
   isPaused <- paused;
