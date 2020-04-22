@@ -155,7 +155,7 @@ procedure isProxy(address: ByStr20)
   end
 end
 
-procedure IsOwner(address: ByStr20)
+procedure isOwner(address: ByStr20)
   current_owner <- owner;
   is_owner = builtin eq address current_owner;
   match is_owner with
@@ -251,22 +251,13 @@ end
 
 transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
   isProxy _sender;
-  current_owner <- owner;
-  isOwner = builtin eq initiator current_owner;
-  isNull = builtin eq null_address newOwner;
-  and_res =
-  let notNull = negb isNull in
-    andb isOwner notNull;
-  match and_res with
-  | True =>
-    owner := newOwner;
-    e = {_eventname : "OwnershipTransferred"; from : initiator; to : newOwner};
-    event e
-  | False =>
-    err = CodeNotOwner;
-    ThrowError err
-  end
+  isOwner initiator;
+  isNotNull newOwner;
+  owner := newOwner;
+  e = {_eventname : "OwnershipTransferred"; from : initiator; to : newOwner};
+  event e
 end
+
 transition pause(initiator : ByStr20)
   isProxy _sender;
   current_pauser <- pauser;
