@@ -148,10 +148,10 @@ end
 procedure isProxy(address: ByStr20)
   is_proxy = builtin eq address proxy_address;
   match is_proxy with
+  | True =>
   | False =>
     err = CodeNotProxy;
     ThrowError err
-  | True =>
   end
 end
 
@@ -159,10 +159,10 @@ procedure isOwner(address: ByStr20)
   current_owner <- owner;
   is_owner = builtin eq address current_owner;
   match is_owner with
+  | True =>
   | False =>
     err = CodeNotOwner;
     ThrowError err
-  | True =>
   end
 end
 
@@ -170,10 +170,10 @@ procedure isPauser(address: ByStr20)
   current_pauser <- pauser;
   is_pauser = builtin eq current_pauser address;
   match is_pauser with
+  | True  =>
   | False =>
     err = CodeNotPauser;
     ThrowError err
-  | True  =>
   end
 end
 
@@ -191,10 +191,10 @@ procedure isBlacklister(address: ByStr20)
   current_blacklister <- blacklister;
   is_blacklister = builtin eq current_blacklister address;
   match is_blacklister with
+  | True  =>
   | False =>
     err = CodeNotBlacklister;
     ThrowError err
-  | True  =>
   end
 end
 
@@ -212,10 +212,10 @@ procedure isMasterMinter(address: ByStr20)
   current_masterMinter <- masterMinter;
   is_masterMinter = builtin eq current_masterMinter address;
   match is_masterMinter with
+  | True  =>
   | False =>
     err = CodeNotMasterMinter;
     ThrowError err
-  | True  =>
   end
 end
 
