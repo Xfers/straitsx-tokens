@@ -254,7 +254,7 @@ procedure isMinter(address: ByStr20)
 end
 
 procedure isNotNull(address: ByStr20)
-  is_null = builtin eq address null_address;
+  is_null = builtin eq null_address address;
   match is_null with
   | True =>
     err = CodeIsNull;
@@ -331,25 +331,15 @@ end
 
 transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
   isProxy _sender;
-  current_owner <- owner;
+  isOwner initiator;
+  isNotNull newBlacklister;
   current_blacklister <- blacklister;
-  isOwner = builtin eq initiator current_owner;
-  isNull = builtin eq null_address newBlacklister;
-  isSelf = builtin eq current_blacklister newBlacklister;
-  and_res =
-    let notNull = negb isNull in
-    let notSelf = negb isSelf in
-    andb_3 isOwner notNull notSelf;
-  match and_res with
-  | True =>
-    blacklister:= newBlacklister;
-    e = {_eventname : "BlacklisterUpdated"; blacklister : newBlacklister; sender : initiator};
-    event e
-  | False =>
-    err = CodeNotOwner;
-    ThrowError err
-  end
+  isNotSelf current_blacklister newBlacklister;
+  blacklister:= newBlacklister;
+  e = {_eventname : "BlacklisterUpdated"; blacklister : newBlacklister; sender : initiator};
+  event e
 end
+
 transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
   isProxy _sender;
   current_owner <- owner;
