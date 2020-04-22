@@ -223,9 +223,11 @@ transition blacklist(address : ByStr20, initiator : ByStr20)
     current_blacklister <- blacklister;
     isBlacklister = builtin eq current_blacklister initiator;
     isNull = builtin eq null_address address;
+    isBlacklisted <- exists blacklisted[address];
     and_res =
     let notNull = negb isNull in
-      andb isBlacklister notNull;
+    let notBlacklisted = negb isBlacklisted in
+      andb_3 isBlacklister notNull notBlacklisted;
     match and_res with
     | True =>
       blacklisted[address] := one;
@@ -247,9 +249,10 @@ transition unBlacklist(address : ByStr20, initiator : ByStr20)
     current_blacklister <- blacklister;
     isBlacklister = builtin eq current_blacklister initiator;
     isNull = builtin eq null_address address;
+    isBlacklisted <- exists blacklisted[address];
     and_res =
     let notNull = negb isNull in
-      andb isBlacklister notNull;
+      andb_3 isBlacklister notNull isBlacklisted;
     match and_res with
     | True =>
       delete blacklisted[address];
