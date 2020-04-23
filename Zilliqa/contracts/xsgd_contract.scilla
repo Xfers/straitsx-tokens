@@ -494,7 +494,7 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr
   isProxy _sender;
   isNotPaused;
   isBlacklisted address;
-  isBlacklister initiator;
+  isNotBlacklister initiator;
   
   (* Calculates reduced supply after burn, creates and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
   new_supply = builtin sub current_supply addr_bal;
