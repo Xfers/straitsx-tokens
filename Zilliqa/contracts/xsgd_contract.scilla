@@ -40,8 +40,6 @@ type Error =
   | CodeIsSelf
   | CodeInsufficientMintAllowance
   | CodeNoMintAllowance
-  | CodeNotAuthorized
-  | CodeNotFound
   | CodeInsufficientFunds
   | CodeInsufficientAllowance
   | CodeIsPaused
@@ -62,13 +60,11 @@ let make_error_event =
       | CodeIsSelf                    => Int32 -8
       | CodeInsufficientMintAllowance => Int32 -9
       | CodeNoMintAllowance           => Int32 -10
-      | CodeNotAuthorized             => Int32 -11
-      | CodeNotFound                  => Int32 -12
-      | CodeInsufficientFunds         => Int32 -13
-      | CodeInsufficientAllowance     => Int32 -14
-      | CodeIsPaused                  => Int32 -15
-      | CodeNotPaused                 => Int32 -16
-      | CodeIsBlacklisted             => Int32 -16
+      | CodeInsufficientFunds         => Int32 -11
+      | CodeInsufficientAllowance     => Int32 -12
+      | CodeIsPaused                  => Int32 -13
+      | CodeNotPaused                 => Int32 -14
+      | CodeIsBlacklisted             => Int32 -15
       | CodeNotBlacklisted            => Int32 -16
       end
     in
