@@ -14,6 +14,21 @@ let one_msg =
         let nil_msg = Nil {Message} in
         Cons {Message} msg nil_msg
 
+(* Error events *)
+type Error =
+  | CodeNotAdmin
+  | CodeNotCurrImpl
+let make_error_event =
+  fun (result : Error) =>
+    let result_code = 
+      match result with
+      | CodeNotAdmin                  => Int32 -1
+      | CodeNotCurrImpl               => Int32 -2
+      end
+    in
+    { _eventname : "Error"; code : result_code }
+
+
 (***************************************************)
 (*             The contract definition             *)
 (***************************************************)
@@ -28,6 +43,37 @@ field implementation : ByStr20 = init_implementation
 field admin : ByStr20 = init_admin
 field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
 field totalSupply : Uint128 = zero
+
+(* Internal functions, used like Solidity modifiers *)
+procedure ThrowError(err : Error)
+  e = make_error_event err;
+  event e;
+  throw
+end
+
+procedure isAdmin(address: ByStr20)
+  current_admin <- admin;
+  is_admin = builtin eq current_admin address;
+  match is_admin with
+  (* if True, continue *)
+  | True =>
+  (* if False, throw error *)
+  | False =>
+    err = CodeNotAdmin;
+    ThrowError err
+  end
+end
+
+procedure isCurrImpl(address: ByStr20)
+  current_impl <- implementation;
+  is_curr_imp = builtin eq current_impl address;
+  match is_curr_imp with
+  | True => 
+  | False =>
+    err = CodeNotCurrImpl;
+    ThrowError err
+  end
+end
 
 transition UpgradeTo(newImplementation : ByStr20)
     currentAdmin <- admin;
