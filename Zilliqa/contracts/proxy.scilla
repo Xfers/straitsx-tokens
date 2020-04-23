@@ -10,9 +10,9 @@ let zero = Uint128 0
 
 (* returns singleton List Message *)
 let one_msg =
-    fun (msg : Message) =>
-        let nil_msg = Nil {Message} in
-        Cons {Message} msg nil_msg
+  fun (msg : Message) =>
+    let nil_msg = Nil {Message} in
+    Cons {Message} msg nil_msg
 
 (* Error events *)
 type Error =
@@ -76,31 +76,24 @@ procedure isCurrImpl(address: ByStr20)
 end
 
 transition UpgradeTo(newImplementation : ByStr20)
-    currentAdmin <- admin;
-    isAdmin = builtin eq currentAdmin _sender;
-    match isAdmin with
-    | True =>
-      implementation := newImplementation;
-      e = {_eventname : "Upgraded"; implementation_address : newImplementation};
-      event e
-    | False =>
-      e = {_eventname : "upgradeTo FailedNotAdmin"; newImplementation : newImplementation};
-      event e
-    end
+  (* Conditional checks *)
+  isAdmin _sender;
+
+  (* Update state and emits event *)
+  implementation := newImplementation;
+  e = {_eventname : "Upgraded"; implementation_address : newImplementation};
+  event e
 end
 
 transition ChangeAdmin(newAdmin : ByStr20)
-    currentAdmin <- admin;
-    isAdmin = builtin eq currentAdmin _sender;
-    match isAdmin with
-    | True =>
-      admin := newAdmin;
-      e = {_eventname : "AdminChanged"; oldAdmin : currentAdmin; newAdmin : newAdmin};
-      event e
-    | False =>
-      e = {_eventname : "changeAdmin FailedNotAdmin"; newAdmin : newAdmin};
-      event e
-    end
+  (* Conditional checks *)
+  isAdmin _sender;
+
+  (* Update state and emits event *)
+  currentAdmin <- admin;
+  admin := newAdmin;
+  e = {_eventname : "AdminChanged"; oldAdmin : currentAdmin; newAdmin : newAdmin};
+  event e
 end
 
 transition TransferOwnership(newOwner : ByStr20)
