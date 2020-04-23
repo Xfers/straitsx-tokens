@@ -174,15 +174,12 @@ transition Mint(recipient: ByStr20, amount : Uint128)
 end
 
 transition mintCallBack(to: ByStr20, new_to_bal: Uint128, new_supply : Uint128)
-    current_impt <- implementation;
-    is_current_imp = builtin eq current_impt _sender;
-    match is_current_imp with
-    | False =>
-        throw
-    | True =>
-        balances[to] := new_to_bal;
-        totalSupply := new_supply
-    end
+  (* Conditional checks *)
+  isCurrImpl _sender;
+
+  (* Update state and emits event *)
+  balances[to] := new_to_bal;
+  totalSupply := new_supply
 end
 
 transition IncreaseAllowance (spender : ByStr20, amount : Uint128)
@@ -225,15 +222,12 @@ transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128)
 end
 
 transition transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)
-    current_impt <- implementation;
-    is_current_imp = builtin eq current_impt _sender;
-    match is_current_imp with
-    | False =>
-        throw
-    | True =>
-        balances[to] := new_to_bal;
-        balances[from] := new_from_bal
-    end
+  (* Conditional checks *)
+  isCurrImpl _sender;
+
+  (* Update state and emits event *)
+  balances[to] := new_to_bal;
+  balances[from] := new_from_bal
 end
 
 transition Transfer (to : ByStr20, amount : Uint128)
@@ -258,15 +252,12 @@ transition Transfer (to : ByStr20, amount : Uint128)
 end
 
 transition transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)
-    current_impt <- implementation;
-    is_current_imp = builtin eq current_impt _sender;
-    match is_current_imp with
-    | False =>
-        throw
-    | True =>
-        balances[to] := new_to_bal;
-        balances[initiator] := new_init_bal
-    end
+  (* Conditional checks *)
+  isCurrImpl _sender;
+
+  (* Update state and emits event *)
+  balances[to] := new_to_bal;
+  balances[initiator] := new_init_bal
 end
 
 transition Burn(amount : Uint128)
@@ -285,15 +276,12 @@ transition Burn(amount : Uint128)
 end
 
 transition burnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)
-    current_impt <- implementation;
-    is_current_imp = builtin eq current_impt _sender;
-    match is_current_imp with
-    | False =>
-        throw
-    | True =>
-        balances[initiator] := new_burn_balance;
-        totalSupply := new_supply
-    end
+  (* Conditional checks *)
+  isCurrImpl _sender;
+
+  (* Update state and emits event *)
+  balances[initiator] := new_burn_balance;
+  totalSupply := new_supply
 end
 
 transition LawEnforcementWipingBurn(address : ByStr20)
@@ -312,15 +300,12 @@ transition LawEnforcementWipingBurn(address : ByStr20)
 end
 
 transition lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)
-    current_impt <- implementation;
-    is_current_imp = builtin eq current_impt _sender;
-    match is_current_imp with
-    | False =>
-        throw
-    | True =>
-        balances[address] := zero;
-        totalSupply := new_supply
-    end
+  (* Conditional checks *)
+  isCurrImpl _sender;
+
+  (* Update state and emits event *)
+  balances[address] := zero;
+  totalSupply := new_supply
 end
 
 transition IncreaseMinterAllowance(minter : ByStr20, amount : Uint128)
