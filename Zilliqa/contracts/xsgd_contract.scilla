@@ -248,6 +248,8 @@ transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
   isProxy _sender;
   isOwner initiator;
   isNotNull newOwner;
+  current_owner <- owner;
+  isNotSelf current_owner newOwner;
   
   (* Update state and emits event *)
   owner := newOwner;
