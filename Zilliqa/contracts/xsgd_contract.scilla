@@ -261,6 +261,7 @@ transition pause(initiator : ByStr20)
   (* Conditional checks *)
   isProxy _sender;
   isPauser initiator;
+  isNotPaused;
   
   (* Update state and emits event *)
   paused := true;
@@ -272,6 +273,7 @@ transition unpause(initiator : ByStr20)
   (* Conditional checks *)
   isProxy _sender;
   isPauser initiator;
+  isPaused;
   
   (* Update state and emits event *)
   paused := false;
