@@ -243,7 +243,7 @@ procedure isNotSelf(a: ByStr20, b: ByStr20)
   end
 end
 
-transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
+transition TransferOwnership(newOwner : ByStr20, initiator : ByStr20)
   (* Conditional checks *)
   isProxy _sender;
   isOwner initiator;
@@ -257,7 +257,7 @@ transition transferOwnership(newOwner : ByStr20, initiator : ByStr20)
   event e
 end
 
-transition pause(initiator : ByStr20)
+transition Pause(initiator : ByStr20)
   (* Conditional checks *)
   isProxy _sender;
   isPauser initiator;
@@ -269,7 +269,7 @@ transition pause(initiator : ByStr20)
   event e
 end
 
-transition unpause(initiator : ByStr20)
+transition Unpause(initiator : ByStr20)
   (* Conditional checks *)
   isProxy _sender;
   isPauser initiator;
@@ -281,7 +281,7 @@ transition unpause(initiator : ByStr20)
   event e
 end
 
-transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
+transition UpdatePauser(newPauser : ByStr20, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isOwner initiator;
@@ -295,7 +295,7 @@ transition updatePauser(newPauser : ByStr20, initiator : ByStr20)
   event e
 end
 
-transition blacklist(address : ByStr20, initiator : ByStr20)
+transition Blacklist(address : ByStr20, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isBlacklister initiator;
@@ -308,7 +308,7 @@ transition blacklist(address : ByStr20, initiator : ByStr20)
   event e
 end
 
-transition unBlacklist(address : ByStr20, initiator : ByStr20)
+transition Unblacklist(address : ByStr20, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isBlacklister initiator;
@@ -317,11 +317,11 @@ transition unBlacklist(address : ByStr20, initiator : ByStr20)
 
   (* Update state and emits event *)
   delete blacklisted[address];
-  e = {_eventname : "UnBlacklisted"; address : address; sender : initiator};
+  e = {_eventname : "Unblacklisted"; address : address; sender : initiator};
   event e
 end
 
-transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
+transition UpdateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isOwner initiator;
@@ -335,7 +335,7 @@ transition updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)
   event e
 end
 
-transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
+transition UpdateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isOwner initiator;
@@ -349,7 +349,7 @@ transition updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)
   event e
 end
 
-transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
+transition IncreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isMasterMinter initiator;
@@ -371,7 +371,7 @@ transition increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   event e
 end
 
-transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
+transition DecreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isMasterMinter initiator;
@@ -405,7 +405,7 @@ transition decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   event e
 end
 
-transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)
+transition Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)
   (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
@@ -440,7 +440,7 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
       event e;
       
       (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
-      msg_to_proxy = {_tag : "mintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
+      msg_to_proxy = {_tag : "MintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
       msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
       msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
       msgs = two_msgs msg_to_proxy msg_to_sender;
@@ -456,7 +456,7 @@ transition mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
   end
 end
 
-transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
+transition Burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
   (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
@@ -475,7 +475,7 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
     new_supply = builtin sub current_supply value;
     
     (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
-    msg_to_proxy = {_tag : "burnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
+    msg_to_proxy = {_tag : "BurnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
     msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
     msgs = two_msgs msg_to_proxy msg_to_sender;
     
@@ -489,7 +489,7 @@ transition burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
   end
 end
 
-transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)
+transition LawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)
   (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
@@ -499,7 +499,7 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr
   
   (* Calculates reduced supply after burn, creates and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
   new_supply = builtin sub current_supply addr_bal;
-  msg_to_proxy = {_tag : "lawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
+  msg_to_proxy = {_tag : "LawEnforcementWipingBurnCallBack"; _recipient : _sender; _amount : zero; address : address; new_supply : new_supply};
   msg_to_sender = {_tag : "LawEnforcementWipingBurnSuccessCallBack"; _recipient : initiator; _amount : zero; address : address};
   msgs = two_msgs msg_to_proxy msg_to_sender;
   
@@ -509,7 +509,7 @@ transition lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr
   send msgs
 end
 
-transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
+transition IncreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
@@ -531,7 +531,7 @@ transition increaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
   event e
 end
 
-transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
+transition DecreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
   (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
@@ -560,7 +560,7 @@ transition decreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByS
   event e
 end
 
-transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)
+transition Transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)
   (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
@@ -583,7 +583,7 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
     event e;
     
     (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
-    msg_to_proxy = {_tag : "transferCallBack"; _recipient : _sender; _amount : zero;
+    msg_to_proxy = {_tag : "TransferCallBack"; _recipient : _sender; _amount : zero;
           to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
     msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
           sender : initiator; recipient : to; amount : value};
@@ -598,7 +598,7 @@ transition transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
   end
 end
 
-transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
+transition TransferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
   (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
@@ -630,7 +630,7 @@ transition transferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
       (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
       msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
               initiator : initiator; sender : from; recipient : to; amount : value };
-      msg_to_proxy = {_tag : "transferFromCallBack"; _recipient : _sender; _amount : zero;
+      msg_to_proxy = {_tag : "TransferFromCallBack"; _recipient : _sender; _amount : zero;
               from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
       msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
               initiator : initiator; sender : from; recipient : to; amount : value};

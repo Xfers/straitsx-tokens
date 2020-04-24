@@ -99,7 +99,7 @@ end
 transition TransferOwnership(newOwner : ByStr20)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "transferOwnership"; _recipient : current_impl; _amount : zero;
+  msg = {_tag : "TransferOwnership"; _recipient : current_impl; _amount : zero;
           newOwner : newOwner; initiator : _sender};
   msgs = one_msg msg;
   send msgs
@@ -108,15 +108,15 @@ end
 transition Pause()
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "pause"; _recipient : current_impl; _amount : zero; initiator : _sender};
+  msg = {_tag : "Pause"; _recipient : current_impl; _amount : zero; initiator : _sender};
   msgs = one_msg msg;
   send msgs
 end
 
-transition UnPause()
+transition Unpause()
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "unpause"; _recipient : current_impl; _amount : zero; initiator : _sender};
+  msg = {_tag : "Unpause"; _recipient : current_impl; _amount : zero; initiator : _sender};
   msgs = one_msg msg;
   send msgs
 end
@@ -124,7 +124,7 @@ end
 transition UpdatePauser(newPauser : ByStr20)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "updatePauser"; _recipient : current_impl; _amount : zero;
+  msg = {_tag : "UpdatePauser"; _recipient : current_impl; _amount : zero;
           newPauser : newPauser; initiator : _sender};
   msgs = one_msg msg;
   send msgs
@@ -133,16 +133,16 @@ end
 transition Blacklist(address : ByStr20)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "blacklist"; _recipient : current_impl; _amount : zero;
+  msg = {_tag : "Blacklist"; _recipient : current_impl; _amount : zero;
           address : address; initiator : _sender};
   msgs = one_msg msg;
   send msgs
 end
 
-transition UnBlacklist(address : ByStr20)
+transition Unblacklist(address : ByStr20)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "unBlacklist"; _recipient : current_impl; _amount : zero;
+  msg = {_tag : "Unblacklist"; _recipient : current_impl; _amount : zero;
           address : address; initiator : _sender};
   msgs = one_msg msg;
   send msgs
@@ -151,7 +151,7 @@ end
 transition UpdateBlacklister(newBlacklister : ByStr20)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "updateBlacklister"; _recipient : current_impl; _amount : zero;
+  msg = {_tag : "UpdateBlacklister"; _recipient : current_impl; _amount : zero;
           newBlacklister : newBlacklister; initiator : _sender};
   msgs = one_msg msg;
   send msgs
@@ -167,13 +167,13 @@ transition Mint(recipient: ByStr20, amount : Uint128)
     | Some bal => bal
     | None => zero
     end;
-  msg = {_tag : "mint"; _recipient : current_impl; _amount : zero; to : recipient;
+  msg = {_tag : "Mint"; _recipient : current_impl; _amount : zero; to : recipient;
           value : amount; initiator : _sender; to_bal : to_bal; current_supply : current_supply};
   msgs = one_msg msg;
   send msgs
 end
 
-transition mintCallBack(to: ByStr20, new_to_bal: Uint128, new_supply : Uint128)
+transition MintCallBack(to: ByStr20, new_to_bal: Uint128, new_supply : Uint128)
   (* Conditional checks *)
   isCurrImpl _sender;
 
@@ -185,7 +185,7 @@ end
 transition IncreaseAllowance (spender : ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "increaseAllowance"; _recipient : current_impl; _amount : zero;
+  msg = {_tag : "IncreaseAllowance"; _recipient : current_impl; _amount : zero;
           spender : spender; value : amount; initiator : _sender};
   msgs = one_msg msg;
   send msgs
@@ -194,7 +194,7 @@ end
 transition DecreaseAllowance (spender : ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "decreaseAllowance"; _recipient : current_impl; _amount : zero;
+  msg = {_tag : "DecreaseAllowance"; _recipient : current_impl; _amount : zero;
           spender : spender; value : amount; initiator : _sender};
   msgs = one_msg msg;
   send msgs
@@ -215,13 +215,13 @@ transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128)
       | Some bal => bal
       | None => zero
       end;
-  msg = {_tag : "transferFrom"; _recipient : current_impl; _amount : zero;
+  msg = {_tag : "TransferFrom"; _recipient : current_impl; _amount : zero;
           from : from; to : to; value : amount; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
   msgs = one_msg msg;
   send msgs
 end
 
-transition transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)
+transition TransferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)
   (* Conditional checks *)
   isCurrImpl _sender;
 
@@ -245,13 +245,13 @@ transition Transfer (to : ByStr20, amount : Uint128)
       | Some bal => bal
       | None => zero
       end;
-  msg = {_tag : "transfer"; _recipient : current_impl; _amount : zero; to : to;
+  msg = {_tag : "Transfer"; _recipient : current_impl; _amount : zero; to : to;
           value : amount; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
   msgs = one_msg msg;
   send msgs
 end
 
-transition transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)
+transition TransferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)
   (* Conditional checks *)
   isCurrImpl _sender;
 
@@ -270,12 +270,12 @@ transition Burn(amount : Uint128)
       | Some bal => bal
       | None => zero
       end;
-  msg = {_tag : "burn"; _recipient : current_impl; _amount : zero; value : amount; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
+  msg = {_tag : "Burn"; _recipient : current_impl; _amount : zero; value : amount; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
   msgs = one_msg msg;
   send msgs
 end
 
-transition burnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)
+transition BurnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)
   (* Conditional checks *)
   isCurrImpl _sender;
 
@@ -294,12 +294,12 @@ transition LawEnforcementWipingBurn(address : ByStr20)
       | Some bal => bal
       | None => zero
       end;
-  msg = {_tag : "lawEnforcementWipingBurn"; _recipient : current_impl; _amount : zero; address : address; initiator : _sender; addr_bal : addr_bal; current_supply : current_supply};
+  msg = {_tag : "LawEnforcementWipingBurn"; _recipient : current_impl; _amount : zero; address : address; initiator : _sender; addr_bal : addr_bal; current_supply : current_supply};
   msgs = one_msg msg;
   send msgs
 end
 
-transition lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)
+transition LawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)
   (* Conditional checks *)
   isCurrImpl _sender;
 
@@ -311,7 +311,7 @@ end
 transition IncreaseMinterAllowance(minter : ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "increaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
+  msg = {_tag : "IncreaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
           amount : amount; initiator : _sender};
   msgs = one_msg msg;
   send msgs
@@ -320,7 +320,7 @@ end
 transition DecreaseMinterAllowance(minter : ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "decreaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
+  msg = {_tag : "DecreaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
           amount : amount; initiator : _sender};
   msgs = one_msg msg;
   send msgs
@@ -329,7 +329,7 @@ end
 transition UpdateMasterMinter(newMasterMinter : ByStr20)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  msg = {_tag : "updateMasterMinter"; _recipient : current_impl; _amount : zero; newMasterMinter : newMasterMinter;
+  msg = {_tag : "UpdateMasterMinter"; _recipient : current_impl; _amount : zero; newMasterMinter : newMasterMinter;
           initiator : _sender};
   msgs = one_msg msg;
   send msgs
