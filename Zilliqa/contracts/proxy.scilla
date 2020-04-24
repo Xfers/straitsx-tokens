@@ -48,7 +48,7 @@ field totalSupply : Uint128 = zero
 (* Internal functions, used like Solidity modifiers *)
 procedure ThrowError(err : Error)
   e = make_error err;
-  throw e;
+  throw e
 end
 
 procedure isAdmin(address: ByStr20)

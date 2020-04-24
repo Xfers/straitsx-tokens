@@ -113,7 +113,7 @@ field minterAllowed : Map ByStr20 (Option Uint128) = Emp ByStr20 (Option Uint128
 (* Internal functions, used like Solidity modifiers *)
 procedure ThrowError(err : Error)
   e = make_error err;
-  throw e;
+  throw e
 end
 
 procedure isProxy(address: ByStr20)
