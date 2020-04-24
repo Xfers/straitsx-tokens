@@ -100,6 +100,7 @@ with
   andb name_symbol_ok decimals_ok
 =>
 
+(* Note that token balances are stored on the proxy contract, everything else on the implementation contract *)
 field owner : ByStr20 = init_owner
 field pauser : ByStr20 = init_owner
 field masterMinter : ByStr20 = init_owner

@@ -39,6 +39,7 @@ init_implementation : ByStr20,
 init_admin : ByStr20
 )
 
+(* Note that token balances are stored on the proxy contract, everything else on the implementation contract *)
 field implementation : ByStr20 = init_implementation
 field admin : ByStr20 = init_admin
 field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
