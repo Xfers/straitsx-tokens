@@ -14,9 +14,9 @@ let min_int =
     b
   end
 let one_msg =
-    fun (msg : Message) =>
-        let nil_msg = Nil {Message} in
-        Cons {Message} msg nil_msg
+  fun (msg : Message) =>
+    let nil_msg = Nil {Message} in
+    Cons {Message} msg nil_msg
 let two_msgs =
   fun (msg1 : Message) =>
   fun (msg2 : Message) =>
