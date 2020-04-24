@@ -18,7 +18,7 @@ let one_msg =
 type Error =
   | CodeNotAdmin
   | CodeNotCurrImpl
-let make_error_event =
+let make_error =
   fun (result : Error) =>
     let result_code = 
       match result with
@@ -26,7 +26,7 @@ let make_error_event =
       | CodeNotCurrImpl               => Int32 -2
       end
     in
-    { _eventname : "Error"; code : result_code }
+    { _exception : "Error"; code : result_code }
 
 
 (***************************************************)
@@ -46,9 +46,8 @@ field totalSupply : Uint128 = zero
 
 (* Internal functions, used like Solidity modifiers *)
 procedure ThrowError(err : Error)
-  e = make_error_event err;
-  event e;
-  throw
+  e = make_error err;
+  throw e;
 end
 
 procedure isAdmin(address: ByStr20)

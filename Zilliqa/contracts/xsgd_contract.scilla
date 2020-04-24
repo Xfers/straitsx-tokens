@@ -46,7 +46,7 @@ type Error =
   | CodeNotPaused
   | CodeIsBlacklisted
   | CodeNotBlacklisted
-let make_error_event =
+let make_error =
   fun (result : Error) =>
     let result_code = 
       match result with
@@ -68,7 +68,7 @@ let make_error_event =
       | CodeNotBlacklisted            => Int32 -16
       end
     in
-    { _eventname : "Error"; code : result_code }
+    { _exception : "Error"; code : result_code }
 
 contract XSGDContract
 (
@@ -111,9 +111,8 @@ field minterAllowed : Map ByStr20 (Option Uint128) = Emp ByStr20 (Option Uint128
 
 (* Internal functions, used like Solidity modifiers *)
 procedure ThrowError(err : Error)
-  e = make_error_event err;
-  event e;
-  throw
+  e = make_error err;
+  throw e;
 end
 
 procedure isProxy(address: ByStr20)
