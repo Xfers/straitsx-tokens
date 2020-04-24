@@ -4,24 +4,7 @@ import BoolUtils IntUtils ListUtils
 
 library XSGDContract
 
-let min_int =
-  fun (a : Uint128) => fun (b : Uint128) =>
-  let alt = builtin lt a b in
-  match alt with
-  | True =>
-    a
-  | False =>
-    b
-  end
-let one_msg =
-  fun (msg : Message) =>
-    let nil_msg = Nil {Message} in
-    Cons {Message} msg nil_msg
-let two_msgs =
-  fun (msg1 : Message) =>
-  fun (msg2 : Message) =>
-    let msgs_tmp = one_msg msg2 in
-    Cons {Message} msg1 msgs_tmp
+
 let zero = Uint128 0
 let one  = Uint128 1
 let none_uint128 = None {Uint128}
@@ -69,6 +52,37 @@ let make_error =
       end
     in
     { _exception : "Error"; code : result_code }
+
+let min_int =
+  fun (a : Uint128) => fun (b : Uint128) =>
+  let alt = builtin lt a b in
+  match alt with
+  | True =>
+    a
+  | False =>
+    b
+  end
+let one_msg =
+  fun (msg : Message) =>
+    let nil_msg = Nil {Message} in
+    Cons {Message} msg nil_msg
+let two_msgs =
+  fun (msg1 : Message) =>
+  fun (msg2 : Message) =>
+    let msgs_tmp = one_msg msg2 in
+    Cons {Message} msg1 msgs_tmp
+let three_msgs =
+  fun (msg1 : Message) =>
+  fun (msg2 : Message) =>
+  fun (msg3 : Message) =>
+    let msgs_tmp = two_msgs msg2 msg3 in
+    Cons {Message} msg1 msgs_tmp
+let get_minter_allowance =
+  fun (option_allowance : Option (Option Uint128)) =>
+    match option_allowance with
+    | Some (Some allowance) => allowance
+    | _ => zero
+    end
 
 contract XSGDContract
 (
@@ -356,12 +370,8 @@ transition IncreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   isNotNull minter;
   
   (* Retrieves initial allowance of minter, calculates new total after adding amount to it *)
-  get_minter_allowance <- minterAllowed[minter];
-  mint_allowance =
-    match get_minter_allowance with
-    | Some (Some allowance) => allowance
-    | _ => zero
-    end;
+  option_mint_allowance <- minterAllowed[minter];
+  mint_allowance = get_minter_allowance option_mint_allowance;
   new_mint_allowance = builtin add mint_allowance amount;
   new_option_mint_allowance = Some {Uint128} new_mint_allowance;
   
@@ -378,12 +388,8 @@ transition DecreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   isNotNull minter;
   
   (* Retrieves initial allowance of minter, calculates new total after subtracting amount from it *)
-  get_minter_allowance <- minterAllowed[minter];
-  mint_allowance =
-    match get_minter_allowance with
-    | Some (Some allowance) => allowance
-    | _ => zero
-    end;
+  option_mint_allowance <- minterAllowed[minter];
+  mint_allowance = get_minter_allowance option_mint_allowance;
   new_option_mint_allowance =
     
     (* If amount to be subtracted > minter allowance, set minter allowance to None {Uint128} *)
@@ -405,7 +411,7 @@ transition DecreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator
   event e
 end
 
-transition Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)
+transition Mint(to: ByStr20, value : Uint128, initiator : ByStr20, o_bal : Uint128, current_supply : Uint128)
   (* Conditional checks *)  
   isProxy _sender;
   isNotPaused;
