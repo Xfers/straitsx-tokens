@@ -168,7 +168,7 @@ let custom_token_transaction_msg_as_list =
       | UnBlacklist address =>
         (* UnBlacklist       (address : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "UnBlacklist" ;
+         _tag : "Unblacklist" ;
          _amount : Uint128 0 ;
          address : address }
       | UpdateBlacklister newBlacklister =>
@@ -239,7 +239,7 @@ let custom_token_transaction_msg_as_list =
       | UnPause =>
         (* Unpause           ()  *)
         {_recipient : proxyTokenContract ;
-         _tag : "UnPause" ;
+         _tag : "Unpause" ;
          _amount : Uint128 0 }
       | UpgradeTo newImplementation =>
         (* UpgradeTo         (newImplementation : ByStr20)  *)
