@@ -165,8 +165,8 @@ let custom_token_transaction_msg_as_list =
          _tag : "Blacklist" ;
          _amount : Uint128 0 ;
          address : address }
-      | UnBlacklist address =>
-        (* UnBlacklist       (address : ByStr20)  *)
+      | Unblacklist address =>
+        (* Unblacklist       (address : ByStr20)  *)
         {_recipient : proxyTokenContract ;
          _tag : "Unblacklist" ;
          _amount : Uint128 0 ;
@@ -204,7 +204,7 @@ let custom_token_transaction_msg_as_list =
          minter : minter ;
          amount : amount }
       | Pause =>
-        (* proxyPause             ()  *)
+        (* Pause             ()  *)
         {_recipient : proxyTokenContract ;
          _tag : "Pause" ;
          _amount : Uint128 0 }
@@ -236,7 +236,7 @@ let custom_token_transaction_msg_as_list =
          from : from ;
          to : to ;
          amount : amount }
-      | UnPause =>
+      | Unpause =>
         (* Unpause           ()  *)
         {_recipient : proxyTokenContract ;
          _tag : "Unpause" ;
