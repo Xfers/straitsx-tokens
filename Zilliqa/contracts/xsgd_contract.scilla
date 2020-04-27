@@ -435,42 +435,31 @@ transition Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
   isNotNull to;
   
   (* Retrieves allowance of minter and checks if value to mint is <= allowance  *)
-  allowed_amount <- minterAllowed[initiator];
-  match allowed_amount with
-  | Some (Some a) =>
-    greater_than_zero = uint128_gt value zero;
-    within_limits = uint128_le value a;
-    and_res = andb greater_than_zero within_limits;
-    match and_res with
-      
-    (* Both conditions passed so calculate increased supply and increased token balance of to *)
-    | True =>
-      new_supply = builtin add value current_supply;
-      new_to_bal = builtin add value to_bal;
-      new_allowed_amount = builtin sub a value;
-      new_option_allowed_amount = let equal_zero = builtin eq zero new_allowed_amount in
-        match equal_zero with
-        | False => Some {Uint128} new_allowed_amount
-        | True => None {Uint128}
-        end;
-      minterAllowed[initiator] := new_option_allowed_amount;
+  option_mint_allowance <- minterAllowed[initiator];
+  mint_allowance = deconstruct_option_option_uint128 option_mint_allowance;
+  within_limits = uint128_le value mint_allowance;
+  match within_limits with
 
-      (* Emits event *)
-      e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
-      event e;
-      
-      (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
-      msg_to_proxy = {_tag : "MintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
-      msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
-      msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
-      msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
-      send msgs
-    | False =>
-      err = CodeInsufficientMintAllowance;
-      ThrowError err
-    end
-  | _ =>
-    err = CodeNoMintAllowance;
+  (* Value to mint <= allowance of minter, calculate increased supply and increased token balance of to *)
+  | True =>
+    new_supply = builtin add value current_supply;
+    new_to_bal = builtin add value to_bal;
+    new_mint_allowance = better_subtract mint_allowance value;
+    new_option_mint_allowance = construct_option_uint128 new_mint_allowance;
+    minterAllowed[initiator] := new_option_mint_allowance;
+
+    (* Emits event *)
+    e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
+    event e;
+    
+    (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
+    msg_to_proxy = {_tag : "MintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
+    msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
+    msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
+    msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
+    send msgs
+  | False =>
+    err = CodeInsufficientMintAllowance;
     ThrowError err
   end
 end
