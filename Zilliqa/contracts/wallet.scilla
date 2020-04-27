@@ -78,7 +78,7 @@ type TokenTransaction =
 (* Blacklist         (address : ByStr20)  *)
 | Blacklist of ByStr20
 (* UnBlacklist       (address : ByStr20)  *)
-| UnBlacklist of ByStr20
+| Unblacklist of ByStr20
 (* UpdateBlacklister (newBlacklister : ByStr20)  *)
 | UpdateBlacklister of ByStr20
 (* LawEnforcementWipingBurn (address : ByStr20) *)
@@ -92,7 +92,7 @@ type TokenTransaction =
 (* Pause             ()  *)
 | Pause
 (* Unpause           ()  *)
-| UnPause
+| Unpause
 (* UpgradeTo         (newImplementation : ByStr20)  *)
 | UpgradeTo of ByStr20
 (* ChangeAdmin       (newAdmin : ByStr20)  *)
@@ -463,7 +463,7 @@ end
 
 (* Submit a new UnBlacklist transaction for future signoff *)
 transition SubmitCustomUnBlacklistTransaction (proxyTokenContract : ByStr20, address : ByStr20)
-  transaction = UnBlacklist address;
+  transaction = Unblacklist address;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
@@ -529,7 +529,7 @@ end
 
 (* Submit a new UnPause transaction for future signoff *)
 transition SubmitCustomUnPauseTransaction (proxyTokenContract : ByStr20)
-  transaction = UnPause;
+  transaction = Unpause;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
