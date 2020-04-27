@@ -51,6 +51,13 @@ procedure ThrowError(err : Error)
   throw e
 end
 
+let deconstruct_option_uint128 =
+  fun (option_uint128 : Option Uint128) =>
+    match option_uint128 with
+    | Some a => a
+    | _ => zero
+    end
+
 procedure isAdmin(address: ByStr20)
   current_admin <- admin;
   is_admin = builtin eq current_admin address;
@@ -162,11 +169,7 @@ transition Mint(recipient: ByStr20, amount : Uint128)
   current_impl <- implementation;
   current_supply <- totalSupply;
   get_to_bal <- balances[recipient];
-  to_bal =
-    match get_to_bal with
-    | Some bal => bal
-    | None => zero
-    end;
+  to_bal = deconstruct_option_uint128 get_to_bal;
   msg = {_tag : "Mint"; _recipient : current_impl; _amount : zero; to : recipient;
           value : amount; initiator : _sender; to_bal : to_bal; current_supply : current_supply};
   msgs = one_msg msg;
@@ -204,17 +207,9 @@ transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
   get_to_bal <- balances[to];
-  to_bal =
-      match get_to_bal with
-      | Some bal => bal
-      | None => zero
-      end;
+  to_bal = deconstruct_option_uint128 get_to_bal;
   get_from_bal <- balances[from];
-  from_bal =
-      match get_from_bal with
-      | Some bal => bal
-      | None => zero
-      end;
+  from_bal = deconstruct_option_uint128 get_from_bal;
   msg = {_tag : "TransferFrom"; _recipient : current_impl; _amount : zero;
           from : from; to : to; value : amount; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
   msgs = one_msg msg;
@@ -234,17 +229,9 @@ transition Transfer (to : ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
   get_to_bal <- balances[to];
-  to_bal =
-      match get_to_bal with
-      | Some bal => bal
-      | None => zero
-      end;
+  to_bal = deconstruct_option_uint128 get_to_bal;
   get_init_bal <- balances[_sender];
-  init_bal =
-      match get_init_bal with
-      | Some bal => bal
-      | None => zero
-      end;
+  init_bal = deconstruct_option_uint128 get_init_bal;
   msg = {_tag : "Transfer"; _recipient : current_impl; _amount : zero; to : to;
           value : amount; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
   msgs = one_msg msg;
@@ -265,11 +252,7 @@ transition Burn(amount : Uint128)
   current_impl <- implementation;
   current_supply <- totalSupply;
   get_burn_bal <- balances[_sender];
-  burn_bal =
-      match get_burn_bal with
-      | Some bal => bal
-      | None => zero
-      end;
+  burn_bal = deconstruct_option_uint128 get_burn_bal;
   msg = {_tag : "Burn"; _recipient : current_impl; _amount : zero; value : amount; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
   msgs = one_msg msg;
   send msgs
@@ -289,11 +272,7 @@ transition LawEnforcementWipingBurn(address : ByStr20)
   current_impl <- implementation;
   current_supply <- totalSupply;
   get_addr_bal <- balances[address];
-  addr_bal =
-      match get_addr_bal with
-      | Some bal => bal
-      | None => zero
-      end;
+  addr_bal = deconstruct_option_uint128 get_addr_bal;
   msg = {_tag : "LawEnforcementWipingBurn"; _recipient : current_impl; _amount : zero; address : address; initiator : _sender; addr_bal : addr_bal; current_supply : current_supply};
   msgs = one_msg msg;
   send msgs
