@@ -21,10 +21,7 @@ type Error =
   | CodeNotMinter
   | CodeIsNull
   | CodeIsSelf
-  | CodeInsufficientMintAllowance
-  | CodeNoMintAllowance
-  | CodeInsufficientFunds
-  | CodeInsufficientAllowance
+  | CodeNotWithinLimits
   | CodeIsPaused
   | CodeNotPaused
   | CodeIsBlacklisted
@@ -41,14 +38,11 @@ let make_error =
       | CodeNotMinter                 => Int32 -6
       | CodeIsNull                    => Int32 -7
       | CodeIsSelf                    => Int32 -8
-      | CodeInsufficientMintAllowance => Int32 -9
-      | CodeNoMintAllowance           => Int32 -10
-      | CodeInsufficientFunds         => Int32 -11
-      | CodeInsufficientAllowance     => Int32 -12
-      | CodeIsPaused                  => Int32 -13
-      | CodeNotPaused                 => Int32 -14
-      | CodeIsBlacklisted             => Int32 -15
-      | CodeNotBlacklisted            => Int32 -16
+      | CodeNotWithinLimits           => Int32 -9
+      | CodeIsPaused                  => Int32 -10
+      | CodeNotPaused                 => Int32 -11
+      | CodeIsBlacklisted             => Int32 -12
+      | CodeNotBlacklisted            => Int32 -13
       end
     in
     { _exception : "Error"; code : result_code }
@@ -447,31 +441,25 @@ transition Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint
   (* Retrieves allowance of minter and checks if value to mint is <= allowance  *)
   option_mint_allowance <- minterAllowed[initiator];
   mint_allowance = deconstruct_option_option_uint128 option_mint_allowance;
-  within_limits = uint128_le value mint_allowance;
-  match within_limits with
+  withinLimits mint_allowance value;
 
   (* Value to mint <= allowance of minter, calculate increased supply and increased token balance of to *)
-  | True =>
-    new_supply = builtin add value current_supply;
-    new_to_bal = builtin add value to_bal;
-    new_mint_allowance = better_subtract mint_allowance value;
-    new_option_mint_allowance = construct_option_uint128 new_mint_allowance;
-    minterAllowed[initiator] := new_option_mint_allowance;
+  new_supply = builtin add value current_supply;
+  new_to_bal = builtin add value to_bal;
+  new_mint_allowance = better_subtract mint_allowance value;
+  new_option_mint_allowance = construct_option_uint128 new_mint_allowance;
+  minterAllowed[initiator] := new_option_mint_allowance;
 
-    (* Emits event *)
-    e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
-    event e;
-    
-    (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
-    msg_to_proxy = {_tag : "MintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
-    msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
-    msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
-    msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
-    send msgs
-  | False =>
-    err = CodeInsufficientMintAllowance;
-    ThrowError err
-  end
+  (* Emits event *)
+  e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
+  event e;
+  
+  (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
+  msg_to_proxy = {_tag : "MintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
+  msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
+  msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
+  msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
+  send msgs
 end
 
 transition Burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
@@ -482,27 +470,21 @@ transition Burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint12
   isNotBlacklisted initiator;
   
   (* Checks if the amount that the minter is trying to burn is <= token balance of minter *)
-  can_do = uint128_le value initiator_balance;
-  match can_do with
+  withinLimits initiator_balance value;
     
   (* Value to burn <= balance of minter so calculate reduced supply and reduced token balance of minter *)
-  | True =>
-    new_burn_balance = builtin sub initiator_balance value;
-    new_supply = builtin sub current_supply value;
+  new_burn_balance = builtin sub initiator_balance value;
+  new_supply = builtin sub current_supply value;
 
-    (* Emits event *)
-    e = { _eventname : "Burnt"; burner : initiator; amount : value};
-    event e;
-    
-    (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
-    msg_to_proxy = {_tag : "BurnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
-    msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
-    msgs = two_msgs msg_to_proxy msg_to_sender;
-    send msgs
-  | False =>
-    err = CodeInsufficientFunds;
-    ThrowError err
-  end
+  (* Emits event *)
+  e = { _eventname : "Burnt"; burner : initiator; amount : value};
+  event e;
+  
+  (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
+  msg_to_proxy = {_tag : "BurnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
+  msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
+  msgs = two_msgs msg_to_proxy msg_to_sender;
+  send msgs
 end
 
 transition LawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)
@@ -571,31 +553,25 @@ transition Transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal :
   isNotNull to;
   
   (* Checks if amount to transfer <= token balance of user *)
-  can_do = uint128_le value init_bal;
-  match can_do with
-  | True =>
-    
-    (* Calculates updated balances of initiator and to *)
-    new_init_bal = builtin sub init_bal value;
-    new_to_bal = builtin add to_bal value;
-    
-    (* Emits event *)
-    e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
-    event e;
-    
-    (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
-    msg_to_proxy = {_tag : "TransferCallBack"; _recipient : _sender; _amount : zero;
-          to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
-    msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
-          sender : initiator; recipient : to; amount : value};
-    msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
-          sender : initiator; recipient : to; amount : value};
-    msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
-    send msgs
-  | False =>
-    err = CodeInsufficientFunds;
-    ThrowError err
-  end
+  withinLimits init_bal value;
+
+  (* Calculates updated balances of initiator and to *)
+  new_init_bal = builtin sub init_bal value;
+  new_to_bal = builtin add to_bal value;
+  
+  (* Emits event *)
+  e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
+  event e;
+  
+  (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
+  msg_to_proxy = {_tag : "TransferCallBack"; _recipient : _sender; _amount : zero;
+        to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
+  msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
+        sender : initiator; recipient : to; amount : value};
+  msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
+        sender : initiator; recipient : to; amount : value};
+  msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
+  send msgs
 end
 
 transition TransferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
@@ -609,39 +585,30 @@ transition TransferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiato
   isNotNull to;
   
   (* Checks if amount to transfer <= allowance of spender *)
-  sender_allowed_from <- allowed[from][initiator];
-  match sender_allowed_from with
-  | Some allowance =>
-    t = min_int from_bal allowance;
-    can_do = uint128_le value t;
-    match can_do with
-    | True =>
-      
-      (* Calculates updated balances of to and from *)
-      new_from_bal = builtin sub from_bal value;
-      new_to_bal = builtin add to_bal value;
-      new_allowed = builtin sub allowance value;
-      allowed[from][initiator] := new_allowed;
-      
-      (* Emits event *)
-      e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
-      event e;
-      
-      (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
-      msg_to_proxy = {_tag : "TransferFromCallBack"; _recipient : _sender; _amount : zero;
-              from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
-      msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
-              initiator : initiator; sender : from; recipient : to; amount : value };
-      msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
-              initiator : initiator; sender : from; recipient : to; amount : value};
-      msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
-      send msgs
-    | False =>
-      err = CodeInsufficientFunds;
-      ThrowError err
-    end
-  | None =>
-    err = CodeInsufficientAllowance;
-    ThrowError err
-  end
+  option_spender_allowance <- allowed[from][initiator];
+  spender_allowance = deconstruct_option_uint128 option_spender_allowance;
+
+  (* Checks if value to transfer <= min(balance of from, spender's allowance) *)
+  min = min_int from_bal spender_allowance;
+  withinLimits min value;
+
+  (* Calculates updated balances of to and from *)
+  new_from_bal = builtin sub from_bal value;
+  new_to_bal = builtin add to_bal value;
+  new_spender_allowance = builtin sub spender_allowance value;
+  allowed[from][initiator] := new_spender_allowance;
+  
+  (* Emits event *)
+  e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
+  event e;
+  
+  (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
+  msg_to_proxy = {_tag : "TransferFromCallBack"; _recipient : _sender; _amount : zero;
+          from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
+  msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
+          initiator : initiator; sender : from; recipient : to; amount : value };
+  msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
+          initiator : initiator; sender : from; recipient : to; amount : value};
+  msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
+  send msgs
 end
