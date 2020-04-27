@@ -283,6 +283,16 @@ procedure isNotSelf(a: ByStr20, b: ByStr20)
   end
 end
 
+procedure withinLimits(limit: Uint128, amount: Uint128)
+  within_limits = uint128_ge limit amount;
+  match within_limits with
+  | True =>
+  | False =>
+    err = CodeNotWithinLimits;
+    ThrowError err
+  end
+end
+
 transition TransferOwnership(newOwner : ByStr20, initiator : ByStr20)
   (* Conditional checks *)
   isProxy _sender;
