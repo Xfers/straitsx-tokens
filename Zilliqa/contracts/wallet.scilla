@@ -77,7 +77,7 @@ type TokenTransaction =
 | UpdatePauser of ByStr20
 (* Blacklist         (address : ByStr20)  *)
 | Blacklist of ByStr20
-(* UnBlacklist       (address : ByStr20)  *)
+(* Unblacklist       (address : ByStr20)  *)
 | Unblacklist of ByStr20
 (* UpdateBlacklister (newBlacklister : ByStr20)  *)
 | UpdateBlacklister of ByStr20
@@ -461,8 +461,8 @@ transition SubmitCustomBlacklistTransaction (proxyTokenContract : ByStr20, addre
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
-(* Submit a new UnBlacklist transaction for future signoff *)
-transition SubmitCustomUnBlacklistTransaction (proxyTokenContract : ByStr20, address : ByStr20)
+(* Submit a new Unblacklist transaction for future signoff *)
+transition SubmitCustomUnblacklistTransaction (proxyTokenContract : ByStr20, address : ByStr20)
   transaction = Unblacklist address;
   SubmitCustomTransaction proxyTokenContract transaction
 end
@@ -527,8 +527,8 @@ transition SubmitCustomPauseTransaction (proxyTokenContract : ByStr20)
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
-(* Submit a new UnPause transaction for future signoff *)
-transition SubmitCustomUnPauseTransaction (proxyTokenContract : ByStr20)
+(* Submit a new Unpause transaction for future signoff *)
+transition SubmitCustomUnpauseTransaction (proxyTokenContract : ByStr20)
   transaction = Unpause;
   SubmitCustomTransaction proxyTokenContract transaction
 end
