@@ -14,6 +14,13 @@ let one_msg =
     let nil_msg = Nil {Message} in
     Cons {Message} msg nil_msg
 
+let deconstruct_option_uint128 =
+  fun (option_uint128 : Option Uint128) =>
+    match option_uint128 with
+    | Some a => a
+    | _ => zero
+    end
+
 (* Error events *)
 type Error =
   | CodeNotAdmin
@@ -50,13 +57,6 @@ procedure ThrowError(err : Error)
   e = make_error err;
   throw e
 end
-
-let deconstruct_option_uint128 =
-  fun (option_uint128 : Option Uint128) =>
-    match option_uint128 with
-    | Some a => a
-    | _ => zero
-    end
 
 procedure isAdmin(address: ByStr20)
   current_admin <- admin;
