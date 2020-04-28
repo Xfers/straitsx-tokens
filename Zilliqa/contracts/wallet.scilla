@@ -42,7 +42,7 @@ type Error =
 | IncorrectSignatureCount
 
 (* Error events *)
-let mk_error_event =
+let make_error =
   fun (err : Error) =>
   let err_code =
     match err with
@@ -59,7 +59,7 @@ let mk_error_event =
     | NonOwnerCannotSubmit      => Int32 -11
     | IncorrectSignatureCount   => Int32 -12
     end in
-  { _eventname : "WalletError" ; err_code : err_code }
+  { _exception : "Error" ; err_code : err_code }
 
 let t = True
 let f = False
@@ -78,7 +78,7 @@ type TokenTransaction =
 (* Blacklist         (address : ByStr20)  *)
 | Blacklist of ByStr20
 (* UnBlacklist       (address : ByStr20)  *)
-| UnBlacklist of ByStr20
+| Unblacklist of ByStr20
 (* UpdateBlacklister (newBlacklister : ByStr20)  *)
 | UpdateBlacklister of ByStr20
 (* LawEnforcementWipingBurn (address : ByStr20) *)
@@ -92,7 +92,7 @@ type TokenTransaction =
 (* Pause             ()  *)
 | Pause
 (* Unpause           ()  *)
-| UnPause
+| Unpause
 (* UpgradeTo         (newImplementation : ByStr20)  *)
 | UpgradeTo of ByStr20
 (* ChangeAdmin       (newAdmin : ByStr20)  *)
@@ -165,10 +165,10 @@ let custom_token_transaction_msg_as_list =
          _tag : "Blacklist" ;
          _amount : Uint128 0 ;
          address : address }
-      | UnBlacklist address =>
-        (* UnBlacklist       (address : ByStr20)  *)
+      | Unblacklist address =>
+        (* Unblacklist       (address : ByStr20)  *)
         {_recipient : proxyTokenContract ;
-         _tag : "UnBlacklist" ;
+         _tag : "Unblacklist" ;
          _amount : Uint128 0 ;
          address : address }
       | UpdateBlacklister newBlacklister =>
@@ -204,7 +204,7 @@ let custom_token_transaction_msg_as_list =
          minter : minter ;
          amount : amount }
       | Pause =>
-        (* proxyPause             ()  *)
+        (* Pause             ()  *)
         {_recipient : proxyTokenContract ;
          _tag : "Pause" ;
          _amount : Uint128 0 }
@@ -236,10 +236,10 @@ let custom_token_transaction_msg_as_list =
          from : from ;
          to : to ;
          amount : amount }
-      | UnPause =>
+      | Unpause =>
         (* Unpause           ()  *)
         {_recipient : proxyTokenContract ;
-         _tag : "UnPause" ;
+         _tag : "Unpause" ;
          _amount : Uint128 0 }
       | UpgradeTo newImplementation =>
         (* UpgradeTo         (newImplementation : ByStr20)  *)
@@ -370,9 +370,9 @@ field signature_counts : Map Uint32 Uint32 =
 field transactions     : Map Uint32 Transaction =
                            Emp Uint32 Transaction
 
-procedure MakeError (err : Error)
-  e = mk_error_event err;
-  event e
+procedure ThrowError(err : Error)
+  e = make_error err;
+  throw e
 end
 
 (* Add signature to signature list *)
@@ -395,7 +395,7 @@ procedure AddSignature (transactionId : Uint32, signee : ByStr20)
   | True =>
     (* Already signed *)
     err = AlreadySigned;
-    MakeError err
+    ThrowError err
   end
 end
 
@@ -406,7 +406,7 @@ procedure SubmitTransaction (transaction : Transaction)
   match sender_is_owner with
   | False =>
     err = NonOwnerCannotSubmit;
-    MakeError err
+    ThrowError err
   | True =>
     tc <- transactionCount;
     transactions[tc] := transaction;
@@ -430,7 +430,7 @@ transition SubmitNativeTransaction (recipient : ByStr20, amount : Uint128, tag :
   | True =>
     (* Illegal transaction *)
     err = InvalidAmount;
-    MakeError err
+    ThrowError err
   | False =>
     transaction = NativeTransaction recipient amount tag;
     SubmitTransaction transaction
@@ -463,7 +463,7 @@ end
 
 (* Submit a new UnBlacklist transaction for future signoff *)
 transition SubmitCustomUnBlacklistTransaction (proxyTokenContract : ByStr20, address : ByStr20)
-  transaction = UnBlacklist address;
+  transaction = Unblacklist address;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
@@ -529,7 +529,7 @@ end
 
 (* Submit a new UnPause transaction for future signoff *)
 transition SubmitCustomUnPauseTransaction (proxyTokenContract : ByStr20)
-  transaction = UnPause;
+  transaction = Unpause;
   SubmitCustomTransaction proxyTokenContract transaction
 end
 
@@ -553,14 +553,14 @@ transition SignTransaction (transactionId : Uint32)
   match sender_is_owner with
   | False =>
     err = NonOwnerCannotSign;
-    MakeError err
+    ThrowError err
   | True =>
     (* Transaction must have been submitted *)
     transaction <- transactions[transactionId];
     match transaction with
     | None =>
       err = UnknownTransactionId;
-      MakeError err
+      ThrowError err
     | Some _ =>
       (* Remaining error cases handled by AddSignature *)
       AddSignature transactionId _sender
@@ -574,19 +574,19 @@ transition RevokeSignature (transactionId : Uint32)
   match sig with
   | False =>
     err = NotAlreadySigned;
-    MakeError err
+    ThrowError err
   | True =>
     count <- signature_counts[transactionId];
     match count with
     | None =>
       err = IncorrectSignatureCount;
-      MakeError err
+      ThrowError err
     | Some c =>
       c_is_zero = builtin eq c zero;
       match c_is_zero with
       | True =>
         err = IncorrectSignatureCount;
-        MakeError err
+        ThrowError err
       | False =>
         new_c = builtin sub c one;
         signature_counts[transactionId] := new_c;
@@ -616,7 +616,7 @@ procedure ExecuteNativeTransaction (recipient : ByStr20, amount : Uint128, tag :
   match sender_may_execute with
   | False =>
     err = SenderMayNotExecute;
-    MakeError err
+    ThrowError err
   | True =>
     (* Check for sufficient funds  *)
     bal <- _balance;
@@ -624,7 +624,7 @@ procedure ExecuteNativeTransaction (recipient : ByStr20, amount : Uint128, tag :
     match not_enough_money with
     | True =>
       err = InsufficientFunds;
-      MakeError err
+      ThrowError err
     | False =>
       (* Transaction approved, and enough money available. *)
       (* Execute transaction *)
@@ -643,7 +643,7 @@ procedure ExecuteCustomTokenTransaction (proxyTokenContract : ByStr20, tokenTran
   match sender_is_owner with
   | False =>
     err = SenderMayNotExecute;
-    MakeError err
+    ThrowError err
   | True =>
     as_msg = custom_token_transaction_msg_as_list proxyTokenContract tokenTransaction;
     send as_msg
@@ -657,20 +657,20 @@ transition ExecuteTransaction (transactionId : Uint32)
   | None =>
     (* Transaction was not found. *)
     err = UnknownTransactionId;
-    MakeError err
+    ThrowError err
   | Some transaction =>
     sig_count_opt <- signature_counts[transactionId];
     match sig_count_opt with
     | None =>
       (* Signature count not found, even though the transaction exists.*)
       err = NoSignatureListFound;
-      MakeError err
+      ThrowError err
     | Some sig_count =>
       not_enough_signatures = builtin lt sig_count required_signatures;
       match not_enough_signatures with
       | True =>
         err = NotEnoughSignatures;
-        MakeError err
+        ThrowError err
       | False =>
         match transaction with
         | NativeTransaction recipient amount tag =>
