@@ -180,7 +180,7 @@ transition MintCallBack(to: ByStr20, new_to_bal: Uint128, new_supply : Uint128)
   (* Conditional checks *)
   isCurrImpl _sender;
 
-  (* Update state and emits event *)
+  (* Update state *)
   balances[to] := new_to_bal;
   totalSupply := new_supply
 end
@@ -220,7 +220,7 @@ transition TransferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uin
   (* Conditional checks *)
   isCurrImpl _sender;
 
-  (* Update state and emits event *)
+  (* Update state *)
   balances[to] := new_to_bal;
   balances[from] := new_from_bal
 end
@@ -242,7 +242,7 @@ transition TransferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint
   (* Conditional checks *)
   isCurrImpl _sender;
 
-  (* Update state and emits event *)
+  (* Update state *)
   balances[to] := new_to_bal;
   balances[initiator] := new_init_bal
 end
@@ -262,7 +262,7 @@ transition BurnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_sup
   (* Conditional checks *)
   isCurrImpl _sender;
 
-  (* Update state and emits event *)
+  (* Update state *)
   balances[initiator] := new_burn_balance;
   totalSupply := new_supply
 end
@@ -282,7 +282,7 @@ transition LawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint
   (* Conditional checks *)
   isCurrImpl _sender;
 
-  (* Update state and emits event *)
+  (* Update state *)
   balances[address] := zero;
   totalSupply := new_supply
 end
@@ -313,4 +313,3 @@ transition UpdateMasterMinter(newMasterMinter : ByStr20)
   msgs = one_msg msg;
   send msgs
 end
-
