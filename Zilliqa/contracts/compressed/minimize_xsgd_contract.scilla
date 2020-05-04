@@ -405,7 +405,7 @@ e = { _eventname : "DecreasedMinterAllowance"; minter : minter; new_option_mint_
 event e
 end
 
-transition Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)
+transition Mint(to: ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)
   
 isProxy _sender;
 isNotPaused;
@@ -416,41 +416,41 @@ isNotNull to;
 
 option_mint_allowance <- minterAllowed[initiator];
 mint_allowance = deconstruct_option_option_uint128 option_mint_allowance;
-withinLimits mint_allowance value;
+withinLimits mint_allowance amount;
 
-new_supply = builtin add value current_supply;
-new_to_bal = builtin add value to_bal;
-new_mint_allowance = better_subtract mint_allowance value;
+new_supply = builtin add amount current_supply;
+new_to_bal = builtin add amount to_bal;
+new_mint_allowance = better_subtract mint_allowance amount;
 new_option_mint_allowance = construct_option_uint128 new_mint_allowance;
 minterAllowed[initiator] := new_option_mint_allowance;
 
-e = {_eventname : "Minted"; minter : initiator; amount : value; recipient : to};
+e = {_eventname : "Minted"; minter : initiator; amount : amount; recipient : to};
 event e;
 
 msg_to_proxy = {_tag : "MintCallBack"; _recipient : _sender; _amount : zero; to : to; new_to_bal : new_to_bal; new_supply : new_supply};
-msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : value};
-msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : value};
+msg_to_sender = {_tag : "MintSuccessCallBack"; _recipient : initiator; _amount : zero; recipient : to; amount : amount};
+msg_to_recipient = {_tag : "RecipientAcceptMint"; _recipient : to; _amount : zero; recipient : to; amount : amount};
 msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
 send msgs
 end
 
-transition Burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
+transition Burn(amount : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)
   
 isProxy _sender;
 isNotPaused;
 isMinter initiator;
 isNotBlacklisted initiator;
 
-withinLimits initiator_balance value;
+withinLimits initiator_balance amount;
 
-new_burn_balance = builtin sub initiator_balance value;
-new_supply = builtin sub current_supply value;
+new_burn_balance = builtin sub initiator_balance amount;
+new_supply = builtin sub current_supply amount;
 
-e = { _eventname : "Burnt"; burner : initiator; amount : value};
+e = { _eventname : "Burnt"; burner : initiator; amount : amount};
 event e;
 
 msg_to_proxy = {_tag : "BurnCallBack"; _recipient : _sender; _amount : zero; initiator : initiator; new_burn_balance : new_burn_balance; new_supply : new_supply};
-msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : value};
+msg_to_sender = {_tag : "BurnSuccessCallBack"; _recipient : initiator; _amount : zero; sender : initiator; amount : amount};
 msgs = two_msgs msg_to_proxy msg_to_sender;
 send msgs
 end
@@ -473,7 +473,7 @@ msgs = two_msgs msg_to_proxy msg_to_sender;
 send msgs
 end
 
-transition IncreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
+transition IncreaseAllowance(spender : ByStr20, amount : Uint128, initiator : ByStr20)
   
 isProxy _sender;
 isNotPaused;
@@ -482,14 +482,14 @@ isNotBlacklisted spender;
 
 option_allowance <- allowed[initiator][spender];
 allowance = deconstruct_option_uint128 option_allowance;
-new_allowance = builtin add allowance value;
+new_allowance = builtin add allowance amount;
 
 allowed[initiator][spender] := new_allowance;
 e = {_eventname : "IncreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
 event e
 end
 
-transition DecreaseAllowance(spender : ByStr20, value : Uint128, initiator : ByStr20)
+transition DecreaseAllowance(spender : ByStr20, amount : Uint128, initiator : ByStr20)
   
 isProxy _sender;
 isNotPaused;
@@ -498,14 +498,14 @@ isNotBlacklisted spender;
 
 option_allowance <- allowed[initiator][spender];
 allowance = deconstruct_option_uint128 option_allowance;
-new_allowance = better_subtract allowance value;
+new_allowance = better_subtract allowance amount;
 
 allowed[initiator][spender] := new_allowance;
 e = {_eventname : "DecreasedAllowance"; token_owner : initiator; spender : spender; new_allowance : new_allowance};
 event e
 end
 
-transition Transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)
+transition Transfer(to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)
   
 isProxy _sender;
 isNotPaused;
@@ -514,25 +514,25 @@ isNotBlacklisted to;
 isNotSelf initiator to;
 isNotNull to;
 
-withinLimits init_bal value;
+withinLimits init_bal amount;
 
-new_init_bal = builtin sub init_bal value;
-new_to_bal = builtin add to_bal value;
+new_init_bal = builtin sub init_bal amount;
+new_to_bal = builtin add to_bal amount;
 
-e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : value};
+e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : amount};
 event e;
 
 msg_to_proxy = {_tag : "TransferCallBack"; _recipient : _sender; _amount : zero;
 to : to; initiator : initiator; new_to_bal : new_to_bal; new_init_bal : new_init_bal};
 msg_to_sender = {_tag : "TransferSuccessCallBack"; _recipient : initiator; _amount : zero;
-sender : initiator; recipient : to; amount : value};
+sender : initiator; recipient : to; amount : amount};
 msg_to_recipient = {_tag : "RecipientAcceptTransfer"; _recipient : to; _amount : zero;
-sender : initiator; recipient : to; amount : value};
+sender : initiator; recipient : to; amount : amount};
 msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
 send msgs
 end
 
-transition TransferFrom (from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
+transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)
   
 isProxy _sender;
 isNotPaused;
@@ -546,22 +546,22 @@ option_spender_allowance <- allowed[from][initiator];
 spender_allowance = deconstruct_option_uint128 option_spender_allowance;
 
 min = min_int from_bal spender_allowance;
-withinLimits min value;
+withinLimits min amount;
 
-new_from_bal = builtin sub from_bal value;
-new_to_bal = builtin add to_bal value;
-new_spender_allowance = builtin sub spender_allowance value;
+new_from_bal = builtin sub from_bal amount;
+new_to_bal = builtin add to_bal amount;
+new_spender_allowance = builtin sub spender_allowance amount;
 allowed[from][initiator] := new_spender_allowance;
 
-e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : value};
+e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : amount};
 event e;
 
 msg_to_proxy = {_tag : "TransferFromCallBack"; _recipient : _sender; _amount : zero;
 from : from; to : to; new_from_bal : new_from_bal; new_to_bal : new_to_bal };
 msg_to_sender = {_tag : "TransferFromSuccessCallBack"; _recipient : initiator; _amount : zero;
-initiator : initiator; sender : from; recipient : to; amount : value };
+initiator : initiator; sender : from; recipient : to; amount : amount };
 msg_to_recipient = {_tag : "RecipientAcceptTransferFrom"; _recipient : to; _amount : zero;
-initiator : initiator; sender : from; recipient : to; amount : value};
+initiator : initiator; sender : from; recipient : to; amount : amount};
 msgs = three_msgs msg_to_proxy msg_to_sender msg_to_recipient;
 send msgs
 end

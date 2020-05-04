@@ -148,7 +148,7 @@ current_supply <- totalSupply;
 get_to_bal <- balances[recipient];
 to_bal = deconstruct_option_uint128 get_to_bal;
 msg = {_tag : "Mint"; _recipient : current_impl; _amount : zero; to : recipient;
-value : amount; initiator : _sender; to_bal : to_bal; current_supply : current_supply};
+amount : amount; initiator : _sender; to_bal : to_bal; current_supply : current_supply};
 msgs = one_msg msg;
 send msgs
 end
@@ -163,7 +163,7 @@ end
 transition IncreaseAllowance (spender : ByStr20, amount : Uint128)
 current_impl <- implementation;
 msg = {_tag : "IncreaseAllowance"; _recipient : current_impl; _amount : zero;
-spender : spender; value : amount; initiator : _sender};
+spender : spender; amount : amount; initiator : _sender};
 msgs = one_msg msg;
 send msgs
 end
@@ -171,7 +171,7 @@ end
 transition DecreaseAllowance (spender : ByStr20, amount : Uint128)
 current_impl <- implementation;
 msg = {_tag : "DecreaseAllowance"; _recipient : current_impl; _amount : zero;
-spender : spender; value : amount; initiator : _sender};
+spender : spender; amount : amount; initiator : _sender};
 msgs = one_msg msg;
 send msgs
 end
@@ -183,7 +183,7 @@ to_bal = deconstruct_option_uint128 get_to_bal;
 get_from_bal <- balances[from];
 from_bal = deconstruct_option_uint128 get_from_bal;
 msg = {_tag : "TransferFrom"; _recipient : current_impl; _amount : zero;
-from : from; to : to; value : amount; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
+from : from; to : to; amount : amount; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
 msgs = one_msg msg;
 send msgs
 end
@@ -202,7 +202,7 @@ to_bal = deconstruct_option_uint128 get_to_bal;
 get_init_bal <- balances[_sender];
 init_bal = deconstruct_option_uint128 get_init_bal;
 msg = {_tag : "Transfer"; _recipient : current_impl; _amount : zero; to : to;
-value : amount; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
+amount : amount; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
 msgs = one_msg msg;
 send msgs
 end
@@ -219,7 +219,7 @@ current_impl <- implementation;
 current_supply <- totalSupply;
 get_burn_bal <- balances[_sender];
 burn_bal = deconstruct_option_uint128 get_burn_bal;
-msg = {_tag : "Burn"; _recipient : current_impl; _amount : zero; value : amount; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
+msg = {_tag : "Burn"; _recipient : current_impl; _amount : zero; amount : amount; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
 msgs = one_msg msg;
 send msgs
 end
