@@ -156,8 +156,8 @@ All the transitions in the contract can be categorized into three categories:
 
 | Name | Params | Description |
 |--|--|--|
-|`upgradeTo`| `newImplementation : ByStr20` |  Change the current implementation address of the token contract. <br> :warning: **Note:** Only the `admin` can invoke this transition|
-|`changeAdmin`| `newAdmin : ByStr20` |  Change the current `admin` of the contract. <br> :warning: **Note:** Only the `admin` can invoke this transition|
+|`UpgradeTo`| `newImplementation : ByStr20` |  Change the current implementation address of the token contract. <br> :warning: **Note:** Only the `admin` can invoke this transition|
+|`ChangeAdmin`| `newAdmin : ByStr20` |  Change the current `admin` of the contract. <br> :warning: **Note:** Only the `admin` can invoke this transition|
 
 #### Relay Transitions
 
