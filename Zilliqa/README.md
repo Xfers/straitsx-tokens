@@ -264,18 +264,18 @@ All the transitions in the contract can be categorized into three categories:
 |`SubmitCustomTransferOwnershipTransaction`| `proxyTokenContract : ByStr20, newOwner : ByStr20` | Submit a new `TransferOwnership` transaction for future signoff |
 |`SubmitCustomUpdatePauserTransaction`| `proxyTokenContract : ByStr20, newPauser : ByStr20` | Submit a new `UpdatePauser` transaction for future signoff |
 |`SubmitCustomBlacklistTransaction`| `proxyTokenContract : ByStr20, address : ByStr20` | Submit a new `Blacklist` transaction for future signoff |
-|`SubmitCustomUnBlacklistTransaction`| `proxyTokenContract : ByStr20, address : ByStr20` | Submit a new `UnBlacklist` transaction for future signoff |
+|`SubmitCustomUnblacklistTransaction`| `proxyTokenContract : ByStr20, address : ByStr20` | Submit a new `Unblacklist` transaction for future signoff |
 |`SubmitCustomUpdateBlacklisterTransaction`| `proxyTokenContract : ByStr20, newBlacklister : ByStr20` | Submit a new `UpdateBlacklister` transaction for future signoff |
 |`SubmitCustomLawEnforcementWipingBurnTransaction`| `proxyTokenContract : ByStr20, address : ByStr20` | Submit a new `LawEnforcementWipingBurn` transaction for future signoff |
-|`SubmitCustomBurnTransaction`| `proxyTokenContract : ByStr20, value : Uint128` | Submit a new `Burn` transaction for future signoff |
-|`SubmitCustomMintTransaction`| `proxyTokenContract : ByStr20, to : ByStr20, value : Uint128` | Submit a new `Mint` transaction for future signoff |
+|`SubmitCustomBurnTransaction`| `proxyTokenContract : ByStr20, amount : Uint128` | Submit a new `Burn` transaction for future signoff |
+|`SubmitCustomMintTransaction`| `proxyTokenContract : ByStr20, to : ByStr20, amount : Uint128` | Submit a new `Mint` transaction for future signoff |
 |`SubmitCustomTransferTransaction`| `proxyTokenContract : ByStr20, to : ByStr20, value : Uint128` | Submit a new `Transfer` transaction for future signoff |
-|`SubmitCustomTransferFromTransaction`| `proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, value : Uint128` | Submit a new `TransferFrom` transaction for future signoff |
+|`SubmitCustomTransferFromTransaction`| `proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, amount : Uint128` | Submit a new `TransferFrom` transaction for future signoff |
 |`SubmitCustomUpdateMasterMinterTransaction`| `proxyTokenContract : ByStr20, newMasterMinter : ByStr20` | Submit a new `UpdateMasterMinter` transaction for future signoff |
 |`SubmitCustomIncreaseMinterAllowanceTransaction`| `proxyTokenContract : ByStr20, minter : ByStr20, amount : Uint128` | Submit a new `IncreaseMinterAllowance` transaction for future signoff |
 |`SubmitCustomDecreaseMinterAllowanceTransaction`| `roxyTokenContract : ByStr20, minter : ByStr20, amount : Uint128` | Submit a new `DecreaseMinterAllowance` transaction for future signoff |
 |`SubmitCustomPauseTransaction`| `proxyTokenContract : ByStr20` | Submit a new `Pause` transaction for future signoff |
-|`SubmitCustomUnPauseTransaction`| `proxyTokenContract : ByStr20` | Submit a new `UnPause` transaction for future signoff |
+|`SubmitCustomUnpauseTransaction`| `proxyTokenContract : ByStr20` | Submit a new `Unpause` transaction for future signoff |
 |`SubmitCustomProxyUpgradeToTransaction`| `proxyTokenContract : ByStr20, newImplementation : ByStr20` | Submit a new `UpgradeTo` transaction for future signoff |
 |`SubmitCustomProxyChangeAdminTransaction`| `proxyTokenContract : ByStr20, newAdmin : ByStr20` | Submit a new `ChangeAdmin` transaction for future signoff |
 
