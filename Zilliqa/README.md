@@ -100,18 +100,18 @@ Each of these category of transitions are presented in further details below:
 
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
-|`Mint`| `to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Minting is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. , 2) Minting can only be done when the contract is not paused. | <center>:x:</center> |
-|`Burn`| `value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Burning is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
+|`Mint`| `to: ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128` | Mint `value` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Minting is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. , 2) Minting can only be done when the contract is not paused. | <center>:x:</center> |
+|`Burn`| `amount : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Burning is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`. 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
 |`LawEnforcementWipingBurn`| `address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128` | Burn entire balance of tokens from `address`.  <br>  :warning: **Note:**   1) Only the blacklister can invoke this transition, i.e., `initiator` must be the `blacklister`. 2) Burning can only be done when the contract is not paused. 3) Only accounts that have been blacklisted by the blacklister may have their funds wiped.| <center>:x:</center>  |
 
 #### Token Transfer Transitions
 
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
-|`IncreaseAllowance`| `spender : ByStr20, value : Uint128, initiator : ByStr20` | Increase `value` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
-|`DecreaseAllowance`| `spender : ByStr20, value : Uint128, initiator : ByStr20` | Decrease `value` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
-|`Transfer`| `to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128` | Transfer `value` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator` and the `recipient` should not be blacklisted.|<center>:x:</center>  |
-|`TransferFrom`| `from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128` | Transfer `value` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator`, the `from` address and the `recipient` should not be blacklisted.|<center>:x:</center>  |
+|`IncreaseAllowance`| `spender : ByStr20, amount : Uint128, initiator : ByStr20` | Increase `value` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
+|`DecreaseAllowance`| `spender : ByStr20, amount : Uint128, initiator : ByStr20` | Decrease `value` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) Only the non-blacklisted minters can invoke this transition, i.e., `initiator` must be a non-blacklisted token holder, 2) The spender must also be non-blacklisted. | <center>:x:</center>  |
+|`Transfer`| `to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128` | Transfer `value` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator` and the `recipient` should not be blacklisted.|<center>:x:</center>  |
+|`TransferFrom`| `from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128` | Transfer `value` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**   1) The `initiator`, the `from` address and the `recipient` should not be blacklisted.|<center>:x:</center>  |
 
 ## Proxy Contract
 
@@ -172,12 +172,12 @@ Note that these transitions are just meant to redirect calls to the correspondin
 |`Blacklist(address : ByStr20)` | `Blacklist(address : ByStr20, initiator : ByStr20)` |
 |`Unblacklist(address : ByStr20)` | `Unblacklist(address : ByStr20, initiator : ByStr20)` |
 |`UpdateBlacklister(newBlacklister : ByStr20)` | `UpdateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)` |
-|`Mint(recipient: ByStr20, amount : Uint128)` | `Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
-|`IncreaseAllowance(spender : ByStr20, amount : Uint128)` | `IncreaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
-|`DecreaseAllowance(spender : ByStr20, amount : Uint128)` | `DecreaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
-|`TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
-|`Transfer(to : ByStr20, amount : Uint128)` | `Transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
-|`Burn(amount : Uint128)` | `Burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
+|`Mint(recipient: ByStr20, amount : Uint128)` | `Mint(to: ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
+|`IncreaseAllowance(spender : ByStr20, amount : Uint128)` | `IncreaseAllowance(spender: ByStr20, amount : Uint128, initiator : ByStr20)` |
+|`DecreaseAllowance(spender : ByStr20, amount : Uint128)` | `DecreaseAllowance(spender: ByStr20, amount : Uint128, initiator : ByStr20)` |
+|`TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
+|`Transfer(to : ByStr20, amount : Uint128)` | `Transfer(to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
+|`Burn(amount : Uint128)` | `Burn(amount : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
 |`LawEnforcementWipingBurn(address : ByStr20)` | `LawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
 |`IncreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `IncreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)` |
 |`DecreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `DecreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)` |
@@ -191,10 +191,10 @@ Because of that `callback transitions` need to be defined to update `balance` or
 
 | Callback transition in the proxy contract  | Source transition in the token contract |
 |--|--|
-|`MintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
-|`TransferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
-|`TransferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)` | `Transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
-|`BurnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)` | `Burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
+|`MintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `Mint(to: ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
+|`TransferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
+|`TransferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)` | `Transfer(to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
+|`BurnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)` | `Burn(amount : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
 |`LawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)` | `LawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
 
 ## Multi-signature Contract
@@ -269,7 +269,7 @@ All the transitions in the contract can be categorized into three categories:
 |`SubmitCustomLawEnforcementWipingBurnTransaction`| `proxyTokenContract : ByStr20, address : ByStr20` | Submit a new `LawEnforcementWipingBurn` transaction for future signoff |
 |`SubmitCustomBurnTransaction`| `proxyTokenContract : ByStr20, amount : Uint128` | Submit a new `Burn` transaction for future signoff |
 |`SubmitCustomMintTransaction`| `proxyTokenContract : ByStr20, to : ByStr20, amount : Uint128` | Submit a new `Mint` transaction for future signoff |
-|`SubmitCustomTransferTransaction`| `proxyTokenContract : ByStr20, to : ByStr20, value : Uint128` | Submit a new `Transfer` transaction for future signoff |
+|`SubmitCustomTransferTransaction`| `proxyTokenContract : ByStr20, to : ByStr20, amount : Uint128` | Submit a new `Transfer` transaction for future signoff |
 |`SubmitCustomTransferFromTransaction`| `proxyTokenContract : ByStr20, from : ByStr20, to : ByStr20, amount : Uint128` | Submit a new `TransferFrom` transaction for future signoff |
 |`SubmitCustomUpdateMasterMinterTransaction`| `proxyTokenContract : ByStr20, newMasterMinter : ByStr20` | Submit a new `UpdateMasterMinter` transaction for future signoff |
 |`SubmitCustomIncreaseMinterAllowanceTransaction`| `proxyTokenContract : ByStr20, minter : ByStr20, amount : Uint128` | Submit a new `IncreaseMinterAllowance` transaction for future signoff |
