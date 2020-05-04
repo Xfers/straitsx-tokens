@@ -191,11 +191,11 @@ Because of that `callback transitions` need to be defined to update `balance` or
 
 | Callback transition in the proxy contract  | Source transition in the token contract |
 |--|--|
-|`mintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
-|`transferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `transferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
-|`transferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)` | `transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
-|`burnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)` | `burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
-|`lawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
+|`MintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
+|`TransferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
+|`TransferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)` | `Transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
+|`BurnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)` | `Burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
+|`LawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)` | `LawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
 
 ## Multi-signature Contract
 
