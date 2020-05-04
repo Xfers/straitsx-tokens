@@ -300,7 +300,7 @@ These `callback transitions` is necessary for building DApps on top of the stabl
 | Name | Params |
 |--|--|
 |`RecipientAcceptTransfer`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
-|`RecipientAcceptTransferFrom`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
+|`RecipientAcceptTransferFrom`| `initiator: ByStr20, sender : ByStr20, recipient : ByStr20, amount : Uint128` |
 |`RecipientAcceptMint`| `recipient : ByStr20, amount : Uint128` |
 
 **Initiator Callback Transitions**
@@ -308,7 +308,7 @@ These `callback transitions` is necessary for building DApps on top of the stabl
 | Name | Params |
 |--|--|
 |`TransferSuccessCallBack`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
-|`TransferFromSuccessCallBack`| `sender : ByStr20, recipient : ByStr20, amount : Uint128` |
+|`TransferFromSuccessCallBack`| `initiator: ByStr20, sender : ByStr20, recipient : ByStr20, amount : Uint128` |
 |`MintSuccessCallBack`| `recipient : ByStr20, amount : Uint128` |
 |`LawEnforcementWipingBurnSuccessCallBack`| `address : ByStr20` |
 |`BurnSuccessCallBack`| `sender : ByStr20, amount : Uint128` |
