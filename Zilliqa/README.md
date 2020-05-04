@@ -165,23 +165,23 @@ Note that these transitions are just meant to redirect calls to the correspondin
 
 | Transition signature in the proxy contract  | Target transition in the token contract |
 |--|--|
-|`proxyTransferOwnership(newOwner : ByStr20)` | `transferOwnership(newOwner : ByStr20, initiator : ByStr20)` |
-|`proxyPause()` | `pause(initiator : ByStr20)` |
-|`proxyUnPause()` | `unpause(initiator : ByStr20)` |
-|`proxyUpdatePauser(newPauser : ByStr20)` | `updatePauser(newPauser : ByStr20, initiator : ByStr20)` |
-|`proxyBlacklist(address : ByStr20)` | `blacklist(address : ByStr20, initiator : ByStr20)` |
-|`proxyUnBlacklist(address : ByStr20)` | `unBlacklist(address : ByStr20, initiator : ByStr20)` |
-|`proxyUpdateBlacklister(newBlacklister : ByStr20)` | `updateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)` |
-|`proxyMint(to: ByStr20, value : Uint128)` | `mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
-|`proxyIncreaseAllowance(spender : ByStr20, value : Uint128)` | `increaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
-|`proxyDecreaseAllowance(spender : ByStr20, value : Uint128)` | `decreaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
-|`proxyTransferFrom(from : ByStr20, to : ByStr20, value : Uint128)` | `transferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
-|`proxyTransfer(to : ByStr20, value : Uint128)` | `transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
-|`proxyBurn(value : Uint128)` | `burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
-|`proxyLawEnforcementWipingBurn(address : ByStr20)` | `lawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
-|`proxyIncreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `increaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)` |
-|`proxyDecreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `decreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)` |
-|`proxyUpdateMasterMinter(newMasterMinter : ByStr20)` | `updateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)` |
+|`TransferOwnership(newOwner : ByStr20)` | `TransferOwnership(newOwner : ByStr20, initiator : ByStr20)` |
+|`Pause()` | `Pause(initiator : ByStr20)` |
+|`Unpause()` | `Unpause(initiator : ByStr20)` |
+|`UpdatePauser(newPauser : ByStr20)` | `UpdatePauser(newPauser : ByStr20, initiator : ByStr20)` |
+|`Blacklist(address : ByStr20)` | `Blacklist(address : ByStr20, initiator : ByStr20)` |
+|`Unblacklist(address : ByStr20)` | `Unblacklist(address : ByStr20, initiator : ByStr20)` |
+|`UpdateBlacklister(newBlacklister : ByStr20)` | `UpdateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)` |
+|`Mint(recipient: ByStr20, amount : Uint128)` | `Mint(to: ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
+|`IncreaseAllowance(spender : ByStr20, amount : Uint128)` | `IncreaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
+|`DecreaseAllowance(spender : ByStr20, amount : Uint128)` | `DecreaseAllowance(spender: ByStr20, value : Uint128, initiator : ByStr20)` |
+|`TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
+|`Transfer(to : ByStr20, amount : Uint128)` | `Transfer(to : ByStr20, value : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
+|`Burn(amount : Uint128)` | `Burn(value : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
+|`LawEnforcementWipingBurn(address : ByStr20)` | `LawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
+|`IncreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `IncreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)` |
+|`DecreaseMinterAllowance(minter : ByStr20, amount : Uint128)` | `DecreaseMinterAllowance(minter : ByStr20, amount : Uint128, initiator : ByStr20)` |
+|`UpdateMasterMinter(newMasterMinter : ByStr20)` | `UpdateMasterMinter(newMasterMinter : ByStr20, initiator : ByStr20)` |
 
 #### Callback Transitions
 
