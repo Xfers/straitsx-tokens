@@ -377,12 +377,12 @@ transaction = Unpause;
 SubmitCustomTransaction proxyTokenContract transaction
 end
 
-transition SubmitCustomProxyUpgradeToTransaction (proxyTokenContract : ByStr20, newImplementation : ByStr20)
+transition SubmitCustomUpgradeToTransaction (proxyTokenContract : ByStr20, newImplementation : ByStr20)
 transaction = UpgradeTo newImplementation;
 SubmitCustomTransaction proxyTokenContract transaction
 end
 
-transition SubmitCustomProxyChangeAdminTransaction (proxyTokenContract : ByStr20, newAdmin : ByStr20)
+transition SubmitCustomChangeAdminTransaction (proxyTokenContract : ByStr20, newAdmin : ByStr20)
 transaction = ChangeAdmin newAdmin;
 SubmitCustomTransaction proxyTokenContract transaction
 end
