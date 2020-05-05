@@ -701,7 +701,7 @@ transition RecipientAcceptTransfer (sender : ByStr20, recipient : ByStr20, amoun
 end
 
 (* Callback transition - no action required, but must be defined, since transferFroms from the wallet will fail otherwise. *)
-transition TransferFromSuccessCallBack (sender : ByStr20, recipient : ByStr20, amount : Uint128)
+transition TransferFromSuccessCallBack (initiator: ByStr20, sender : ByStr20, recipient : ByStr20, amount : Uint128)
 end
 
 (* Callback transition - no action required, but must be defined, since mints from the wallet will fail otherwise. *)
@@ -717,7 +717,7 @@ transition BurnSuccessCallBack (sender : ByStr20, amount : Uint128)
 end
 
 (* Acceptance transition - no action required, but must be defined, since transferFroms to the wallet will fail otherwise. *)
-transition RecipientAcceptTransferFrom (sender : ByStr20, recipient : ByStr20, amount : Uint128)
+transition RecipientAcceptTransferFrom (initiator: ByStr20, sender : ByStr20, recipient : ByStr20, amount : Uint128)
 end
 
 (* Acceptance transition - no action required, but must be defined, since mints to the wallet will fail otherwise. *)
