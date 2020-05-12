@@ -560,7 +560,7 @@ transition Transfer(to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal 
   new_to_bal = builtin add to_bal amount;
   
   (* Emits event *)
-  e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : amount};
+  e = {_eventname : "TransferSuccess"; sender : initiator; recipient : to; amount : amount};
   event e;
   
   (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)
@@ -599,7 +599,7 @@ transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128, initiat
   allowed[from][initiator] := new_spender_allowance;
   
   (* Emits event *)
-  e = {_eventname : "TransferFrom"; initiator : initiator; sender : from; recipient : to; amount : amount};
+  e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : amount};
   event e;
   
   (* Create and sends the transaction to be called on the proxy contract since balances are stored on the proxy, not the implementation *)

@@ -519,7 +519,7 @@ withinLimits init_bal amount;
 new_init_bal = builtin sub init_bal amount;
 new_to_bal = builtin add to_bal amount;
 
-e = {_eventname : "Transfer"; sender : initiator; recipient : to; amount : amount};
+e = {_eventname : "TransferSuccess"; sender : initiator; recipient : to; amount : amount};
 event e;
 
 msg_to_proxy = {_tag : "TransferCallBack"; _recipient : _sender; _amount : zero;
@@ -553,7 +553,7 @@ new_to_bal = builtin add to_bal amount;
 new_spender_allowance = builtin sub spender_allowance amount;
 allowed[from][initiator] := new_spender_allowance;
 
-e = {_eventname : "TransferFrom"; initiator : initiator; sender : from; recipient : to; amount : amount};
+e = {_eventname : "TransferFromSuccess"; initiator : initiator; sender : from; recipient : to; amount : amount};
 event e;
 
 msg_to_proxy = {_tag : "TransferFromCallBack"; _recipient : _sender; _amount : zero;
