@@ -44,15 +44,30 @@ The table below lists the parameters that are defined at the contract deployment
 
 | Name | Type | Description |
 |--|--|--|
+|`contract_owner`|`ByStr20`| The contract owner of the proxy address.|
 |`name`| `String` | A human readable token name. |
 |`symbol`| `String` | A ticker symbol for the token. |
 |`decimals`| `Uint32` | Defines the smallest unit of the tokens|
-|`init_owner`| `ByStr20` | The initial owner of the contract. |
+|`init_supply`|`Uint128` | The initial supply of tokens which is 0 |
+|`init_implementation`|`ByStr20`| The initial implementation contract address |
+|`init_admin`|`ByStr20`| The initial admin of the proxy contract |
+|`init_owner`| `ByStr20` | The initial owner of the token contract. |
 |`proxy_address` | `ByStr20` | Address of the proxy contract. |
 
-### Mutable Fields
-
+### Mutable Fields 
 The table below presents the mutable fields of the contract and their initial values.
+
+# Proxy Contract
+
+| Name | Type | Initial Value |Description |
+|--|--|--|--|
+|`implementation`|`ByStr20`|`init_implementation` | Current `implementation` address of the token contract. |
+|`admin`|`ByStr20`|`init_admin` | Current `admin` address of the token contract. |
+|`balances`|`Map ByStr20 Uint128`|`let emp_map = Emp ByStr20 Uint128 in builtin put emp_map contract_owner init_supply` | Keeps track of the balance for each token holder. (balance of an address = balances[holder address]) |
+|`total_supply`|`Uint128`| Total supply of tokens |
+|`allowances`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the allowance of each `spender` for each token holder and the number of tokens that the `spender` is allowed to spend on behalf of the token holder. (token allowed to spend = allowed[holder address][spender address]) |
+
+#### Token Contract
 
 | Name | Type | Initial Value |Description |
 |--|--|--|--|
@@ -62,8 +77,7 @@ The table below presents the mutable fields of the contract and their initial va
 |`paused`| `Bool` | `True` | Keeps track of whether the contract is current paused or not. `True` means the contract is paused. |
 |`blacklister`| `ByStr20` | `init_owner` | Current `blacklister` in the contract.|
 |`blacklisted`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Records the addresses that are blacklisted. An address that is present in the map is blacklisted irrespective of the value it is mapped to. |
-|`allowed`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the `Spender` for each token holder and the number of tokens that she is allowed to spend on behalf of the token holder. (token allowed to spend = allowed[holder address][spender address]) |
-|`minterAllowed`| `Map ByStr20 (Option Uint128)` | `Emp ByStr20 (Option Uint128)` | Keeps track of the allowed number of tokens that a `minter` can mint (tokens allowed to mint = minterAllowed[minter address]). <br> `Option t` can present as the `Some` type `t` or the `None` type ([See detail](https://scilla.readthedocs.io/en/latest/scilla-in-depth.html#option)). |
+|`minterAllowances`| `Map ByStr20 (Option Uint128)` | `Emp ByStr20 (Option Uint128)` | Keeps track of the allowed number of tokens that a `minter` can mint (tokens allowed to mint = minterAllowances[minter address]). <br> `Option t` can present as the `Some` type `t` or the `None` type ([See detail](https://scilla.readthedocs.io/en/latest/scilla-in-depth.html#option)). |
 
 ### Transitions
 
