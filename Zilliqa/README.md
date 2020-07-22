@@ -23,19 +23,17 @@ The multi-signature contract is a digital signature scheme which allows a group 
 
 All contracts here also have a minimized version in `/compressed` folder because there is a maximum code size limit of 20,480 bytes in Zilliqa.
 
-### Token contract Roles and Privileges
+## Token contract 
+### Roles and Privileges
 
 | Name | Description & Privileges |
 |--|--|
 |`init_owner`| The initial owner of the token contract. It is usually the creator of the token contract. |
-|`init_admin`| The initial admin of the proxy contract. It is usually the creator of the proxy contract. |
-|`contract_owner`| The contract owner of the proxy contract. It is usually the creator of the proxy contract. The `contract_owner` role has no functionality outside of being used to comply with the ZRC2 standard.|
 |`owner`| The current owner of the token contract. The `owner` handles critical administrative actions, e.g., determining which address plays which role in the token contract. There is only one `owner` and it is first initialized to `init_owner`.|
 |`pauser`| The current pauser of the token contract. The `pauser` is allowed to (un)pause the contract. There is only one `pauser` and it is first initialized to `init_owner`.|
 |`masterMinter`| The current master minter of the token contract. The `masterMinter` manages the minters and configures the number of tokens that each minter is allowed to mint. There is only one `masterMinter` and it is first initialized to `init_owner`. |
 |`minter`| A role that is allowed to mint and burn new tokens. The token contract defines several minters and the number of tokens that each minter is allowed to mint in the `minterAllowances` field. The `IncreaseMinterAllowance` transition is called by the `masterMinter` for adding a new `minter` by increasing the its minterAllowance. There can be more than one `minter` for the token contract. |
 |`blacklister`| The current blacklister of the token contract. The `blacklister` is used to freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister` and it is first initialized to `init_owner`. |
-|`spender`| A token holder can designate another address(es) to send up to a certain number of tokens on its behalf. The proxy contract defines each token holder and the number of tokens that a `spender` address is allowed to spend on behalf of the token holder in `allowances` field. |
 |`initiator`| The user who calls the proxy contract that in turns call the token contract. After deployment, the address of the token contract will be made known to the user and the code will be visible directly from the block explorer. |
 
 ### Immutable Parameters
@@ -44,30 +42,11 @@ The table below lists the parameters that are defined at the contract deployment
 
 | Name | Type | Description |
 |--|--|--|
-|`contract_owner`|`ByStr20`| The contract owner of the proxy address.|
-|`name`| `String` | A human readable token name. |
-|`symbol`| `String` | A ticker symbol for the token. |
-|`decimals`| `Uint32` | Defines the smallest unit of the tokens|
-|`init_supply`|`Uint128` | The initial supply of tokens which is 0 |
-|`init_implementation`|`ByStr20`| The initial implementation contract address |
-|`init_admin`|`ByStr20`| The initial admin of the proxy contract |
 |`init_owner`| `ByStr20` | The initial owner of the token contract. |
 |`proxy_address` | `ByStr20` | Address of the proxy contract. |
 
 ### Mutable Fields 
-The table below presents the mutable fields of the contract and their initial values.
-
-# Proxy Contract
-
-| Name | Type | Initial Value |Description |
-|--|--|--|--|
-|`implementation`|`ByStr20`|`init_implementation` | Current `implementation` address of the token contract. |
-|`admin`|`ByStr20`|`init_admin` | Current `admin` address of the token contract. |
-|`balances`|`Map ByStr20 Uint128`|`let emp_map = Emp ByStr20 Uint128 in builtin put emp_map contract_owner init_supply` | Keeps track of the balance for each token holder. (balance of an address = balances[holder address]) |
-|`total_supply`|`Uint128`| Total supply of tokens |
-|`allowances`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the allowance of each `spender` for each token holder and the number of tokens that the `spender` is allowed to spend on behalf of the token holder. (token allowed to spend = allowed[holder address][spender address]) |
-
-#### Token Contract
+The table below presents the mutable fields of the token contract and their initial values.
 
 | Name | Type | Initial Value |Description |
 |--|--|--|--|
@@ -137,29 +116,34 @@ Proxy contract is a relay contract that redirects calls to it to the token contr
 
 | Name | Description & Privileges |
 |--|--|
-|`init_admin` | The initial admin of the contract which is usually the creator of the contract.  `init_admin` is also the initial value of `admin`. |
-|`admin` | Current `admin` of the contract initialized to `init_admin`. Certain critical actions can only be performed by the `admin`, e.g., changing the current implementation of the token contract. |
-|`initiator`| The user who calls the proxy contract that in turns call the token contract. After deployment, the address of the proxy contract will be made known to the user and the code will be visible directly from the block explorer. |
+|`init_admin`| The initial admin of the contract. It is usually the creator of the contract. |
+|`contract_owner`| The contract owner of the contract. It is usually the creator of the contract. The `contract_owner` role has no functionality outside of being used to comply with the ZRC2 standard.|
+|`spender`| A token holder can designate another address(es) to send up to a certain number of tokens on its behalf. The proxy contract defines each token holder and the number of tokens that a `spender` address is allowed to spend on behalf of the token holder in `allowances` field.|
 
 ### Immutable Parameters
 
-The table below list the parameters that are defined at the contrat deployment time and hence cannot be changed later on.
+The table below lists the parameters that are defined at the contract deployment time and hence cannot be changed later on.
 
 | Name | Type | Description |
 |--|--|--|
-|`init_implementation`| `ByStr20` | The address of the token contract. |
-|`init_admin`| `ByStr20` | The address of the admin. |
+|`contract_owner`|`ByStr20`| The contract owner of the proxy address.|
+|`name`| `String` | A human readable token name. |
+|`symbol`| `String` | A ticker symbol for the token. |
+|`decimals`| `Uint32` | Defines the smallest unit of the tokens|
+|`init_supply`|`Uint128` | The initial supply of tokens which is 0 |
+|`init_implementation`|`ByStr20`| The initial implementation contract address |
+|`init_admin`|`ByStr20`| The initial admin of the proxy contract |
 
 ### Mutable Fields
-
-The table below presents the mutable fields of the contract and their initial values.
+The table below presents the mutable fields of the token contract and their initial values.
 
 | Name | Type | Initial Value |Description |
 |--|--|--|--|
-|`implementation`| `ByStr20` | `init_implementation` | Address of the current implementation of the token contract. |
-|`admin`| `ByStr20` | `init_owner` | Current `admin` in the contract. |
-|`balances`| `Map ByStr20 Uint128` | `Emp ByStr20 Uint128` | Keeps track of the number of tokens that each token holder owns. |
-|`totalSupply`| `Uint128` | `0` | The total number of tokens that is in the supply. |
+|`implementation`|`ByStr20`|`init_implementation` | Current `implementation` address of the token contract. |
+|`admin`|`ByStr20`|`init_admin` | Current `admin` address of the token contract. |
+|`balances`|`Map ByStr20 Uint128`|`let emp_map = Emp ByStr20 Uint128 in builtin put emp_map contract_owner init_supply` | Keeps track of the balance for each token holder. (balance of an address = balances[holder address]) |
+|`total_supply`|`Uint128`| Total supply of tokens |
+|`allowances`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the allowance of each `spender` for each token holder and the number of tokens that the `spender` is allowed to spend on behalf of the token holder. (token allowed to spend = allowed[holder address][spender address]) |
 
 ### Transitions
 
