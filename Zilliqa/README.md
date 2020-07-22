@@ -27,13 +27,15 @@ All contracts here also have a minimized version in `/compressed` folder because
 
 | Name | Description & Privileges |
 |--|--|
-|`init_owner`| The initial owner of the contract which is usually the creator of the contract. `init_owner` is the initial value of several other roles. |
-|`owner`| Current owner of the contract initialized to `init_owner`. Certain critical actions can only be performed by the `owner`, e.g., changing who plays certain roles in the contract. |
-|`pauser`| Account that is allowed to (un)pause the contract. It is initialized to `init_owner`. `pauser` can (un)pause the contract. There is only one `pauser` for the contract. |
-|`masterMinter`| The master minter to manage the minters for the contract.  `masterMinter` can add or remove minters and configure the number of tokens that a minter is allowed to mint. There is only one `masterMinter` for the contract. |
-|`minter`| An account that is allowed to mint and burn new tokens. The contract defines several minters and the number of tokens allowed to mint by minter in `minterAllowed` field. Call `increaseMinterAllowance` transition for creating a new `minter` by increasing the number of tokens allowed to mint. |
-|`blacklister`| An account that can freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister`. |
-|`spender`| A token holder can designate a certain address to send up to a certain number of tokens on its behalf. The contract defines each token holder and the number of tokens that `spender` account allowed to spend on behalf of the token holder in `allowed` field. |
+|`init_owner`| The initial owner of the token contract. It is usually the creator of the token contract. |
+|`init_admin`| The initial admin of the proxy contract. It is usually the creator of the proxy contract. |
+|`contract_owner`| The contract owner of the proxy contract. It is usually the creator of the proxy contract. The `contract_owner` role has no functionality outside of being used to comply with the ZRC2 standard.|
+|`owner`| The current owner of the token contract. The `owner` handles critical administrative actions, e.g., determining which address plays which role in the token contract. There is only one `owner` and it is first initialized to `init_owner`.|
+|`pauser`| The current pauser of the token contract. The `pauser` is allowed to (un)pause the contract. There is only one `pauser` and it is first initialized to `init_owner`.|
+|`masterMinter`| The current master minter of the token contract. The `masterMinter` manages the minters and configures the number of tokens that each minter is allowed to mint. There is only one `masterMinter` and it is first initialized to `init_owner`. |
+|`minter`| A role that is allowed to mint and burn new tokens. The token contract defines several minters and the number of tokens that each minter is allowed to mint in the `minterAllowances` field. The `IncreaseMinterAllowance` transition is called by the `masterMinter` for adding a new `minter` by increasing the its minterAllowance. There can be more than one `minter` for the token contract. |
+|`blacklister`| The current blacklister of the token contract. The `blacklister` is used to freeze, unfreeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister` and it is first initialized to `init_owner`. |
+|`spender`| A token holder can designate another address(es) to send up to a certain number of tokens on its behalf. The proxy contract defines each token holder and the number of tokens that a `spender` address is allowed to spend on behalf of the token holder in `allowances` field. |
 |`initiator`| The user who calls the proxy contract that in turns call the token contract. After deployment, the address of the token contract will be made known to the user and the code will be visible directly from the block explorer. |
 
 ### Immutable Parameters
