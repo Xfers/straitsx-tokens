@@ -118,7 +118,7 @@ Proxy contract is a relay contract that redirects calls to it to the token contr
 |--|--|
 |`init_admin`| The initial admin of the contract. It is usually the creator of the contract. |
 |`contract_owner`| The contract owner of the contract. It is usually the creator of the contract. The `contract_owner` role has no functionality outside of being used to comply with the ZRC2 standard.|
-|`spender`| A token holder can designate another address(es) to send up to a certain number of tokens on its behalf. The proxy contract defines each token holder and the number of tokens that a `spender` address is allowed to spend on behalf of the token holder in `allowances` field.|
+|`spender`| A token holder can designate another address(es) to send up to a certain number of tokens on its behalf. The proxy contract defines each token holder and the number of tokens that a `spender` address is allowed to spend on behalf of the token holder in the `allowances` field.|
 
 ### Immutable Parameters
 
@@ -142,7 +142,7 @@ The table below presents the mutable fields of the token contract and their init
 |`implementation`|`ByStr20`|`init_implementation` | Current `implementation` address of the token contract. |
 |`admin`|`ByStr20`|`init_admin` | Current `admin` address of the token contract. |
 |`balances`|`Map ByStr20 Uint128`|`let emp_map = Emp ByStr20 Uint128 in builtin put emp_map contract_owner init_supply` | Keeps track of the balance for each token holder. (balance of an address = balances[holder address]) |
-|`total_supply`|`Uint128`| Total supply of tokens |
+|`total_supply`|`Uint128`|`Uint128 0`| Total supply of tokens |
 |`allowances`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the allowance of each `spender` for each token holder and the number of tokens that the `spender` is allowed to spend on behalf of the token holder. (token allowed to spend = allowed[holder address][spender address]) |
 
 ### Transitions
@@ -173,9 +173,9 @@ Note that these transitions are just meant to redirect calls to the correspondin
 |`Unblacklist(address : ByStr20)` | `Unblacklist(address : ByStr20, initiator : ByStr20)` |
 |`UpdateBlacklister(newBlacklister : ByStr20)` | `UpdateBlacklister(newBlacklister : ByStr20, initiator : ByStr20)` |
 |`Mint(recipient: ByStr20, amount : Uint128)` | `Mint(to: ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
-|`IncreaseAllowance(spender : ByStr20, amount : Uint128)` | `IncreaseAllowance(spender: ByStr20, amount : Uint128, initiator : ByStr20)` |
-|`DecreaseAllowance(spender : ByStr20, amount : Uint128)` | `DecreaseAllowance(spender: ByStr20, amount : Uint128, initiator : ByStr20)` |
-|`TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
+|`IncreaseAllowance(spender : ByStr20, amount : Uint128)` | `IncreaseAllowance(spender : ByStr20, amount : Uint128, initiator : ByStr20, current_allowance : Uint128)` |
+|`DecreaseAllowance(spender : ByStr20, amount : Uint128)` | `DecreaseAllowance(spender : ByStr20, amount : Uint128, initiator : ByStr20, current_allowance : Uint128)` |
+|`TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128)` | `TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128, spender_allowance : Uint128)` |
 |`Transfer(to : ByStr20, amount : Uint128)` | `Transfer(to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
 |`Burn(amount : Uint128)` | `Burn(amount : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
 |`LawEnforcementWipingBurn(address : ByStr20)` | `LawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
@@ -185,14 +185,15 @@ Note that these transitions are just meant to redirect calls to the correspondin
 
 #### Callback Transitions
 
-Since it may be necessary to upgrade the contract in the future, need to set `balance` and `totalSupply` in the proxy contract.
+To ensure interoperability and composability of our XSGD token contract on the Zilliqa blockchain, the compulsory mutable variables like `balances`, `allowances` and `total_supply` are found in the proxy contract.
 
-Because of that `callback transitions` need to be defined to update `balance` or `totalSupply` that return by transitions in `token contract`.
+In order to update these variables on the proxy contract, we need to define some `callback transitions` for the `token contract` to call.
 
 | Callback transition in the proxy contract  | Source transition in the token contract |
 |--|--|
 |`MintCallBack(to : ByStr20, new_to_bal : Uint128, new_supply : Uint128)` | `Mint(to: ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128)` |
-|`TransferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128)` |
+|`AllowanceCallBack(initiator : ByStr20, spender : ByStr20, new_allowance : Uint128)`|`IncreaseAllowance(spender : ByStr20, amount : Uint128, initiator : ByStr20, current_allowance : Uint128), DecreaseAllowance(spender : ByStr20, amount : Uint128, initiator : ByStr20, current_allowance : Uint128), TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128, spender_allowance : Uint128)`|
+|`TransferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)` | `TransferFrom(from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128, spender_allowance : Uint128)` |
 |`TransferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)` | `Transfer(to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128)` |
 |`BurnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)` | `Burn(amount : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128)` |
 |`LawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)` | `LawEnforcementWipingBurn(address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128)` |
