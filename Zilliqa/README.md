@@ -11,13 +11,13 @@ https://www.xfers.com/
 The XSGD contract has been written by the StraitsX team to fit both the specific needs of the XSGD token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.
 
 The XSGD contract consists of two communicating contracts:
-- [token contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/xsgd_contract.scilla)
-- [proxy contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/proxy.scilla)
+- [token contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/contracts/xsgd_contract.scilla)
+- [proxy contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/contracts/proxy.scilla)
 
 The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. This allows upgrading the contract, as the original proxy can point to a newly deployed token contract.
 
 And one multi-signature contract:
-- [multi-signature contract](https://github.com/Xfers/XSGD-scilla/blob/master/contracts/wallet.scilla)
+- [multi-signature contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/contracts/wallet.scilla)
 
 The multi-signature contract is a digital signature scheme which allows a group of users(owners) to submit, sign and execute transactions in proxy contract.
 
