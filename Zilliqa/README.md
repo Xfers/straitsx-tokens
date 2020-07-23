@@ -116,7 +116,8 @@ Proxy contract is a relay contract that redirects calls to it to the token contr
 
 | Name | Description & Privileges |
 |--|--|
-|`init_admin`| The initial admin of the contract. It is usually the creator of the contract. |
+|`init_admin`| The initial admin of the proxy contract. It is usually the creator of the proxy contract. |
+|`admin`| The current admin of the proxy contract. The `admin` handles critical administrative actions, e.g., changing implementation of contract. There is only one `admin` and it is first initialized to `init_admin`.
 |`contract_owner`| The contract owner of the contract. It is usually the creator of the contract. The `contract_owner` role has no functionality outside of being used to comply with the ZRC2 standard.|
 |`spender`| A token holder can designate another address(es) to send up to a certain number of tokens on its behalf. The proxy contract defines each token holder and the number of tokens that a `spender` address is allowed to spend on behalf of the token holder in the `allowances` field.|
 
