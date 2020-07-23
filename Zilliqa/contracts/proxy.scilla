@@ -42,15 +42,44 @@ let make_error =
 
 contract ProxyContract
 (
-init_implementation : ByStr20,
-init_admin : ByStr20
+  contract_owner: ByStr20,
+  name :    String,
+  symbol :  String,
+  decimals : Uint32,
+  init_supply : Uint128,
+  init_implementation : ByStr20,
+  init_admin : ByStr20
 )
+with
+  (* Constraint expressions *)
+  (* Must return true or the contract will fail to deploy *)
+  let string_is_not_empty =
+    fun (s : String) =>
+      let zero = Uint32 0 in
+      let s_length = builtin strlen s in
+      let s_empty = builtin eq s_length zero in
+      negb s_empty
+  in
+  let name_ok = string_is_not_empty name in
+  let symbol_ok = string_is_not_empty symbol in
+  let name_symbol_ok = andb name_ok symbol_ok in
+  let decimals_ok =
+    let six = Uint32 6 in
+    let eighteen = Uint32 18 in
+    let decimals_at_least_6 = uint32_le six decimals in
+    let decimals_no_more_than_18 = uint32_le decimals eighteen in
+    andb decimals_at_least_6 decimals_no_more_than_18 in
+  andb name_symbol_ok decimals_ok
+=>
 
 (* Note that token balances are stored on the proxy contract, everything else on the implementation contract *)
 field implementation : ByStr20 = init_implementation
 field admin : ByStr20 = init_admin
-field balances : Map ByStr20 Uint128 = Emp ByStr20 Uint128
-field totalSupply : Uint128 = zero
+field balances : Map ByStr20 Uint128
+  = let emp_map = Emp ByStr20 Uint128 in
+    builtin put emp_map contract_owner init_supply
+field total_supply : Uint128 = zero
+field allowances : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
 
 (* Internal functions, used like Solidity modifiers *)
 procedure ThrowError(err : Error)
@@ -167,7 +196,7 @@ end
 transition Mint(recipient: ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  current_supply <- totalSupply;
+  current_supply <- total_supply;
   get_to_bal <- balances[recipient];
   to_bal = deconstruct_option_uint128 get_to_bal;
   msg = {_tag : "Mint"; _recipient : current_impl; _amount : zero; to : recipient;
@@ -182,14 +211,19 @@ transition MintCallBack(to: ByStr20, new_to_bal: Uint128, new_supply : Uint128)
 
   (* Update state *)
   balances[to] := new_to_bal;
-  totalSupply := new_supply
+  total_supply := new_supply
 end
 
 transition IncreaseAllowance (spender : ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
+
+  (* Retrieves initial allowance of spender *)
+  option_allowance <- allowances[_sender][spender];
+  allowance = deconstruct_option_uint128 option_allowance;
+
   msg = {_tag : "IncreaseAllowance"; _recipient : current_impl; _amount : zero;
-          spender : spender; amount : amount; initiator : _sender};
+          spender : spender; amount : amount; initiator : _sender; current_allowance : allowance};
   msgs = one_msg msg;
   send msgs
 end
@@ -197,10 +231,23 @@ end
 transition DecreaseAllowance (spender : ByStr20, amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
+
+  (* Retrieves initial allowance of spender *)
+  option_allowance <- allowances[_sender][spender];
+  allowance = deconstruct_option_uint128 option_allowance;
+
   msg = {_tag : "DecreaseAllowance"; _recipient : current_impl; _amount : zero;
-          spender : spender; amount : amount; initiator : _sender};
+          spender : spender; amount : amount; initiator : _sender; current_allowance : allowance};
   msgs = one_msg msg;
   send msgs
+end
+
+transition AllowanceCallBack(initiator : ByStr20, spender : ByStr20, new_allowance : Uint128)
+  (* Conditional checks *)
+  isCurrImpl _sender;
+
+  (* Update state *)
+  allowances[initiator][spender] := new_allowance
 end
 
 transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128)
@@ -208,10 +255,15 @@ transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128)
   current_impl <- implementation;
   get_to_bal <- balances[to];
   to_bal = deconstruct_option_uint128 get_to_bal;
+
   get_from_bal <- balances[from];
   from_bal = deconstruct_option_uint128 get_from_bal;
+
+  option_allowance <- allowances[from][_sender];
+  spender_allowance = deconstruct_option_uint128 option_allowance;
+
   msg = {_tag : "TransferFrom"; _recipient : current_impl; _amount : zero;
-          from : from; to : to; amount : amount; initiator : _sender; to_bal : to_bal; from_bal : from_bal};
+          from : from; to : to; amount : amount; initiator : _sender; to_bal : to_bal; from_bal : from_bal; spender_allowance : spender_allowance};
   msgs = one_msg msg;
   send msgs
 end
@@ -250,7 +302,7 @@ end
 transition Burn(amount : Uint128)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  current_supply <- totalSupply;
+  current_supply <- total_supply;
   get_burn_bal <- balances[_sender];
   burn_bal = deconstruct_option_uint128 get_burn_bal;
   msg = {_tag : "Burn"; _recipient : current_impl; _amount : zero; amount : amount; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
@@ -264,13 +316,13 @@ transition BurnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_sup
 
   (* Update state *)
   balances[initiator] := new_burn_balance;
-  totalSupply := new_supply
+  total_supply := new_supply
 end
 
 transition LawEnforcementWipingBurn(address : ByStr20)
   (* Creates message to be called on the implementation contract *)
   current_impl <- implementation;
-  current_supply <- totalSupply;
+  current_supply <- total_supply;
   get_addr_bal <- balances[address];
   addr_bal = deconstruct_option_uint128 get_addr_bal;
   msg = {_tag : "LawEnforcementWipingBurn"; _recipient : current_impl; _amount : zero; address : address; initiator : _sender; addr_bal : addr_bal; current_supply : current_supply};
@@ -284,7 +336,7 @@ transition LawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint
 
   (* Update state *)
   balances[address] := zero;
-  totalSupply := new_supply
+  total_supply := new_supply
 end
 
 transition IncreaseMinterAllowance(minter : ByStr20, amount : Uint128)
