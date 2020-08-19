@@ -69,7 +69,7 @@ field admin : ByStr20 = init_admin
 field balances : Map ByStr20 Uint128
 = let emp_map = Emp ByStr20 Uint128 in
 builtin put emp_map contract_owner init_supply
-field total_supply : Uint128 = zero
+field total_supply : Uint128 = init_supply
 field allowances : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
 
 procedure ThrowError(err : Error)

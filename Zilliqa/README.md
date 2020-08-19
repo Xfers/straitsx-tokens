@@ -143,7 +143,7 @@ The table below presents the mutable fields of the token contract and their init
 |`implementation`|`ByStr20`|`init_implementation` | Current `implementation` address of the token contract. |
 |`admin`|`ByStr20`|`init_admin` | Current `admin` address of the token contract. |
 |`balances`|`Map ByStr20 Uint128`|`let emp_map = Emp ByStr20 Uint128 in builtin put emp_map contract_owner init_supply` | Keeps track of the balance for each token holder. (balance of an address = balances[holder address]) |
-|`total_supply`|`Uint128`|`Uint128 0`| Total supply of tokens |
+|`total_supply`|`Uint128`|`init_supply`| Total supply of tokens |
 |`allowances`| `Map ByStr20 (Map ByStr20 Uint128)` | `Emp ByStr20 (Map ByStr20 Uint128)` | Keeps track of the allowance of each `spender` for each token holder and the number of tokens that the `spender` is allowed to spend on behalf of the token holder. (token allowed to spend = allowed[holder address][spender address]) |
 
 ### Transitions
