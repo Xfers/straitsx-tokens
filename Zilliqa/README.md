@@ -3,9 +3,7 @@
 ## Token Description
 The StraitsX SGD (XSGD) token is the first digital token fully collateralized one-for-one with Singapore Dollar (SGD) and representing 1 SGD. The XSGD token is written as a smart contract on Zilliqa's high-throughput decentralised public blockchain following the ZRC2 protocol and is governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd. 
 
-The Xfers payment service is regarded as a Widely Accepted Stored Value Facility under Singapore law. Xfers Pte. Ltd., is the Approved Holder of the Xfers Wallet Stored Value Facility.
-
-https://www.xfers.com/
+[Xfers](https://www.xfers.com/sg/) is an approved holder of a Major Payment Institution license ("MPI") for e-money issuance licensed by the Monetary Authority of Singapore (MAS)
 
 ## Smart Contract Specifications
 The XSGD contract has been written by the StraitsX team to fit both the specific needs of the XSGD token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.
@@ -62,7 +60,7 @@ The table below presents the mutable fields of the token contract and their init
 
 Note that each of the transitions in the token contract takes `initiator` as a parameter which as explained above is the caller that calls the proxy contract which in turn calls the token contract.
 
-All the transitions in the contract can be categorized into three categories:
+All the transitions in the contract can be categorized into four categories:
 - _housekeeping transitions_ meant to facilitate basic admin related tasks.
 - _pause transitions_ meant to pause and unpause the contract.
 - _minting-related transitions_ that allows mining and burning of tokens.
@@ -96,7 +94,7 @@ Each of these category of transitions are presented in further details below:
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
 |`Mint`| `to: ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, current_supply : Uint128` | Mint `amount` number of new tokens and allocate them to the `to` address.  <br>  :warning: **Note:** 1) Minting is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`, 2) Minting can only be done when the contract is not paused, 3) The `to` address cannot be blacklisted nor null. | <center>:x:</center> |
-|`Burn`| `amount : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128` | Burn `value` number of tokens.  <br>  :warning: **Note:**   1) Burning is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`, 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
+|`Burn`| `amount : Uint128, initiator : ByStr20, initiator_balance : Uint128, current_supply : Uint128` | Burn `amount` number of tokens.  <br>  :warning: **Note:**   1) Burning is a privileged transition that can be invoked only by non-blacklisted minters, i.e., `initiator` must be a non-blacklisted `minter`, 2) Burning can only be done when the contract is not paused.| <center>:x:</center>  |
 |`LawEnforcementWipingBurn`| `address : ByStr20, initiator : ByStr20, addr_bal : Uint128, current_supply : Uint128` | Burn entire balance of tokens from `address`.  <br>  :warning: **Note:** 1) Only the blacklister can invoke this transition, i.e., `initiator` must be the `blacklister` and is not blacklisted, 2) Burning can only be done when the contract is not paused, 3) Only accounts that have been blacklisted by the blacklister may have their funds wiped.| <center>:x:</center>  |
 
 #### Token Transfer Transitions
@@ -104,9 +102,9 @@ Each of these category of transitions are presented in further details below:
 | Name | Params | Description | Callable when paused? |
 |--|--|--|--|
 |`IncreaseAllowance`| `spender : ByStr20, amount : Uint128, initiator : ByStr20, current_allowance : Uint128` | Increase token allowance by `amount` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) `initiator` and `spender` must not be blacklisted, 2) `initiator` and `spender` cannot be the same address i.e. increase allowance for self, 3) Increasing allowance can only be done when the contract is not paused. | <center>:x:</center>  |
-|`DecreaseAllowance`| `spender : ByStr20, amount : Uint128, initiator : ByStr20, current_allowance : Uint128` | Decrease `value` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) `initiator` and `spender` must not be blacklisted, 2) `initiator` and `spender` cannot be the same address i.e. increase allowance for self, 3) Increasing allowance can only be done when the contract is not paused. | <center>:x:</center>  |
-|`Transfer`| `to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128` | Transfer `value` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:** 1) The `initiator` and `to` addresses should not be blacklisted, 2) The `initiator` and `to` addresses cannot be the same address i.e. transfer to self, 3) `to` cannot be the null address, 4) `Transfer` can only be called when the contract is not paused. |<center>:x:</center>  |
-|`TransferFrom`| `from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128, spender_allowance : Uint128` | Transfer `value` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**  1) The `initiator`, `from`  and `to` addresses should not be blacklisted, 2) `from` and `to` addresses cannot be the same i.e. transferFrom to self, 3) `to` cannot be the null address, 4) `TransferFrom` can only be called when the contract is not paused. |<center>:x:</center>  |
+|`DecreaseAllowance`| `spender : ByStr20, amount : Uint128, initiator : ByStr20, current_allowance : Uint128` | Decrease `amount` amount of a `spender` to spend on behalf of a token holder (`initiator`) . <br> :warning: **Note:** 1) `initiator` and `spender` must not be blacklisted, 2) `initiator` and `spender` cannot be the same address i.e. increase allowance for self, 3) Decreasing allowance can only be done when the contract is not paused. | <center>:x:</center>  |
+|`Transfer`| `to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, init_bal : Uint128` | Transfer `amount` number of tokens from the `initiator` to the `to` address.  <br>  :warning: **Note:** 1) The `initiator` and `to` addresses should not be blacklisted, 2) The `initiator` and `to` addresses cannot be the same address i.e. transfer to self, 3) `to` cannot be the null address, 4) `Transfer` can only be called when the contract is not paused. |<center>:x:</center>  |
+|`TransferFrom`| `from : ByStr20, to : ByStr20, amount : Uint128, initiator : ByStr20, to_bal : Uint128, from_bal : Uint128, spender_allowance : Uint128` | Transfer `amount` number of tokens on behalf of the `initiator` to the `to` address.  <br>  :warning: **Note:**  1) The `initiator`, `from`  and `to` addresses should not be blacklisted, 2) `from` and `to` addresses cannot be the same i.e. transferFrom to self, 3) `to` cannot be the null address, 4) `TransferFrom` can only be called when the contract is not paused. |<center>:x:</center>  |
 
 ## Proxy Contract
 
