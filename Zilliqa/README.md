@@ -3,9 +3,7 @@
 ## Token Description
 The StraitsX SGD (XSGD) token is the first digital token fully collateralized one-for-one with Singapore Dollar (SGD) and representing 1 SGD. The XSGD token is written as a smart contract on Zilliqa's high-throughput decentralised public blockchain following the ZRC2 protocol and is governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd. 
 
-The Xfers payment service is regarded as a Widely Accepted Stored Value Facility under Singapore law. Xfers Pte. Ltd., is the Approved Holder of the Xfers Wallet Stored Value Facility.
-
-https://www.xfers.com/
+[Xfers](https://www.xfers.com/sg/) is an approved holder of a Major Payment Institution license ("MPI") for e-money issuance licensed by the Monetary Authority of Singapore (MAS)
 
 ## Smart Contract Specifications
 The XSGD contract has been written by the StraitsX team to fit both the specific needs of the XSGD token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.

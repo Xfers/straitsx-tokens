@@ -3,9 +3,7 @@
 ## Token Description
 The StraitsX SGD (XSGD) token is the first digital token fully collateralized one-for-one with Singapore Dollar (SGD) and representing 1 SGD. The XSGD token is written as a smart contract on the Ethereum blockchain following the ERC20 standard and is governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd. 
 
-The Xfers payment service is regarded as a Widely Accepted Stored Value Facility under Singapore law. Xfers Pte. Ltd., is the Approved Holder of the Xfers Wallet Stored Value Facility.
-
-https://www.xfers.com/
+[Xfers](https://www.xfers.com/sg/) is an approved holder of a Major Payment Institution license ("MPI") for e-money issuance licensed by the Monetary Authority of Singapore (MAS)
 
 ## Smart Contract Specifications
 The XSGD contract has been written by the StraitsX team to fit both the specific needs of the XSGD token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.
@@ -14,7 +12,7 @@ The XSGD contract consists of two communicating contracts:
 - [token contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Ethereum/contracts/FiatTokenV1.sol)
 - [proxy contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Ethereum/contracts/FiatTokenProxy.sol)
 
-The token contract represents a standard fungible token contract with minting and burning features, while an [unstructured storage proxy pattern](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies#unstructured-storage-proxies) is used for the proxy contract. This pattern enables the proxy to use the logic of the token contract but modifying its own storage state. The proxy can point to the new contract address should there be upgrades to the token implementation in the future.
+The token contract represents a standard fungible token contract with minting and burning features, while an [unstructured storage proxy pattern](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies#unstructured-storage-proxies) is used for the proxy contract. This pattern enables the token contract to modify the storage of the proxy contract. Since the state resides on the proxy contract, one simply needs to point to a new token implementation for future upgrades.
 
 And one multi-signature contract:
 - [multi-signature contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Ethereum/contracts/MultiSigWallet.sol)
@@ -33,14 +31,20 @@ The multi-signature contract is a digital signature scheme which allows a group 
 |`blacklister`| The current blacklister of the token contract. The `blacklister` is used to (un)freeze & wipe the balance from any other account when required to do so by law enforcement. The presence of this function in the code is a mandatory regulatory requirement. StraitsX will never use this function on its own accord. There is only one `blacklister` and it is initialized by calling the `initialize()` function. |
 |`msg.sender`| The address that initiated the function call. |
 
+### Immutable Fields
+The table below presents the immutable fields of the token contract and a description of what it is for.
+
+| Name | Type | Description |
+|--|--|--|
+| `name` | `string` | Name of the token |
+| `symbol` | `string` | Symbol of the token |
+| `decimals` | `uint8` | Decimals of the token |
+
 ### Mutable Fields 
 The table below presents the mutable fields of the token contract and a description of what it is for.
 
 | Name | Type | Description |
-|--|--|--|--|
-| `name` | `string` | Name of the token |
-| `symbol` | `string` | Symbol of the token |
-| `decimals` | `uint8` | Decimals of the token |
+|--|--|--|
 | `_owner` | `address` | Current `_owner` in the contract. Inherited from `Ownable.sol`. |
 | `masterMinter` | `address` | Current `masterMinter` in the contract. |
 | `initialized` | `bool` | To keep track if the contract is initialized. `initialize()` can only be called once. |
