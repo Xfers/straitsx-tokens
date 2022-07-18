@@ -206,7 +206,7 @@ edit the .env file
 -   For local ganache testing, you only need to specify a random THROWAWAY_ADDRESS.
 -   If you wish to deploy to mainnet or testnets, you will also need to specify DEPLOYER_MNEMONIC, ACCESS_TOKEN and ADDRESSES.
 -   DEPLOYER_MNEMONIC is the mnemonic of a HD wallet with which the deployer account is the first address. This deployer account will be used for deploying the contracts and should already have some MATIC in it. If you do not have this, you can generate a mnemonic [here](https://iancoleman.io/bip39/#english) and get some testnet MATIC from this [faucet](https://faucet.metamask.io/).
--   ACCESS_TOKEN is your infura project id. If you do not have one, please make an account on the [official infura website](https://infura.io/) and create a project.
+-   ACCESS_TOKEN is your Alchemy project id. If you do not have one, please make an account on the [official alchmey website](https://dashboard.alchemyapi.io/) and create a project.
 -   Since each role will be controlled by a multisig, ADDRESSES represents the list of owners to be used in each multisig.
 -   See the example .env file below for a full example.
 

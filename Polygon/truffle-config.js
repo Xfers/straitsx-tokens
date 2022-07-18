@@ -1,6 +1,6 @@
 require("dotenv").config()
 
-// INFURA Setup - see validate/README.validate.md for more info
+// ALCHEMY Setup - see validate/README.validate.md for more info
 const HD_WALLET_PROVIDER = require("truffle-hdwallet-provider"); // These keys will be used only for CALL
 const DEPLOYER_MNEMONIC = process.env.DEPLOYER_MNEMONIC;
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
