@@ -1,0 +1,15 @@
+build/
+node_modules/
+coverage/
+coverage.json
+package-lock.json
+.idea/
+#local codebuild results
+artifacts/
+.DS_Store
+contracts/.DS_Store
+token.json
+credentials.json
+echidna/
+validate/apikey.infura
+.env

@@ -1,0 +1,320 @@
+scilla_version 0
+
+
+import BoolUtils IntUtils
+
+library ProxyContract
+
+let zero = Uint128 0
+
+let one_msg =
+fun (msg : Message) =>
+let nil_msg = Nil {Message} in
+Cons {Message} msg nil_msg
+
+let deconstruct_option_uint128 =
+fun (option_uint128 : Option Uint128) =>
+match option_uint128 with
+| Some a => a
+| _ => zero
+end
+
+type Error =
+| CodeNotAdmin
+| CodeNotCurrImpl
+let make_error =
+fun (result : Error) =>
+let result_code = 
+match result with
+| CodeNotAdmin                  => Int32 -1
+| CodeNotCurrImpl               => Int32 -2
+end
+in
+{ _exception : "Error"; code : result_code }
+
+
+
+contract ProxyContract
+(
+contract_owner: ByStr20,
+name :    String,
+symbol :  String,
+decimals : Uint32,
+init_supply : Uint128,
+init_implementation : ByStr20,
+init_admin : ByStr20
+)
+with
+let string_is_not_empty =
+fun (s : String) =>
+let zero = Uint32 0 in
+let s_length = builtin strlen s in
+let s_empty = builtin eq s_length zero in
+negb s_empty
+in
+let name_ok = string_is_not_empty name in
+let symbol_ok = string_is_not_empty symbol in
+let name_symbol_ok = andb name_ok symbol_ok in
+let decimals_ok =
+let six = Uint32 6 in
+let eighteen = Uint32 18 in
+let decimals_at_least_6 = uint32_le six decimals in
+let decimals_no_more_than_18 = uint32_le decimals eighteen in
+andb decimals_at_least_6 decimals_no_more_than_18 in
+andb name_symbol_ok decimals_ok
+=>
+
+field implementation : ByStr20 = init_implementation
+field admin : ByStr20 = init_admin
+field balances : Map ByStr20 Uint128
+= let emp_map = Emp ByStr20 Uint128 in
+builtin put emp_map contract_owner init_supply
+field total_supply : Uint128 = init_supply
+field allowances : Map ByStr20 (Map ByStr20 Uint128) = Emp ByStr20 (Map ByStr20 Uint128)
+
+procedure ThrowError(err : Error)
+e = make_error err;
+throw e
+end
+
+procedure isAdmin(address: ByStr20)
+current_admin <- admin;
+is_admin = builtin eq current_admin address;
+match is_admin with
+| True =>
+| False =>
+err = CodeNotAdmin;
+ThrowError err
+end
+end
+
+procedure isCurrImpl(address: ByStr20)
+current_impl <- implementation;
+is_curr_imp = builtin eq current_impl address;
+match is_curr_imp with
+| True => 
+| False =>
+err = CodeNotCurrImpl;
+ThrowError err
+end
+end
+
+transition UpgradeTo(newImplementation : ByStr20)
+isAdmin _sender;
+
+implementation := newImplementation;
+e = {_eventname : "Upgraded"; implementation_address : newImplementation};
+event e
+end
+
+transition ChangeAdmin(newAdmin : ByStr20)
+isAdmin _sender;
+
+currentAdmin <- admin;
+admin := newAdmin;
+e = {_eventname : "AdminChanged"; oldAdmin : currentAdmin; newAdmin : newAdmin};
+event e
+end
+
+transition TransferOwnership(newOwner : ByStr20)
+current_impl <- implementation;
+msg = {_tag : "TransferOwnership"; _recipient : current_impl; _amount : zero;
+newOwner : newOwner; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition Pause()
+current_impl <- implementation;
+msg = {_tag : "Pause"; _recipient : current_impl; _amount : zero; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition Unpause()
+current_impl <- implementation;
+msg = {_tag : "Unpause"; _recipient : current_impl; _amount : zero; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition UpdatePauser(newPauser : ByStr20)
+current_impl <- implementation;
+msg = {_tag : "UpdatePauser"; _recipient : current_impl; _amount : zero;
+newPauser : newPauser; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition Blacklist(address : ByStr20)
+current_impl <- implementation;
+msg = {_tag : "Blacklist"; _recipient : current_impl; _amount : zero;
+address : address; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition Unblacklist(address : ByStr20)
+current_impl <- implementation;
+msg = {_tag : "Unblacklist"; _recipient : current_impl; _amount : zero;
+address : address; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition UpdateBlacklister(newBlacklister : ByStr20)
+current_impl <- implementation;
+msg = {_tag : "UpdateBlacklister"; _recipient : current_impl; _amount : zero;
+newBlacklister : newBlacklister; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition Mint(recipient: ByStr20, amount : Uint128)
+current_impl <- implementation;
+current_supply <- total_supply;
+get_to_bal <- balances[recipient];
+to_bal = deconstruct_option_uint128 get_to_bal;
+msg = {_tag : "Mint"; _recipient : current_impl; _amount : zero; to : recipient;
+amount : amount; initiator : _sender; to_bal : to_bal; current_supply : current_supply};
+msgs = one_msg msg;
+send msgs
+end
+
+transition MintCallBack(to: ByStr20, new_to_bal: Uint128, new_supply : Uint128)
+isCurrImpl _sender;
+
+balances[to] := new_to_bal;
+total_supply := new_supply
+end
+
+transition IncreaseAllowance (spender : ByStr20, amount : Uint128)
+current_impl <- implementation;
+
+option_allowance <- allowances[_sender][spender];
+allowance = deconstruct_option_uint128 option_allowance;
+
+msg = {_tag : "IncreaseAllowance"; _recipient : current_impl; _amount : zero;
+spender : spender; amount : amount; initiator : _sender; current_allowance : allowance};
+msgs = one_msg msg;
+send msgs
+end
+
+transition DecreaseAllowance (spender : ByStr20, amount : Uint128)
+current_impl <- implementation;
+
+option_allowance <- allowances[_sender][spender];
+allowance = deconstruct_option_uint128 option_allowance;
+
+msg = {_tag : "DecreaseAllowance"; _recipient : current_impl; _amount : zero;
+spender : spender; amount : amount; initiator : _sender; current_allowance : allowance};
+msgs = one_msg msg;
+send msgs
+end
+
+transition AllowanceCallBack(initiator : ByStr20, spender : ByStr20, new_allowance : Uint128)
+isCurrImpl _sender;
+
+allowances[initiator][spender] := new_allowance
+end
+
+transition TransferFrom (from : ByStr20, to : ByStr20, amount : Uint128)
+current_impl <- implementation;
+get_to_bal <- balances[to];
+to_bal = deconstruct_option_uint128 get_to_bal;
+
+get_from_bal <- balances[from];
+from_bal = deconstruct_option_uint128 get_from_bal;
+
+option_allowance <- allowances[from][_sender];
+spender_allowance = deconstruct_option_uint128 option_allowance;
+
+msg = {_tag : "TransferFrom"; _recipient : current_impl; _amount : zero;
+from : from; to : to; amount : amount; initiator : _sender; to_bal : to_bal; from_bal : from_bal; spender_allowance : spender_allowance};
+msgs = one_msg msg;
+send msgs
+end
+
+transition TransferFromCallBack(from : ByStr20, to : ByStr20, new_from_bal : Uint128, new_to_bal : Uint128)
+isCurrImpl _sender;
+
+balances[to] := new_to_bal;
+balances[from] := new_from_bal
+end
+
+transition Transfer (to : ByStr20, amount : Uint128)
+current_impl <- implementation;
+get_to_bal <- balances[to];
+to_bal = deconstruct_option_uint128 get_to_bal;
+get_init_bal <- balances[_sender];
+init_bal = deconstruct_option_uint128 get_init_bal;
+msg = {_tag : "Transfer"; _recipient : current_impl; _amount : zero; to : to;
+amount : amount; initiator : _sender; to_bal : to_bal; init_bal : init_bal};
+msgs = one_msg msg;
+send msgs
+end
+
+transition TransferCallBack(to : ByStr20, initiator : ByStr20, new_to_bal : Uint128, new_init_bal : Uint128)
+isCurrImpl _sender;
+
+balances[to] := new_to_bal;
+balances[initiator] := new_init_bal
+end
+
+transition Burn(amount : Uint128)
+current_impl <- implementation;
+current_supply <- total_supply;
+get_burn_bal <- balances[_sender];
+burn_bal = deconstruct_option_uint128 get_burn_bal;
+msg = {_tag : "Burn"; _recipient : current_impl; _amount : zero; amount : amount; initiator : _sender; initiator_balance : burn_bal; current_supply : current_supply};
+msgs = one_msg msg;
+send msgs
+end
+
+transition BurnCallBack(initiator : ByStr20, new_burn_balance : Uint128, new_supply : Uint128)
+isCurrImpl _sender;
+
+balances[initiator] := new_burn_balance;
+total_supply := new_supply
+end
+
+transition LawEnforcementWipingBurn(address : ByStr20)
+current_impl <- implementation;
+current_supply <- total_supply;
+get_addr_bal <- balances[address];
+addr_bal = deconstruct_option_uint128 get_addr_bal;
+msg = {_tag : "LawEnforcementWipingBurn"; _recipient : current_impl; _amount : zero; address : address; initiator : _sender; addr_bal : addr_bal; current_supply : current_supply};
+msgs = one_msg msg;
+send msgs
+end
+
+transition LawEnforcementWipingBurnCallBack(address : ByStr20, new_supply : Uint128)
+isCurrImpl _sender;
+
+balances[address] := zero;
+total_supply := new_supply
+end
+
+transition IncreaseMinterAllowance(minter : ByStr20, amount : Uint128)
+current_impl <- implementation;
+msg = {_tag : "IncreaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
+amount : amount; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition DecreaseMinterAllowance(minter : ByStr20, amount : Uint128)
+current_impl <- implementation;
+msg = {_tag : "DecreaseMinterAllowance"; _recipient : current_impl; _amount : zero; minter : minter;
+amount : amount; initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end
+
+transition UpdateMasterMinter(newMasterMinter : ByStr20)
+current_impl <- implementation;
+msg = {_tag : "UpdateMasterMinter"; _recipient : current_impl; _amount : zero; newMasterMinter : newMasterMinter;
+initiator : _sender};
+msgs = one_msg msg;
+send msgs
+end

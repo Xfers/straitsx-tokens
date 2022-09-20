@@ -1,25 +1,25 @@
-# StraitsX-tokens (XSGD)
+# StraitsX-tokens (XIDR)
 
 ## Token Description
-The StraitsX SGD (XSGD) token is the first digital token fully collateralized one-for-one with Singapore Dollar (SGD) and representing 1 SGD. The XSGD token is written as a smart contract on the Polygon blockchain following the ERC20 standard and is governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd. 
+The StraitsX IDR (XIDR) token is the first digital token fully collateralized one-for-one with Indonesia Dollar (IDR) and representing 1 IDR. The XIDR token is written as a smart contract on the Ethereum blockchain following the ERC20 standard and is governed by the StraitsX network whereby XIDR tokens are centrally minted and burned by Xfers Pte. Ltd.
 
 [Xfers](https://www.xfers.com/sg/) is an approved holder of a Major Payment Institution license ("MPI") for e-money issuance licensed by the Monetary Authority of Singapore (MAS)
 
 ## Smart Contract Specifications
-The XSGD contract has been written by the StraitsX team to fit both the specific needs of the XSGD token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.
+The XIDR contract has been written by the StraitsX team to fit both the specific needs of the XIDR token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.
 
-The XSGD contract consists of two communicating contracts:
-- [token contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Polygon/contracts/FiatTokenV1.sol)
-- [proxy contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Polygon/contracts/FiatTokenProxy.sol)
+The XIDR contract consists of two communicating contracts:
+- [token contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Ethereum/XIDR/contracts/FiatTokenV1.sol)
+- [proxy contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Ethereum/XIDR/contracts/FiatTokenProxy.sol)
 
 The token contract represents a standard fungible token contract with minting and burning features, while an [unstructured storage proxy pattern](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies#unstructured-storage-proxies) is used for the proxy contract. This pattern enables the token contract to modify the storage of the proxy contract. Since the state resides on the proxy contract, one simply needs to point to a new token implementation for future upgrades.
 
 And one multi-signature contract:
-- [multi-signature contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Polygon/contracts/MultiSigWallet.sol)
+- [multi-signature contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Ethereum/XIDR/contracts/MultiSigWallet.sol)
 
 The multi-signature contract is a digital signature scheme which allows a group of users(owners) to submit, sign and execute transactions to the proxy contract.
 
-## Token contract 
+## Token contract
 ### Roles and Privileges
 
 | Name | Description & Privileges |
@@ -40,7 +40,7 @@ The table below presents the immutable fields of the token contract and a descri
 | `symbol` | `string` | Symbol of the token |
 | `decimals` | `uint8` | Decimals of the token |
 
-### Mutable Fields 
+### Mutable Fields
 The table below presents the mutable fields of the token contract and a description of what it is for.
 
 | Name | Type | Description |
@@ -52,7 +52,7 @@ The table below presents the mutable fields of the token contract and a descript
 | `pauser` | `address` | Current `pauser` in the contract. Inherited from `Pausable.sol`. |
 | `balances` | `mapping(address => uint256)` | Tracks the balances of each address. |
 | `allowed` | `mapping(address => mapping(address => uint256))` | Tracks the allowances given by each address (owner) to another address (spender). |
-| `totalSupply_` | `uint256` | Tracks the total supply of tokens minted on the Polygon blockchain. |
+| `totalSupply_` | `uint256` | Tracks the total supply of tokens minted on the Ethereum blockchain. |
 | `minters` | `mapping(address => bool)` | Tracks the minter status of each address. |
 | `minterAllowed` | `mapping(address => uint256)` | Tracks the minter allowance of each address (minter). |
 | `blacklister` | `address` | Current `blacklister` in the contract. Inherited from `Blacklistable.sol`. |
@@ -105,11 +105,11 @@ Each of these category of functions are presented in further details below:
 
 ## Proxy Contract
 
-The proxy contract points to a contract implementation which it derives its logic from. You can understand more by reading this [detailed explanation](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies#unstructured-storage-proxies) or by going through their [documentation](https://docs.zeppelinos.org/docs/2.2.0/upgradeability_adminupgradeabilityproxy). 
+The proxy contract points to a contract implementation which it derives its logic from. You can understand more by reading this [detailed explanation](https://docs.openzeppelin.com/upgrades-plugins/1.x/proxies#unstructured-storage-proxies) or by going through their [documentation](https://docs.zeppelinos.org/docs/2.2.0/upgradeability_adminupgradeabilityproxy).
 
 ## Multi-signature Contract
 
-The multi signature contract is the [same contract](https://github.com/gnosis/MultiSigWallet/blob/master/contracts/MultiSigWallet.sol) that is used by Gnosis. 
+The multi signature contract is the [same contract](https://github.com/gnosis/MultiSigWallet/blob/master/contracts/MultiSigWallet.sol) that is used by Gnosis.
 
 This contract holds funds that can be paid out to arbitrary users, provided that enough people in the collection of owners sign off on the payout. The transaction must be added to the contract before signatures can be collected. Once enough signatures are collected, the transaction will automatically be executed and if successful, the money paid out.
 
@@ -205,8 +205,8 @@ edit the .env file
 
 -   For local ganache testing, you only need to specify a random THROWAWAY_ADDRESS.
 -   If you wish to deploy to mainnet or testnets, you will also need to specify DEPLOYER_MNEMONIC, ACCESS_TOKEN and ADDRESSES.
--   DEPLOYER_MNEMONIC is the mnemonic of a HD wallet with which the deployer account is the first address. This deployer account will be used for deploying the contracts and should already have some MATIC in it. If you do not have this, you can generate a mnemonic [here](https://iancoleman.io/bip39/#english) and get some testnet MATIC from this [faucet](https://faucet.metamask.io/).
--   ACCESS_TOKEN is your Alchemy project id. If you do not have one, please make an account on the [official alchmey website](https://dashboard.alchemyapi.io/) and create a project.
+-   DEPLOYER_MNEMONIC is the mnemonic of a HD wallet with which the deployer account is the first address. This deployer account will be used for deploying the contracts and should already have some ETH in it. If you do not have this, you can generate a mnemonic [here](https://iancoleman.io/bip39/#english) and get some testnet eth from this [faucet](https://faucet.metamask.io/).
+-   ACCESS_TOKEN is your infura project id. If you do not have one, please make an account on the [official infura website](https://infura.io/) and create a project.
 -   Since each role will be controlled by a multisig, ADDRESSES represents the list of owners to be used in each multisig.
 -   See the example .env file below for a full example.
 
