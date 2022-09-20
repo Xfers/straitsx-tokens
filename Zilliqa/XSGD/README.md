@@ -1,7 +1,7 @@
 # StraitsX SGD (XSGD)
 
 ## Token Description
-The StraitsX SGD (XSGD) token is the first digital token fully collateralized one-for-one with Singapore Dollar (SGD) and representing 1 SGD. The XSGD token is written as a smart contract on Zilliqa's high-throughput decentralised public blockchain following the ZRC2 protocol and is governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd. 
+The StraitsX SGD (XSGD) token is the first digital token fully collateralized one-for-one with Singapore Dollar (SGD) and representing 1 SGD. The XSGD token is written as a smart contract on Zilliqa's high-throughput decentralised public blockchain following the ZRC2 protocol and is governed by the StraitsX network whereby XSGD tokens are centrally minted and burned by Xfers Pte. Ltd.
 
 [Xfers](https://www.xfers.com/sg/) is an approved holder of a Major Payment Institution license ("MPI") for e-money issuance licensed by the Monetary Authority of Singapore (MAS)
 
@@ -9,19 +9,19 @@ The StraitsX SGD (XSGD) token is the first digital token fully collateralized on
 The XSGD contract has been written by the StraitsX team to fit both the specific needs of the XSGD token as described in the StraitsX Whitepaper and the requirement to comply with local regulation.
 
 The XSGD contract consists of two communicating contracts:
-- [token contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/contracts/xsgd_contract.scilla)
-- [proxy contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/contracts/proxy.scilla)
+- [token contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/XSGD/contracts/xsgd_contract.scilla)
+- [proxy contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/XSGD/contracts/proxy.scilla)
 
 The token contract represents a standard fungible token contract with minting and burning features, while the proxy contract is a typical relay contract that redirects all calls to the token contract. This allows upgrading the contract, as the original proxy can point to a newly deployed token contract.
 
 And one multi-signature contract:
-- [multi-signature contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/contracts/wallet.scilla)
+- [multi-signature contract](https://github.com/Xfers/StraitsX-tokens/blob/master/Zilliqa/XSGD/contracts/wallet.scilla)
 
 The multi-signature contract is a digital signature scheme which allows a group of users(owners) to submit, sign and execute transactions in proxy contract.
 
 All contracts here also have a minimized version in `/compressed` folder because there is a maximum code size limit of 20,480 bytes in Zilliqa.
 
-## Token contract 
+## Token contract
 ### Roles and Privileges
 
 | Name | Description & Privileges |
@@ -43,7 +43,7 @@ The table below lists the parameters that are defined at the contract deployment
 |`init_owner`| `ByStr20` | The initial owner of the token contract. |
 |`proxy_address` | `ByStr20` | Address of the proxy contract. |
 
-### Mutable Fields 
+### Mutable Fields
 The table below presents the mutable fields of the token contract and their initial values.
 
 | Name | Type | Initial Value |Description |
