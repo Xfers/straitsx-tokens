@@ -18,17 +18,17 @@ module.exports = async (deployer, network, accounts) => {
         const ADDRESSES = JSON.parse(process.env.ADDRESSES);
         const DeployedContractAddresses = {};
 
+        // deploys all the smartcontracts and stores their addresses 
         // Todo: Add logger for deployment of contracts
         const TOKEN = await FiatTokenV1.new();
         const PROXY = await FiatTokenProxy.new(TOKEN.address);
-        const MASTER_MINTER = await WalletContract.new(
-            ADDRESSES.masterMinter,
-            1
-        );
-        const PAUSER = await WalletContract.new(ADDRESSES.pauser, 1);
-        const BLACK_LISTER = await WalletContract.new(ADDRESSES.blackLister, 1);
-        const OWNER = await WalletContract.new(ADDRESSES.owner, 1);
-        const PROXY_ADMIN = await WalletContract.new(ADDRESSES.proxyAdmin, 1);
+        const MASTER_MINTER = await WalletContract.new(ADDRESSES.masterMinter, 3);
+        const PAUSER = await WalletContract.new(ADDRESSES.pauser, 3);
+        const BLACK_LISTER = await WalletContract.new(ADDRESSES.blackLister, 3);
+        const OWNER = await WalletContract.new(ADDRESSES.owner, 3);
+        const PROXY_ADMIN = await WalletContract.new(ADDRESSES.proxyAdmin, 3);
+        const MINTER = await WalletContract.new(ADDRESSES.minter, 2);
+        const TREASURY_WALLET = await WalletContract.new(ADDRESSES.treasuryWallet, 3);
 
         DeployedContractAddresses["masterMinter"] = MASTER_MINTER.address;
         DeployedContractAddresses["pauser"] = PAUSER.address;
@@ -37,6 +37,8 @@ module.exports = async (deployer, network, accounts) => {
         DeployedContractAddresses["token"] = TOKEN.address;
         DeployedContractAddresses["proxy"] = PROXY.address;
         DeployedContractAddresses["proxyAdmin"] = PROXY_ADMIN.address;
+        DeployedContractAddresses["minter"] = MINTER.address;
+        DeployedContractAddresses["treasuryWallet"] = TREASURY_WALLET.address;
 
         // Write to addresses.json
         FS.writeFileSync(
