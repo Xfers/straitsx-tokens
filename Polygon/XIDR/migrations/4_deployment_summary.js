@@ -31,6 +31,8 @@ module.exports = async (deployer, network, accounts) => {
         owner = ADDRESSES.owner;
         tokenAddr = ADDRESSES.token;
         proxyAddr = ADDRESSES.proxy;
+        treasury = ADDRESSES.treasuryWallet;
+        minter = ADDRESSES.minter;
     }
     // Print ADDRESSES of deployed contracts
     console.log();
@@ -43,5 +45,7 @@ module.exports = async (deployer, network, accounts) => {
     console.log(`   ${"> Token:".padEnd(23, " ")} ${tokenAddr}`);
     console.log(`   ${"> Proxy:".padEnd(23, " ")} ${proxyAddr}`);
     console.log(`   ${"> Proxy Admin:".padEnd(23, " ")} ${admin}`);
+    console.log(`   ${"> Treasury:".padEnd(23, " ")} ${treasury}`);
+    console.log(`   ${"> Minter:".padEnd(23, " ")} ${minter}`);
     console.log();
 };

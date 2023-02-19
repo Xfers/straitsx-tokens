@@ -1,7 +1,7 @@
 require("dotenv").config()
 
 // ALCHEMY Setup - see validate/README.validate.md for more info
-const HD_WALLET_PROVIDER = require("truffle-hdwallet-provider"); // These keys will be used only for CALL
+const HD_WALLET_PROVIDER = require("@truffle/hdwallet-provider"); // These keys will be used only for CALL
 const DEPLOYER_MNEMONIC = process.env.DEPLOYER_MNEMONIC;
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 
@@ -38,11 +38,11 @@ module.exports = {
     },
     // Polygon Testnet
     mumbai: {
-      provider: () => new HD_WALLET_PROVIDER(DEPLOYER_MNEMONIC, `https://matic-mumbai.chainstacklabs.com/`),
-      //host: 'https://rpc-mumbai.matic.today',
+      provider: () => new HD_WALLET_PROVIDER(DEPLOYER_MNEMONIC, `https://polygon-mumbai.g.alchemy.com/v2/${ACCESS_TOKEN}`),
       network_id: 80001,
-      confirmations: 2,
-      timeoutBlocks: 200,
+      gas: 4500000,
+      gasPrice: 35000000000,
+      disableConfirmationListener: true,
       skipDryRun: true
     },
     // Polygon Mainnet
@@ -65,4 +65,3 @@ module.exports = {
     //reporter: './verification/verification_reporter.js',
   },
 };
-
