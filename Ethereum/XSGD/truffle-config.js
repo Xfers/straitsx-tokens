@@ -1,7 +1,7 @@
 require("dotenv").config()
 
 // INFURA Setup - see validate/README.validate.md for more info
-const HD_WALLET_PROVIDER = require("truffle-hdwallet-provider"); // These keys will be used only for CALL
+const HD_WALLET_PROVIDER = require("@truffle/hdwallet-provider"); // These keys will be used only for CALL
 const DEPLOYER_MNEMONIC = process.env.DEPLOYER_MNEMONIC;
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;
 
@@ -51,7 +51,18 @@ module.exports = {
       gas: 4500000, // Current Ropsten gas limit. See https://ropsten.etherscan.io/block/3141628
       gasPrice: 1100000000, // 1.1 GWei - based on the lower end of current txs getting into blocks currently on Ropsten.
       network_id: 3
-    }
+    },
+    // GOERLI INFURA Setup
+    infura_goerli: {
+      networkCheckTimeout: 10000,
+      timeoutBlocks: 200,
+      provider: function() {
+        return new HD_WALLET_PROVIDER(DEPLOYER_MNEMONIC, `https://goerli.infura.io/v3/${ACCESS_TOKEN}`, 0, 10)
+      },
+      gas: 4500000,
+      gasPrice: 30000000000,
+      network_id: 5
+    },
   },
   mocha: {
     /*
